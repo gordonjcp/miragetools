@@ -1,0 +1,30 @@
+#! /usr/bin/env python
+
+# the following two variables are used by the target "waf dist"
+VERSION='0'
+APPNAME='miragedisk'
+
+# these variables are mandatory ('/' are converted automatically)
+top = '.'
+out = 'build'
+
+def options(opt):
+    opt.tool_options('compiler_cc')
+
+def configure(conf):
+    conf.check_tool('compiler_cc')
+
+    # set for debugging
+    #conf.env.CCFLAGS = ['-O0', '-g', '-ggdb']
+    conf.check_cfg(package='sndfile', uselib_store='SNDFILE', atleast_version='1.0.21', mandatory=True, args='--cflags --libs')
+def build(bld):
+
+    bld(
+        features = 'c cprogram',
+        source = ['mirage.c', ],
+        target = 'miragetool',
+        uselib = "SNDFILE",
+	linkflags = "",
+        includes = '. /usr/include')
+
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
