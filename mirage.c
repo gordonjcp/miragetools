@@ -70,11 +70,11 @@ int main (int argc, char **argv) {
 	
 	fd = open("/dev/fd0", O_ACCMODE | O_NDELAY);
 	if (fd == -1) {
-		printf("couldn't open /dev/fd0: %s\n", strerror(errno));
+		perror("couldn't open /dev/fd0");
 		exit(1);
 	}
 	
-	printf("%s\n", arguments.arg);
+	printf("parsed filename %s\n", arguments.arg);
 	printf("disk exerciser\nrecalibrate floppy\n");
 	fd_recalibrate(fd);
 	sleep(2);

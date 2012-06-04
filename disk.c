@@ -42,7 +42,7 @@ void fd_recalibrate(int fd) {
 	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_RECALIBRATE;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
 	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
-	if(tmp) printf("recalibrate nonzero, error = \"%s\"\n", strerror(errno));
+	if(tmp) perror(__func__);
 }
 
 void fd_seek(int fd, int trk) {
@@ -56,13 +56,11 @@ void fd_seek(int fd, int trk) {
 	raw_cmd.cmd_count = 0;
 	// set up the command
 	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_SEEK;
-	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 1;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = trk;
 	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
-	if(tmp) printf("tmp nonzero, error = \"%s\"\n", strerror(errno));
+	if(tmp) perror(__func__);
 }
-
-
 
 void fd_seekin(int fd) {
 	// step one track in
@@ -77,5 +75,5 @@ void fd_seekin(int fd) {
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 1;
 	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
-	if(tmp) printf("seekin nonzero, error = \"%s\"\n", strerror(errno));
+	if(tmp) perror(__func__);
 }
