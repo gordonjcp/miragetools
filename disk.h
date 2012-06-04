@@ -21,3 +21,4 @@
 void fd_recalibrate(int fd);
 void fd_seek(int fd, int track);
 void fd_seekin(int fd);
+void fd_readsect(int fd, int trk, int sect, char *buffer);
