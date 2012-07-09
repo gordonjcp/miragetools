@@ -23,7 +23,7 @@ CFLAGS = $(CDEBUG) $(INC) -Wall
 LDFLAGS = -g
 
 OBJS= console.o dis6809.o emu6809.o inst6809.o int6809.o memory.o \
-      misc.o miscutils.o motorola.o
+      misc.o motorola.o acia.o
 
 sim6809:$(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -42,9 +42,9 @@ memory.o: memory.c config.h console.h
 
 misc.o: misc.c config.h emu6809.h
 
-miscutils.o: miscutils.c config.h  
-
 motorola.o: motorola.c config.h emu6809.h
+
+acia.o:	acia.c config.h emu6809.h acia.h
 
 clean:
 	rm -f sim6809 *.o core
