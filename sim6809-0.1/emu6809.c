@@ -561,7 +561,8 @@ tt_u16 get_eaw()
 
 void m6809_init()
 {
-  rpc = last_rpc = rx = ry = ru = rs = 0;
+  rpc = rx = ry = ru = rs = 0;
+  last_rpc=-1;
   ra = rb = rdp = 0;
   setcc(0);
 }

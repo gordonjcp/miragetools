@@ -53,10 +53,32 @@ tt_u8 via_rreg(int reg) {
 
 	tt_u8 val;
 
-	if (reg == 0x00) {
-		val = (via.orb & 0x1f) | 0x40;  // force disk ready
-	}
-	printf("pc: %04x via_rreg(%d, 0x%02x)\n", last_rpc, reg, val);
+	switch(reg) {
+		case 0:
+			val = (via.orb & 0x1f) | 0x40; // fake disk ready
+			break;
+		case 10:
+			printf("pc: %04x via_rreg read shift register unhandled\n", last_rpc);
+			val = 0;
+			break;
+		case 12:
+			val = via.pcr;
+			break;
+		case 13:
+			val = via.ifr;
+			break;
+		case 14:
+			val = via.ier;
+			break;	
+		case 15:
+			printf("pc: %04x via_rreg read IRA no handshake unhandled\n", last_rpc);
+			val = 0;
+			break;
+		default:
+			printf("pc: %04x via_rreg(%d, 0x%02x)\n", last_rpc, reg, val);
+			exit(1);
+		}
+
 	return val;
 }
 
@@ -103,21 +125,22 @@ void via_wreg(int reg, tt_u8 val) {
 			via.t2h = val;
 			via_t2 = via.t2l | (via.t2h<<8);
 			via_cycles = cycles + (via_t2>>2);  // half, because the clock frequency is 2MHz
-			printf("%-4x: t2 = %04x\n", last_rpc, (int) via_t2);
+			//printf("%-4x: t2 = %04x\n", last_rpc, (int) via_t2);
 			break;
 		case 10:
-			printf("%04x: sr=%02x\n", last_rpc, val);
+			printf("%04x: sr<=%02x\n", last_rpc, val);
 			break;
 		case 11:
-			printf("%04x: acr=%02x\n", last_rpc, val);
+			printf("%04x: acr<=%02x\n", last_rpc, val);
 			break;
 		case 12:
-			printf("%04x: pcr=%02x\n", last_rpc, val);
+			via.pcr = val;
+			printf("%04x: pcr<=%02x\n", last_rpc, val);
 			break;
 		case 13:
 			val &= 0x7f;
 			via.ifr &= ~val;
-			printf("%04x: val=%02x ier=%02x\n", last_rpc, val, via.ier);
+			printf("%04x: val=%02x ier<=%02x\n", last_rpc, val, via.ifr);
 			break;
 		case 14:
 			// okay, this is a funny one.  If bit 7 is set, the remaining bits
@@ -131,7 +154,7 @@ void via_wreg(int reg, tt_u8 val) {
 			
 			break;
 		case 15:
-			printf("%04x: ora=%02x\n", last_rpc, val);
+			printf("%04x: ora<=%02x\n", last_rpc, val);
 			break;
 		default:
 			printf("pc: %04x via_wreg(%d, 0x%02x)\n", last_rpc, reg, val);	

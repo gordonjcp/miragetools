@@ -32,7 +32,7 @@ void reset(void)
 }
 
 void irq(void) {
-  rpc++;		// skip over sync -- FIXME sync bug
+  if (get_memb(rpc)==0x13) rpc++; // skip over sync
   if (!cci) {
     cce = 1;
     do_psh(&rs, &ru, 0xff);

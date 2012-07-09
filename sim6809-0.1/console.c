@@ -134,6 +134,7 @@ void execute_addr(tt_u16 addr)
 		acia_run();
 		fdc_run();
 		via_run();
+		last_rpc = rpc;
     }
     if (n == SYSTEM_CALL)
       activate_console = m6809_system();
@@ -274,6 +275,21 @@ void console_command()
       } else
 	printf("Syntax Error. Type 'h' to show help.\n");
       break;
+      
+    case 'z' :
+      if (more_params(&strptr)) {
+    reset();
+	console_active = 0;
+	execute_addr(readhex(&strptr));
+	if (regon) {
+	  m6809_dumpregs();
+	  printf("Next PC: ");
+	  dis6809(rpc, stdout);
+	}
+	memadr = rpc;
+      } else
+	printf("Syntax Error. Type 'h' to show help.\n");
+      break;
     case 'g' :
       if (more_params(&strptr))
 	rpc = readhex(&strptr);
@@ -305,6 +321,7 @@ void console_command()
 #endif
       printf("   u               : toggle dump registers\n");
       printf("   y [0]           : show number of 6809 cycles [or set it to 0]\n");
+      printf("   z [adr]         : reset and run until <adr>\n");
       break;
     case 'l' :
       if (more_params(&strptr))

@@ -57,12 +57,14 @@ int memory_init(void) {
 tt_u8 get_memb(tt_u16 adr) {
 	// fetch bytes from memory, or dispatch a call to the device handler
 	
+	if (last_rpc <0x8000 && activate_console==0) activate_console=1;
+#if 0
 	// crappy breakpoint ;-)
-	if(adr == 0x893c) {
-		printf("break\n");
+	if(adr == 0x893c && activate_console==0) {
+		printf("break \n");
 		activate_console=1;
 	}
-	
+#endif
 	if ((adr & 0xf000) != 0xe000) return ramdata[adr];  // device map
 	if (adr == 0xece2) return 0x90;
 
