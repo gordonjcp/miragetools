@@ -26,6 +26,7 @@
 #include "config.h"
 #include "emu6809.h"
 #include "console.h"
+#include "motorola.h"
 
 long cycles = 0;
 
@@ -270,7 +271,7 @@ void console_command()
       printf("   f adr           : step forward until PC = <adr>\n");
       printf("   g [adr]         : start execution at current address or <adr>\n");
       printf("   h, ?            : show this help page\n");
-      printf("   l file          : load Intel Hex binary <file>\n");
+      printf("   l file          : load Motorola S-record <file>\n");
       printf("   m [start] [end] : dump memory from <start> to <end>\n");
       printf("   n [n]           : next [n] instruction(s)\n");
       printf("   p adr           : set PC to <adr>\n");
@@ -285,7 +286,7 @@ void console_command()
       break;
     case 'l' :
       if (more_params(&strptr))
-	load_intelhex(readstr(&strptr));
+	load_motos1(readstr(&strptr));
       else
 	printf("Syntax Error. Type 'h' to show help.\n");
       break;
@@ -392,7 +393,7 @@ void parse_cmdline(int argc, char **argv)
     exit(0);
   }
   while (argc-- > 0)
-    load_intelhex(*++argv);
+    load_motos1(*++argv);
 }
 
 int main(int argc, char **argv)

@@ -242,5 +242,3 @@ char *ccstr(tt_u8 val);
 /* miscutils.c */
 void *mmalloc(size_t n);
 
-/* intel.c */
-void load_intelhex(char *filename);
