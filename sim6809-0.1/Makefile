@@ -23,7 +23,7 @@ CFLAGS = $(CDEBUG) $(INC) -Wall
 LDFLAGS = -g
 
 OBJS= console.o dis6809.o emu6809.o inst6809.o int6809.o memory.o \
-      misc.o motorola.o acia.o
+      misc.o motorola.o acia.o fdc.o
 
 sim6809:$(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -46,6 +46,7 @@ motorola.o: motorola.c config.h emu6809.h
 
 # hardware drivers
 acia.o:	acia.c config.h emu6809.h acia.h
+fdc.o:	fdc.c config.h emu6809.h fdc.h
 
 clean:
 	rm -f sim6809 *.o core
