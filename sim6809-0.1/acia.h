@@ -20,6 +20,26 @@
 #define __ACIA_H
 
 #include "emu6809.h"
+
+#define ACIA_CR 0
+#define ACIA_SR 0
+#define ACIA_TDR 1
+#define ACIA_RDR 1
+
+// at 31250bps there will be 320 clocks between characters
+#define ACIA_CLK 320
+
 int acia_init();
 void acia_destroy();
+void acia_run();
+tt_u8 acia_rreg(int reg);
+void acia_wreg(int reg, tt_u8 val);
+
+struct {
+	tt_u8 cr;
+	tt_u8 sr;
+	tt_u8 tdr;
+	tt_u8 rdr;
+} acia;
+
 #endif

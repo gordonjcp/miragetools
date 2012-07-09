@@ -40,10 +40,14 @@
 */
 
 static	int master, slave;
+static long acia_cycles;
 
 int acia_init() {
 	// configure a PTY and print its name on the console
 	int i;
+
+	// tx register empty
+	acia.sr = 0x02;
 	
 	pid_t pid = openpty(&master, &slave, NULL, NULL, NULL);
 	if (pid == -1) {
@@ -77,6 +81,7 @@ int acia_init() {
 	}
 	
 	printf("something failed\n");
+
 	return -1;
 }
 
@@ -84,3 +89,59 @@ void acia_destroy() {
 	close(master);
 	close(slave);
 }
+
+void acia_run() {
+	// call this every time around the loop
+	int i;
+	char buf;
+
+	i =read(master, &buf, 1);
+
+	if (cycles < acia_cycles) return;  // nothing to do yet
+	acia_cycles = cycles + ACIA_CLK;	// nudge timer
+	// read a character?
+
+	if(i != -1) {
+		acia.rdr = buf;
+		acia.sr |= 0x01;
+		if (acia.cr & 0x80) {
+			acia.sr |= 0x80;
+			firq();
+		}
+	}
+	
+	// got a character to send?
+	if (!(get_memb(0xe100) & 0x02)) {
+		buf = acia.tdr;
+		write(master, &buf, 1);
+		acia.sr |= 0x02;
+		if ((acia.cr & 0x60) == 0x20) {
+			acia.sr |= 0x80;
+			firq();
+		}
+	}
+}
+
+tt_u8 acia_rreg(int reg) {
+	// handle reads from ACIA registers
+	switch (reg & 0x01) {   // not fully mapped
+		case ACIA_SR:
+			return acia.sr;
+		case ACIA_RDR:
+			acia.sr &= 0x7e;	// clear IRQ, RDRF
+			return acia.rdr;
+	}
+	return 0xff;	// maybe the bus floats
+}
+void acia_wreg(int reg, tt_u8 val) {
+	// handle writes to ACIA registers
+	switch (reg & 0x01) {   // not fully mapped
+		case ACIA_CR:
+			break;
+		case ACIA_TDR:
+			acia.tdr = val;
+			acia.sr &= 0x7d;	// clear IRQ, TDRE
+			break;
+	}
+}
+

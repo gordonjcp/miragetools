@@ -55,6 +55,7 @@ char next_char(char **c);
 void console_command(void);
 void parse_cmdline(int argc, char **argv);
 int main(int argc, char **argv);
+long cycles;
 
 /* dis6809.c */
 int dis6809(tt_u16 adr, FILE *stream);

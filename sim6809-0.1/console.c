@@ -97,12 +97,15 @@ int execute()
   int r = 0;
 
   do {
-    while ((n = m6809_execute()) > 0 && !activate_console)
+    while ((n = m6809_execute()) > 0 && !activate_console) {
       cycles += n;
+    acia_run();
+
+	}
 
     if (activate_console && n > 0)
       cycles += n;
-    
+
     if (n == SYSTEM_CALL)
       r = activate_console = m6809_system();
     else if (n < 0) {

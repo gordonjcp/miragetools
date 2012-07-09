@@ -23,6 +23,7 @@
 #include "config.h"
 #include "emu6809.h"
 #include "console.h"
+#include "acia.h"
 
 tt_u8 *ramdata;    /* 64 kb of ram */
 
@@ -52,6 +53,16 @@ int memory_init(void) {
 
 tt_u8 get_memb(tt_u16 adr) {
 	// fetch bytes from memory, or dispatch a call to the device handler
+	switch (adr & 0xff00) {
+		case 0xe100:	// ACIA
+			return acia_rreg(adr & 0xff);
+		default:
+			#ifdef DEBUGDEV
+			// FIXME needs last rpc, not this rpc
+			printf("$%04x: unhandled hardware device %04x\n", rpc, adr);
+			#endif
+			break;
+	}
 	return ramdata[adr];
 }
 
@@ -62,9 +73,14 @@ tt_u16 get_memw(tt_u16 adr)
 
 void set_memb(tt_u16 adr, tt_u8 val) {
 	// write byte to memory, or dispatch a call to the device handler
+	switch (adr & 0xff00) {
+		case 0xe100:	// ACIA
+			acia_wreg(adr & 0xff, val);
+			break;
+	}
 	if (adr>0xf000) {
 		#ifdef DEBUGROM
-		printf("$%0x4: write to ROM %04x=%02x\n", rpc, adr, val);
+		printf("$%04x: write to ROM %04x=%02x\n", rpc, adr, val);
 		#endif
 		if (protect_rom) return;
 	}
