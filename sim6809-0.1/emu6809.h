@@ -23,6 +23,7 @@ tt_u16 rpc, rx, ry, ru, rs;
 tt_u8 ra, rb, rdp;
 int nbcycle;
 int err6809; 
+tt_u16 last_rpc;
  
 #ifdef PC_HISTORY
 tt_u16 pchist[PC_HISTORY_SIZE];

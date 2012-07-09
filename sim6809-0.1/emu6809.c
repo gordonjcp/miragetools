@@ -23,7 +23,7 @@
 #include "emu6809.h"
 #include "calc6809.h"
 
-tt_u16 rpc, rx, ry, ru, rs;
+tt_u16 rpc, last_rpc, rx, ry, ru, rs;
 
 tt_u8 ra, rb, rdp;
 
@@ -561,7 +561,7 @@ tt_u16 get_eaw()
 
 void m6809_init()
 {
-  rpc = rx = ry = ru = rs = 0;
+  rpc = last_rpc = rx = ry = ru = rs = 0;
   ra = rb = rdp = 0;
   setcc(0);
 }

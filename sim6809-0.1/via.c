@@ -21,7 +21,8 @@
 #include "emu6809.h"
 
 /*
-TODO: implement everything
+VIA is clocked at 2MHz
+T2 is programmed to divide by 5000
 
 Register maps
 Port A					Port B
@@ -36,6 +37,18 @@ Port A					Port B
 
 */
 
+static long via_cycles, via_t2=0;
+
+void via_run() {
+	if (cycles < via_cycles) return; // not ready yet
+	
+	if (via.ier & 0x20) {
+		via.ifr |= 0xa0;	// timer 2 interrupt, interrupt flag
+		irq();  // fire interrupt
+	}
+	via_cycles = cycles + (via_t2>>2);  // half, because the clock frequency is 2MHz
+}
+
 tt_u8 via_rreg(int reg) {
 
 	tt_u8 val;
@@ -43,15 +56,84 @@ tt_u8 via_rreg(int reg) {
 	if (reg == 0x00) {
 		val = (via.orb & 0x1f) | 0x40;  // force disk ready
 	}
-	printf("pc: %04x via_rreg(%d, 0x%02x)\n", rpc, reg, val);
+	printf("pc: %04x via_rreg(%d, 0x%02x)\n", last_rpc, reg, val);
 	return val;
 }
 
 void via_wreg(int reg, tt_u8 val) {
-	//if (rpc!=0xf376)
-	printf("pc: %04x via_wreg(%d, 0x%02x)\n", rpc, reg, val);
-	if (reg == 0x00) {
-		via.orb = val;
+	int bc;
+
+	switch(reg) {
+		case 0:
+
+			bc = val ^ via.orb;
+			printf("%04x: %02x portb ", last_rpc, bc);
+			if (bc == 0) printf("no change");
+			if (bc & 0x01) printf("bank=%s ", (val & 0x10)?"1":"0");
+			if (bc & 0x02) printf("half=%s ", (val & 0x10)?"upper":"lower");
+			if (bc & 0x04) printf("input=%s ", (val & 0x10)?"mic":"line");
+			if (bc & 0x08) printf("mode=%s ", (val & 0x10)?"sample":"play");
+			if (bc & 0x10) printf("fdc=%s ", (val & 0x10)?"off":"on");
+			printf("\n");
+			via.orb = val;
+			return;
+		case 1: // port A only used for keypad and display
+			return;
+		case 2:
+			printf("%04x: ddrb=%02x\n", last_rpc, val);
+			via.ddrb = val;
+			break;
+		case 3:
+			printf("%04x: ddra=%02x\n", last_rpc, val);
+			via.ddra = val;
+			break;
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+			printf("%04x: timer/counter 1 %02x=%02x\n", last_rpc, reg, val);
+			break;
+		case 8:
+			via.t2l = val;
+			via_t2 = via.t2l | (via.t2h<<8);
+			via_cycles = cycles + (via_t2>>2);  // half, because the clock frequency is 2MHz
+			printf("%-4x: t2 = %04x\n", last_rpc, (int) via_t2);
+			break;
+		case 9:
+			via.t2h = val;
+			via_t2 = via.t2l | (via.t2h<<8);
+			via_cycles = cycles + (via_t2>>2);  // half, because the clock frequency is 2MHz
+			printf("%-4x: t2 = %04x\n", last_rpc, (int) via_t2);
+			break;
+		case 10:
+			printf("%04x: sr=%02x\n", last_rpc, val);
+			break;
+		case 11:
+			printf("%04x: acr=%02x\n", last_rpc, val);
+			break;
+		case 12:
+			printf("%04x: pcr=%02x\n", last_rpc, val);
+			break;
+		case 13:
+			val &= 0x7f;
+			via.ifr &= ~val;
+			printf("%04x: val=%02x ier=%02x\n", last_rpc, val, via.ier);
+			break;
+		case 14:
+			// okay, this is a funny one.  If bit 7 is set, the remaining bits
+			// that are high are set high in IER.  If it is unset, the remaining
+			// bits that are high are cleared.
+			
+			if (val & 0x80) via.ier |= (val & 0x7f);
+				else via.ier &= (~val);
+			
+			printf("%04x: val=%02x ier=%02x\n", last_rpc, val, via.ier);
+			
+			break;
+		case 15:
+			printf("%04x: ora=%02x\n", last_rpc, val);
+			break;
+		default:
+			printf("pc: %04x via_wreg(%d, 0x%02x)\n", last_rpc, reg, val);	
 	}
-	
 }

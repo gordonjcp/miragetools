@@ -105,6 +105,8 @@ int execute()
       cycles += n;
     acia_run();
     fdc_run();
+    via_run();
+	last_rpc = rpc;
 
 	}
 
@@ -128,9 +130,10 @@ void execute_addr(tt_u16 addr)
 
   while (!activate_console && rpc != addr) {
     while ((n = m6809_execute()) > 0 && !activate_console && rpc != addr) {
-      cycles += n;
-          acia_run();
-    fdc_run();
+		cycles += n;
+		acia_run();
+		fdc_run();
+		via_run();
     }
     if (n == SYSTEM_CALL)
       activate_console = m6809_system();

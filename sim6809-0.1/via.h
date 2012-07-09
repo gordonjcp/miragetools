@@ -21,10 +21,15 @@
 
 tt_u8 via_rreg(int reg);
 void via_wreg(int reg, tt_u8 val);
+void via_run();
 
 struct {
 	tt_u8 orb, irb;
 	tt_u8 ora, ira;
 	tt_u8 ddrb, ddra;
+	tt_u8 t2l, t2h;
+	tt_u8 ier, ifr;
+	tt_u8 pcr;
+
 } via;
 #endif
