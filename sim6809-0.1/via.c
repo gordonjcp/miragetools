@@ -23,6 +23,17 @@
 /*
 VIA is clocked at 2MHz
 T2 is programmed to divide by 5000
+on the analogue board there is a 4052 dual mux with pin 3 going to VCF8
+and pin 13 feeding the ADC
+
+portB
+ 4  3   pin 3   pin 13
+ 0  0 0 mic     compressed	
+ 0  1 1 line    uncompressed
+ 1  0 2 gnd     pitch wheel
+ 1  1 3 gnd     modwheel
+note that pin 4 also drives the top of the volume control, so selecting the
+sample input mutes the audio.
 
 Register maps
 Port A					Port B
@@ -86,14 +97,13 @@ void via_wreg(int reg, tt_u8 val) {
 
 	switch(reg) {
 		case 0:
-
 			bc = val ^ via.orb;
-			printf("%04x: %02x portb ", last_rpc, bc);
+			printf("%04x: %02x portb %02x", last_rpc, bc, val);
 			if (bc == 0) printf("no change");
-			if (bc & 0x01) printf("bank=%s ", (val & 0x10)?"1":"0");
-			if (bc & 0x02) printf("half=%s ", (val & 0x10)?"upper":"lower");
-			if (bc & 0x04) printf("input=%s ", (val & 0x10)?"mic":"line");
-			if (bc & 0x08) printf("mode=%s ", (val & 0x10)?"sample":"play");
+			if (bc & 0x01) printf("bank=%s ", (val & 0x10)?"0":"1");
+			if (bc & 0x02) printf("half=%s ", (val & 0x10)?"lower":"upper");
+			if (bc & 0x04) printf("input=%s ", (val & 0x10)?"line":"mic");
+			if (bc & 0x08) printf("mode=%s ", (val & 0x10)?"play":"sample");
 			if (bc & 0x10) printf("fdc=%s ", (val & 0x10)?"off":"on");
 			printf("\n");
 			via.orb = val;

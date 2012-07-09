@@ -66,8 +66,8 @@ tt_u8 get_memb(tt_u16 adr) {
 	}
 #endif
 	if ((adr & 0xf000) != 0xe000) return ramdata[adr];  // device map
-	if (adr == 0xece2) return 0x90;
-
+	if (adr == 0xece2 && last_rpc==0xf5c7) return 0xa0;
+	if (adr == 0xece2) return 0x40;
 	switch (adr & 0xff00) {
 		case 0xe100:	// ACIA
 			return acia_rreg(adr & 0xff);
@@ -118,7 +118,7 @@ void set_memb(tt_u16 adr, tt_u8 val) {
 			printf("$%04x: DOC %04x set to %02x\n", last_rpc, adr, val);
 			break;
 		case 0xe400:
-			printf("$%04x: mux %04x set to %02x\n", last_rpc, adr, val);
+			//printf("$%04x: mux %04x set to %02x\n", last_rpc, adr, val);
 			break;
 		default:
 			#ifdef DEBUGDEV
