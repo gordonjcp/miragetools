@@ -1,6 +1,8 @@
-/* memory.c -- Memory emulation
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   memory.c -- Memory emulation
    Copyright (C) 1998 Jerome Thoen
-
+   Copyright (C) 2012 Gordon JC Pearce <gordonjcp@gjcp.net>
+   
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2, or (at your option)
@@ -15,7 +17,6 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,16 +26,33 @@
 
 tt_u8 *ramdata;    /* 64 kb of ram */
 
-int memory_init(void)
-{
-  ramdata = (tt_u8 *)mmalloc(0x10000);
+static int protect_rom = 0;
 
-  return 1;
+int memory_init(void) {
+	// allocate RAM and fetch ROM from disk
+	FILE *in;
+	
+	ramdata = (tt_u8 *)malloc(65536);
+	if (!ramdata) {
+		fprintf(stderr, "Failed to allocate RAM area\n");
+		abort();
+	}
+
+	// fetch the ROM
+	in = fopen("miragerom.bin", "r");   // FIXME allow filename from cli
+	if (in) {
+		fread(ramdata + 0xf000, sizeof(char), 4096, in);
+		protect_rom = 1;	// do not allow the ROM to be overwritten
+		fclose(in);
+	} else {
+		fprintf(stderr, "warning: Could not open ROM image\n");
+	}
+	return 1;
 }
 
-tt_u8 get_memb(tt_u16 adr)
-{
-  return ramdata[adr];
+tt_u8 get_memb(tt_u16 adr) {
+	// fetch bytes from memory, or dispatch a call to the device handler
+	return ramdata[adr];
 }
 
 tt_u16 get_memw(tt_u16 adr)
@@ -42,9 +60,15 @@ tt_u16 get_memw(tt_u16 adr)
   return (tt_u16)get_memb(adr) << 8 | (tt_u16)get_memb(adr + 1);
 }
 
-void set_memb(tt_u16 adr, tt_u8 val)
-{
-    ramdata[adr] = val;
+void set_memb(tt_u16 adr, tt_u8 val) {
+	// write byte to memory, or dispatch a call to the device handler
+	if (adr>0xf000) {
+		#ifdef DEBUGROM
+		printf("$%0x4: write to ROM %04x=%02x\n", rpc, adr, val);
+		#endif
+		if (protect_rom) return;
+	}
+	ramdata[adr] = val;
 }
 
 void set_memw(tt_u16 adr, tt_u16 val)
