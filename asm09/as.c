@@ -1,3 +1,4 @@
+#include <string.h>
 static char *rcs_id = "$Id: as.c,v 1.2 1995/09/07 19:08:27 wadeh Exp $";
 
 char mapdn();

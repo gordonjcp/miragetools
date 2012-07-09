@@ -2,6 +2,7 @@
 #define FALSE (1==0)
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "as.h"
 #include "table9.h"
 #include "as.c"

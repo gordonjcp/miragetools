@@ -266,7 +266,7 @@ char *
 alloc(nbytes)
 int nbytes;
 {
-	char *malloc();
+	void *malloc();
 
 	return(malloc(nbytes));
 }
