@@ -68,13 +68,13 @@ void fdc_run() {
 	
 	switch (fdc.cr & 0xf0) {
 		case 0x00:  // restore
-			printf("fdc_run(): restore\n");
+			//printf("fdc_run(): restore\n");
 			fdc.trk_r = 0;
 			fdc.sr = 0x04;  // track at 0
 			nmi();
 			return;
 		case 0x10:  // restore
-			printf("fdc_run(): seek\n");
+			//printf("fdc_run(): seek\n");
 			fdc.trk_r = fdc.data_r;
 			fdc.sr = 0;
 			if (fdc.trk_r == 0) fdc.sr |= 0x04;  // track at 0
@@ -90,14 +90,14 @@ void fdc_run() {
 			s_byte++;
 			fdc_cycles = cycles + 32;
 			irq();
-			
-			if (s_byte>=(fdc.sec_r==5?512:1024)) {
+
+			if (s_byte>(fdc.sec_r==5?512:1024)) {
 				fdc.sr &= 0xfe;
 				nmi();
 			}
 			return;
 		default:
-			printf("fdc_run(): unknown (%02x)\n", fdc.cr);
+			//printf("fdc_run(): unknown (%02x)\n", fdc.cr);
 			fdc.sr = 0;
 			break;
 	}
@@ -130,15 +130,10 @@ void fdc_wreg(int reg, tt_u8 val) {
 	// handle writes to FDC registers
 	int cmd = (val & 0xf0)>>4;
 
-
-			printf("%04x: ", rpc);	
 	switch (reg & 0x03) {  // not fully mapped
 		case FDC_CR:
-		
-
-
 			if ((val & 0xf0) == 0xd0) { // force interrupt
-				printf("cmd %02x: force interrupt\n", val);
+				//printf("cmd %02x: force interrupt\n", val);
 				fdc.sr &= 0xfe; // clear busy bit
 				return;
 			}
@@ -146,38 +141,38 @@ void fdc_wreg(int reg, tt_u8 val) {
 			fdc.cr = val;
 			switch(cmd) {
 				case 0: // restore
-					printf("%04x cmd %02x: restore\n", rpc, val);
+					//printf("%04x cmd %02x: restore\n", rpc, val);
 					fdc_cycles = cycles + 1000000;   // slow
 					fdc.sr = 0x01; // busy
 					break;
 				case 1:
-					printf("cmd %02x: seek to %d\n", val, fdc.data_r);
+					//printf("cmd %02x: seek to %d\n", val, fdc.data_r);
 					fdc_cycles = cycles + 1000000;
 					fdc.sr = 0x01;
 					break;
 				case 8:
-					printf("cmd %02x: read sector\n", val);
+					//printf("cmd %02x: read sector\n", val);
 					fdc_cycles = cycles + 1000;
 					s_byte = 0;
 					fdc.sr = 0x01;
 					break;
 				default:
-					printf("cmd %02x: unknown\n", val);
+					printf("fdc cmd %02x: unknown\n", val);
 					fdc.sr = 0;
 					fdc_cycles = 0;
 					break;
 			}
 			break;
 		case FDC_TRACK:
-			printf("%04x track = %d\n",rpc,  val);
+			//printf("%04x track = %d\n",rpc,  val);
 			fdc.trk_r = val;
 			break;
 		case FDC_SECTOR:
-			printf("sector = %d\n", val);
+			//printf("sector = %d\n", val);
 			fdc.sec_r = val;
 			break;
 		case FDC_DATA:
-			printf("data = %d\n", val);
+			//printf("data = %d\n", val);
 			fdc.data_r = val;
 			break;
 	}

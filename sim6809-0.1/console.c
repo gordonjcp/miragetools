@@ -60,6 +60,8 @@ int m6809_system(void)
   char *p = input;
   tt_u8 c;
 
+	rti();
+	return 1;
   switch (ra) {
   case 0 :
     printf("Program terminated\n");
