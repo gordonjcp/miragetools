@@ -1,5 +1,5 @@
-/* vim: set noexpandtab ai ts=4 sw=4 tw=4: */
-/* fdc.c -- emulation of 1772 FDC
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   fdc.c -- emulation of 1772 FDC
    Copyright (C) 2012 Gordon JC Pearce
 
    This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,20 @@ void fdc_destroy() {
 
 void fdc_run() {
 	// called every cycle
-
+	if ((fdc.sr & 0x01) == 0) return;   // nothing to do
+	if (cycles < fdc_cycles) return; // not ready yet
+	printf("fdc_run()\n");
+	
+	switch (fdc.cr & 0xf0) {
+		case 0x00:  // restore
+			printf("fdc: restore\n");
+			fdc.trk_r = 0;
+			fdc.sr = 0x04;  // track at 0
+			nmi();
+			return;
+	}
+	fdc.sr &= 0xfe;	// stop
+	//exit(1);
 }
 
 tt_u8 fdc_rreg(int reg) {
@@ -97,9 +110,23 @@ void fdc_wreg(int reg, tt_u8 val) {
 				return;
 			}
 			switch(cmd) {
+				case 0: // restore
+					printf("cmd %02x: restore\n", val);
+					fdc_cycles = cycles + 1000000;   // slow
+					fdc.sr |= 0x01; // busy
+					break;
 				default:
 					printf("cmd %02x: unknown\n", val);
 					break;
 			}
+		case FDC_TRACK:
+			fdc.trk_r = val;
+			break;
+		case FDC_SECTOR:
+			fdc.sec_r = val;
+			break;
+		case FDC_DATA:
+			fdc.data_r = val;
+			break;
 	}
 }

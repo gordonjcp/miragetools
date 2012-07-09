@@ -1,5 +1,5 @@
-/* vim: set noexpandtab ai ts=4 sw=4 tw=4: */
-/* fdc.c -- emulation of 1772 FDC
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   fdc.c -- emulation of 1772 FDC
    Copyright (C) 2012 Gordon JC Pearce
 
    This program is free software; you can redistribute it and/or modify

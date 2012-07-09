@@ -1,5 +1,7 @@
-/* emu6809.h -- defs
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   emu6809.h -- defs
    Copyright (C) 1998 Jerome Thoen
+   Copyright (C) 2012 Gordon JC Pearce
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -225,6 +227,7 @@ void lbvs(void);
 void reset(void);
 void irq(void);
 void firq(void);
+void nmi();
 
 /* memory.c */
 int memory_init(void);
