@@ -239,6 +239,3 @@ char *hex16str(tt_u16 v);
 char *bin8str(tt_u8 val);
 char *ccstr(tt_u8 val);
 
-/* miscutils.c */
-void *mmalloc(size_t n);
-
