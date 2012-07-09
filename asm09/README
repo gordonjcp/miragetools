@@ -1,0 +1,52 @@
+README		Readme for 6809 assembler
+Wade Hampton
+tasi029@tmn.com
+September 7, 1995
+
+Please, unless you have updates, I refer you to Motorola's BBS for
+information on this and help on using it.  Send flames to /dev/null.
+
+This is a simple assembler for the Motorola 6809.  It is one
+of the freeware assemblers on their BBS with minor mods for Linux.
+
+To build:
+
+   gcc -g -o as9  as9.c
+
+Limitations:
+
+1) This does not support macros (use M4, etc.).  
+2) Symbols are 8 characters only with a max of about 2000 
+   (this could be changed int he code).
+2) This does not support complex math expressions such as:
+
+   AAA EQU   100
+   BBB EQU   (AAA*2)/2
+
+This would have to be split into:
+
+   AAA EQU   100
+   TTT EQU   AAA*2
+   BBB EQU   TTT/2
+
+There may be a more recent one.  If so, I will probably incorporate 
+my mods and release it again.  
+
+Motorola ftp should be at:
+
+   freeware.aus.sps.mot.com
+
+I have not been able to access it (as of yet). 
+The phone number for the BBS is:
+
+   512-891-3733.
+
+Note:  There are assemblers for the 6800,1,2,4,5,8,9,11... based on
+this code.  I may try to make all of them and release the entire lot
+as a package (when I find the *&^% time).  Any volunteers?
+
+
+
+
+
+
