@@ -35,6 +35,9 @@
 static FILE *disk;
 static tt_u8 *diskdata;
 static long fdc_cycles;
+static int s_byte;  // byte within sector
+
+int a;
 
 int fdc_init() {
 	diskdata = malloc(80*5632);	// 440k disk image
@@ -77,10 +80,21 @@ void fdc_run() {
 			if (fdc.trk_r == 0) fdc.sr |= 0x04;  // track at 0
 			nmi();
 			return;
-		case 0x80:  // restore
-			printf("fdc_run(): read sector %d\n", fdc.sec_r);
-			fdc.sr = 0;
-			nmi();
+		case 0x80:  // read sector
+			//printf("fdc_run(): read sector %d\n", fdc.sec_r);
+			a = s_byte+(1024*fdc.sec_r)+(5632*fdc.trk_r);
+			//printf("s_byte=%04x trk=%d sec=%d disk addr = %04x\n",s_byte, fdc.trk_r, fdc.sec_r, a);
+
+			fdc.data_r=diskdata[a];
+			fdc.sr |= 0x02;
+			s_byte++;
+			fdc_cycles = cycles + 32;
+			irq();
+			
+			if (s_byte>=(fdc.sec_r==5?512:1024)) {
+				fdc.sr &= 0xfe;
+				nmi();
+			}
 			return;
 		default:
 			printf("fdc_run(): unknown (%02x)\n", fdc.cr);
@@ -130,17 +144,18 @@ void fdc_wreg(int reg, tt_u8 val) {
 				case 0: // restore
 					printf("%04x cmd %02x: restore\n", rpc, val);
 					fdc_cycles = cycles + 1000000;   // slow
-					fdc.sr |= 0x01; // busy
+					fdc.sr = 0x01; // busy
 					break;
 				case 1:
 					printf("cmd %02x: seek to %d\n", val, fdc.data_r);
 					fdc_cycles = cycles + 1000000;
-					fdc.sr |= 0x01;
+					fdc.sr = 0x01;
 					break;
 				case 8:
 					printf("cmd %02x: read sector\n", val);
 					fdc_cycles = cycles + 1000;
-					fdc.sr |= 0x01;
+					s_byte = 0;
+					fdc.sr = 0x01;
 					break;
 				default:
 					printf("cmd %02x: unknown\n", val);
@@ -148,10 +163,13 @@ void fdc_wreg(int reg, tt_u8 val) {
 					fdc_cycles = 0;
 					break;
 			}
+			break;
 		case FDC_TRACK:
+			printf("%04x track = %d\n",rpc,  val);
 			fdc.trk_r = val;
 			break;
 		case FDC_SECTOR:
+			printf("sector = %d\n", val);
 			fdc.sec_r = val;
 			break;
 		case FDC_DATA:

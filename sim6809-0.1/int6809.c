@@ -1,6 +1,7 @@
 /* vim: set noexpandtab ai ts=4 sw=4 tw=4:
    int6809.c -- 6809 hardware interrupts
    Copyright (C) 1998 Jerome Thoen
+   Copyright (C) 2012 Gordon JC Pearce
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,8 +31,8 @@ void reset(void)
   rpc = get_memw(0xfffe);
 }
 
-void irq(void)
-{
+void irq(void) {
+  rpc++;		// skip over sync -- FIXME sync bug
   if (!cci) {
     cce = 1;
     do_psh(&rs, &ru, 0xff);
@@ -39,6 +40,7 @@ void irq(void)
     rpc = get_memw(0xfff8);
     nbcycle = 21;
   }
+  nbcycle = 21;
 }
 
 void firq(void)

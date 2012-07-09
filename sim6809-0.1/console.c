@@ -125,9 +125,11 @@ void execute_addr(tt_u16 addr)
   int n;
 
   while (!activate_console && rpc != addr) {
-    while ((n = m6809_execute()) > 0 && !activate_console && rpc != addr)
+    while ((n = m6809_execute()) > 0 && !activate_console && rpc != addr) {
       cycles += n;
-    
+          acia_run();
+    fdc_run();
+    }
     if (n == SYSTEM_CALL)
       activate_console = m6809_system();
     else if (n < 0) {
