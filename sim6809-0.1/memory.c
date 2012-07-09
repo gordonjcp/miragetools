@@ -32,7 +32,7 @@ int memory_init(void) {
 	// allocate RAM and fetch ROM from disk
 	FILE *in;
 	
-	ramdata = (tt_u8 *)malloc(65536);
+	ramdata = (tt_u8 *)malloc(65536); // FIXME is this ever actually free()ed?
 	if (!ramdata) {
 		fprintf(stderr, "Failed to allocate RAM area\n");
 		abort();

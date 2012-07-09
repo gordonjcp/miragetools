@@ -18,4 +18,69 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pty.h>
+#include <fcntl.h>
 
+#include "config.h"
+#include "emu6809.h"
+#include "acia.h"
+
+/*
+   The 6850 ACIA in the Mirage is mapped at $E100
+   registers are:
+   $e100 control register / status register
+   $e101 transmit register / receive register
+   I only intend to implement CR7 RX interrupt and CR5 TX interrupt in the control
+   and SR0 RD full, SR1 TX empty, and SR7 IRQ
+   maybe for robustness testing I will implement a way to signal errors
+   RTS, CTS and DCD are not used, with the latter two held grounded
+*/
+
+static	int master, slave;
+
+int acia_init() {
+	// configure a PTY and print its name on the console
+	int i;
+	
+	pid_t pid = openpty(&master, &slave, NULL, NULL, NULL);
+	if (pid == -1) {
+		printf("openpty failed");
+		exit(1);
+	}   // FIXME better error handling
+	
+	if(pid == 0){
+		printf("ACIA port: %s\n", ttyname(slave));
+		// Ensure that the echo is switched off 
+		struct termios orig_termios;
+		if (tcgetattr (master, &orig_termios) < 0) {
+			perror ("ERROR getting current terminal's attributes");
+			return -1;
+		}
+		
+		orig_termios.c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON);
+		orig_termios.c_oflag &= ~(ONLCR);
+		orig_termios.c_cc[VTIME] = 0;
+		orig_termios.c_cc[VMIN] = 0;
+		
+		i = fcntl(master, F_GETFL, 0);
+		
+		fcntl(master, F_SETFL, i | O_NONBLOCK);
+		
+		if (tcsetattr (master, TCSANOW, &orig_termios) < 0) {
+			perror ("ERROR setting current terminal's attributes");
+			return -1;
+		}
+		return master; //Return the file descriptor
+	}
+	
+	printf("something failed\n");
+	return -1;
+}
+
+void acia_destroy() {
+	close(master);
+	close(slave);
+}

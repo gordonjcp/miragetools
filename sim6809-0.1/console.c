@@ -28,6 +28,9 @@
 #include "console.h"
 #include "motorola.h"
 
+// hardware drivers
+#include "acia.h"
+
 long cycles = 0;
 
 int activate_console = 0;
@@ -396,15 +399,20 @@ void parse_cmdline(int argc, char **argv)
     load_motos1(*++argv);
 }
 
-int main(int argc, char **argv)
-{
-  if (!memory_init())
-    return 1;
-  parse_cmdline(argc, argv);
-  console_init();
-  m6809_init();
-  setup_brkhandler();
-  console_command();
+int main(int argc, char **argv) {
+	if (!memory_init())
+		return 1;
+	parse_cmdline(argc, argv);
+	console_init();
+	m6809_init();
+	setup_brkhandler();
 
-  return 0;
+	// setup hardware drivers
+	acia_init();
+
+	// into the main loop
+	console_command();
+	
+	acia_destroy();
+	return 0;
 }

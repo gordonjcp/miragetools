@@ -20,5 +20,6 @@
 #define __ACIA_H
 
 #include "emu6809.h"
-
+int acia_init();
+void acia_destroy();
 #endif

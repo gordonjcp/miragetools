@@ -16,7 +16,7 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 CC = gcc
-LIBS = 
+LIBS = -lutil
 INC = 
 CDEBUG = -g
 CFLAGS = $(CDEBUG) $(INC) -Wall
@@ -44,6 +44,7 @@ misc.o: misc.c config.h emu6809.h
 
 motorola.o: motorola.c config.h emu6809.h
 
+# hardware drivers
 acia.o:	acia.c config.h emu6809.h acia.h
 
 clean:
