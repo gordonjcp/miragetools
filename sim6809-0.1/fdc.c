@@ -129,9 +129,13 @@ tt_u8 fdc_rreg(int reg) {
 void fdc_wreg(int reg, tt_u8 val) {
 	// handle writes to FDC registers
 	int cmd = (val & 0xf0)>>4;
-	
+
+
+			printf("%04x: ", rpc);	
 	switch (reg & 0x03) {  // not fully mapped
 		case FDC_CR:
+		
+
 
 			if ((val & 0xf0) == 0xd0) { // force interrupt
 				printf("cmd %02x: force interrupt\n", val);
@@ -173,6 +177,7 @@ void fdc_wreg(int reg, tt_u8 val) {
 			fdc.sec_r = val;
 			break;
 		case FDC_DATA:
+			printf("data = %d\n", val);
 			fdc.data_r = val;
 			break;
 	}
