@@ -36,6 +36,7 @@ long cycles = 0;
 
 int activate_console = 0;
 static int console_active = 0;
+static int auto_start = 0;
 
 static void sigbrkhandler(int sigtype)
 {
@@ -214,6 +215,12 @@ void console_command()
   long n;
   int i, r;
   int regon = 0;
+
+  rpc = get_memw(0xfffe);
+  if (auto_start) {
+        console_active = 0;
+        execute();
+  }
 
   for(;;) {
     activate_console = 0;
@@ -400,6 +407,11 @@ void parse_cmdline(int argc, char **argv)
     printf("%s: [file [...]]\n", argv[0]);
     exit(0);
   }
+
+  if (!strcmp(argv[1], "-r")) {
+    auto_start=1;
+  }
+  
   while (argc-- > 0)
     load_motos1(*++argv);
 }
