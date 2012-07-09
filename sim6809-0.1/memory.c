@@ -57,7 +57,7 @@ int memory_init(void) {
 tt_u8 get_memb(tt_u16 adr) {
 	// fetch bytes from memory, or dispatch a call to the device handler
 	
-	if (last_rpc <0x8000 && activate_console==0) activate_console=1;
+	//if (last_rpc <0x8000 && activate_console==0) activate_console=1;
 #if 0
 	// crappy breakpoint ;-)
 	if(adr == 0x893c && activate_console==0) {
@@ -68,7 +68,6 @@ tt_u8 get_memb(tt_u16 adr) {
 	if ((adr & 0xf000) != 0xe000) return ramdata[adr];  // device map
 	if (adr == 0xece2) return 0x90;
 
-	
 	switch (adr & 0xff00) {
 		case 0xe100:	// ACIA
 			return acia_rreg(adr & 0xff);
@@ -114,6 +113,12 @@ void set_memb(tt_u16 adr, tt_u8 val) {
 			break;
 		case 0xe200:	// VIA
 			via_wreg(adr & 0xff, val);
+			break;
+		case 0xec00:
+			printf("$%04x: DOC %04x set to %02x\n", last_rpc, adr, val);
+			break;
+		case 0xe400:
+			printf("$%04x: mux %04x set to %02x\n", last_rpc, adr, val);
 			break;
 		default:
 			#ifdef DEBUGDEV

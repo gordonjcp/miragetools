@@ -76,7 +76,6 @@ tt_u8 via_rreg(int reg) {
 			break;
 		default:
 			printf("pc: %04x via_rreg(%d, 0x%02x)\n", last_rpc, reg, val);
-			exit(1);
 		}
 
 	return val;
