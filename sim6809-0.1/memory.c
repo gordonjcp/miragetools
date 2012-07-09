@@ -59,6 +59,8 @@ tt_u8 get_memb(tt_u16 adr) {
 			return acia_rreg(adr & 0xff);
 		case 0xe800:	// FDC
 			return fdc_rreg(adr & 0xff);
+		case 0xe200:	// VIA
+			return 0x40;	// just enough for the disk present bit
 
 		default:
 			#ifdef DEBUGDEV
