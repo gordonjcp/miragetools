@@ -62,18 +62,32 @@ void fdc_run() {
 	// called every cycle
 	if ((fdc.sr & 0x01) == 0) return;   // nothing to do
 	if (cycles < fdc_cycles) return; // not ready yet
-	printf("fdc_run()\n");
 	
 	switch (fdc.cr & 0xf0) {
 		case 0x00:  // restore
-			printf("fdc: restore\n");
+			printf("fdc_run(): restore\n");
 			fdc.trk_r = 0;
 			fdc.sr = 0x04;  // track at 0
 			nmi();
 			return;
+		case 0x10:  // restore
+			printf("fdc_run(): seek\n");
+			fdc.trk_r = fdc.data_r;
+			fdc.sr = 0;
+			if (fdc.trk_r == 0) fdc.sr |= 0x04;  // track at 0
+			nmi();
+			return;
+		case 0x80:  // restore
+			printf("fdc_run(): read sector %d\n", fdc.sec_r);
+			fdc.sr = 0;
+			nmi();
+			return;
+		default:
+			printf("fdc_run(): unknown (%02x)\n", fdc.cr);
+			fdc.sr = 0;
+			break;
 	}
 	fdc.sr &= 0xfe;	// stop
-	//exit(1);
 }
 
 tt_u8 fdc_rreg(int reg) {
@@ -104,19 +118,34 @@ void fdc_wreg(int reg, tt_u8 val) {
 	
 	switch (reg & 0x03) {  // not fully mapped
 		case FDC_CR:
+
 			if ((val & 0xf0) == 0xd0) { // force interrupt
 				printf("cmd %02x: force interrupt\n", val);
 				fdc.sr &= 0xfe; // clear busy bit
 				return;
 			}
+			if (fdc.sr & 0x01) return;
+			fdc.cr = val;
 			switch(cmd) {
 				case 0: // restore
-					printf("cmd %02x: restore\n", val);
+					printf("%04x cmd %02x: restore\n", rpc, val);
 					fdc_cycles = cycles + 1000000;   // slow
 					fdc.sr |= 0x01; // busy
 					break;
+				case 1:
+					printf("cmd %02x: seek to %d\n", val, fdc.data_r);
+					fdc_cycles = cycles + 1000000;
+					fdc.sr |= 0x01;
+					break;
+				case 8:
+					printf("cmd %02x: read sector\n", val);
+					fdc_cycles = cycles + 1000;
+					fdc.sr |= 0x01;
+					break;
 				default:
 					printf("cmd %02x: unknown\n", val);
+					fdc.sr = 0;
+					fdc_cycles = 0;
 					break;
 			}
 		case FDC_TRACK:
