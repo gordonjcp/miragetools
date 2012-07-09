@@ -30,6 +30,7 @@
 
 // hardware drivers
 #include "acia.h"
+#include "fdc.h"
 
 long cycles = 0;
 
@@ -100,6 +101,7 @@ int execute()
     while ((n = m6809_execute()) > 0 && !activate_console) {
       cycles += n;
     acia_run();
+    fdc_run();
 
 	}
 
@@ -412,10 +414,12 @@ int main(int argc, char **argv) {
 
 	// setup hardware drivers
 	acia_init();
+	fdc_init();
 
 	// into the main loop
 	console_command();
 	
 	acia_destroy();
+	fdc_destroy();
 	return 0;
 }

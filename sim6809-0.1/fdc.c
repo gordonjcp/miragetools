@@ -16,14 +16,6 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-/* quick technical rundown of the FDC in the Mirage
-DRQ is inverted and drives /IRQ
-INTRQ is inverted and drives /NMI
-
-So to read data we wait for an interrupt and loop until NMI
-At least, this is how the Mirage ROM does it
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -32,11 +24,82 @@ At least, this is how the Mirage ROM does it
 #include "fdc.h"
 #include "emu6809.h"
 
+/*
+   quick technical rundown of the FDC in the Mirage
+   DRQ is inverted and drives /IRQ
+   INTRQ is inverted and drives /NMI
+   So to read data we wait for an interrupt and loop until NMI
+   At least, this is how the Mirage ROM does it
+*/
+
+static FILE *disk;
+static tt_u8 *diskdata;
+static long fdc_cycles;
+
 int fdc_init() {
+	diskdata = malloc(80*5632);	// 440k disk image
+	if (!diskdata) {
+		fprintf(stderr, "Not enough memory to allocate disk data\n");
+		abort();
+	}
+	
+	disk = fopen("disk.img", "r");
+	if (disk) {
+		fread(diskdata, sizeof(char), 5632*80, disk);
+		fclose(disk);
+	} else {
+		fprintf(stderr, "warning: couldn't read in disk image\n");
+	}
 	return 0;
 }
+
 void fdc_destroy() {
-}
-void fdc_run() {
+ 	// free memory used by disk
+	if (diskdata) free(diskdata);
 }
 
+void fdc_run() {
+	// called every cycle
+
+}
+
+tt_u8 fdc_rreg(int reg) {
+	// handle reads from FDC registers
+	tt_u8 val;
+
+	switch (reg & 0x03) {   // not fully mapped
+		case FDC_SR:
+			val = fdc.sr;
+			break;
+		case FDC_TRACK:
+			val = fdc.trk_r;
+			break;
+		case FDC_SECTOR:
+			val =  fdc.sec_r;
+			break;
+		case FDC_DATA:
+			fdc.sr &= 0xfd; // clear IRQ bit
+			val =  fdc.data_r;
+			break;
+	}
+	return val;
+}
+
+void fdc_wreg(int reg, tt_u8 val) {
+	// handle writes to FDC registers
+	int cmd = (val & 0xf0)>>4;
+	
+	switch (reg & 0x03) {  // not fully mapped
+		case FDC_CR:
+			if ((val & 0xf0) == 0xd0) { // force interrupt
+				printf("cmd %02x: force interrupt\n", val);
+				fdc.sr &= 0xfe; // clear busy bit
+				return;
+			}
+			switch(cmd) {
+				default:
+					printf("cmd %02x: unknown\n", val);
+					break;
+			}
+	}
+}

@@ -19,9 +19,26 @@
 #ifndef __FDC_H
 #define __FDC_H
 
+// registers
+#define FDC_SR 0
+#define FDC_CR 0
+#define FDC_TRACK 1
+#define FDC_SECTOR 2
+#define FDC_DATA 3
+
 int fdc_init();
 void fdc_destroy();
 void fdc_run();
+tt_u8 fdc_rreg(int reg);
+void fdc_wreg(int reg, tt_u8 val);
+
+struct {
+	tt_u8 sr;
+	tt_u8 cr;
+	tt_u8 trk_r;
+	tt_u8 sec_r;
+	tt_u8 data_r;
+} fdc;
 
 #endif
 
