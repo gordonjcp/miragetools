@@ -1,0 +1,13 @@
+sim6809 was developped under Linux, and you should have no problem to compile
+it on any Linux box.
+
+sim6809 should also compile on other Unix machines, but this is not tested. If
+have made modifications to make it compile on other platforms, please send me
+the patches.
+
+Before compiling sim6809, you must complete config.h. Data types are set for
+an Intel x86 Linux platform.
+
+Then, type make, and the program should compile.
+To install it on your system, simply copy the file sim6809 in /usr/local/bin 
+for example. 

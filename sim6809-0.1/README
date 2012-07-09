@@ -1,0 +1,22 @@
+This is version 0.1 beta of sim6809.
+
+sim6809 is a 6809 simulator, which contains a debugger, and support for
+Intel Hex binary files.
+
+This program is beta software, and enhancements are welcome.
+There is no documentation at this time. To see debugger commands, type "h"
+in the debugger.
+Have a look to the example 6809 file example.asm, which explains how to print
+text on the console, and how to read a string from standard input.
+
+This program needs an assembler which is able to produce Intel Hex files,
+such as the 6809 free assembler that you can find with sim6809 on my web
+page at:
+http://www.mygale.org/~jth/index.html
+
+If you know other Unix 6809 assemblers, please tell me, I am interested.
+ 
+Please send me your comments or bug reports:
+Jerome Thoen <thoen@mail.dotcom.fr>
+
+sim6809 is free software. See the file COPYING for copying conditions.
