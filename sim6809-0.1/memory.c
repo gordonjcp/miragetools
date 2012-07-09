@@ -66,8 +66,7 @@ tt_u8 get_memb(tt_u16 adr) {
 		case 0xe800:	// FDC
 			return fdc_rreg(adr & 0xff);
 		case 0xe200:	// VIA
-			return 0x40;	// just enough for the disk present bit
-
+			return via_rreg(adr & 0xff);
 		default:
 			#ifdef DEBUGDEV
 			// FIXME needs last rpc, not this rpc
@@ -92,6 +91,8 @@ void set_memb(tt_u16 adr, tt_u8 val) {
 		case 0xe800:	// FDC
 			fdc_wreg(adr & 0xff, val);
 			break;
+		case 0xe200:	// VIA
+			via_wreg(adr & 0xff, val);
 	}
 	if (adr>0xf000) {
 		#ifdef DEBUGROM

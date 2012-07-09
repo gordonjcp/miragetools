@@ -36,4 +36,22 @@ Port A					Port B
 
 */
 
+tt_u8 via_rreg(int reg) {
 
+	tt_u8 val;
+
+	if (reg == 0x00) {
+		val = (via.orb & 0x1f) | 0x40;  // force disk ready
+	}
+	printf("pc: %04x via_rreg(%d, 0x%02x)\n", rpc, reg, val);
+	return val;
+}
+
+void via_wreg(int reg, tt_u8 val) {
+	//if (rpc!=0xf376)
+	printf("pc: %04x via_wreg(%d, 0x%02x)\n", rpc, reg, val);
+	if (reg == 0x00) {
+		via.orb = val;
+	}
+	
+}
