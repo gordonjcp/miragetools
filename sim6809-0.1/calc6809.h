@@ -1,4 +1,5 @@
-/* calc6809.h
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   calc6809.h
    Copyright (C) 1998 Jerome Thoen
 
    This program is free software; you can redistribute it and/or modify
@@ -55,8 +56,8 @@ int ccvr, ccv8;
 
 int addrmode;
 
-tt_u16 (*eaddrmodb[])();
-tt_u16 (*eaddrmodw[])();
+tt_u16 (*eaddrmodb[7])();
+tt_u16 (*eaddrmodw[7])();
 
 #define GET_EAB (*eaddrmodb[addrmode])()
 #define GET_EAW (*eaddrmodw[addrmode])()

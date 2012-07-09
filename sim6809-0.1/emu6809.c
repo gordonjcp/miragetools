@@ -1,4 +1,5 @@
-/* emu6809.c -- 6809 simulator
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   emu6809.c -- 6809 simulator
    Copyright (C) 1998 Jerome Thoen
 
    This program is free software; you can redistribute it and/or modify
@@ -206,10 +207,10 @@ null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
 null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
 null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null };
 
-tt_u16 (*eaddrmodb[])() = {
+tt_u16 (*eaddrmodb[7])() = {
   nula, immb, dir, idx, ext, nula, relb };
 
-tt_u16 (*eaddrmodw[])() = {
+tt_u16 (*eaddrmodw[7])() = {
   nula, immw, dir, idx, ext, nula, relw };
 
 tt_u8 getcc()

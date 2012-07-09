@@ -1,4 +1,5 @@
-/* console.h
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   console.h
    Copyright (C) 1998 Jerome Thoen
 
    This program is free software; you can redistribute it and/or modify
@@ -14,8 +15,6 @@
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
-
-
 
 extern int activate_console;
 extern int debugio;

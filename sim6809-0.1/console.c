@@ -1,4 +1,5 @@
-/* console.c -- debug console 
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   console.c -- debug console 
    Copyright (C) 1998 Jerome Thoen
 
    This program is free software; you can redistribute it and/or modify
@@ -28,7 +29,7 @@
 
 long cycles = 0;
 
-static int activate_console = 0;
+int activate_console = 0;
 static int console_active = 0;
 
 static void sigbrkhandler(int sigtype)
