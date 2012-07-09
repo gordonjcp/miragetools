@@ -95,12 +95,10 @@ void acia_run() {
 	int i;
 	char buf;
 
-	i =read(master, &buf, 1);
-
 	if (cycles < acia_cycles) return;  // nothing to do yet
 	acia_cycles = cycles + ACIA_CLK;	// nudge timer
 	// read a character?
-
+	i =read(master, &buf, 1);
 	if(i != -1) {
 		acia.rdr = buf;
 		acia.sr |= 0x01;
