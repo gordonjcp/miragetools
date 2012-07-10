@@ -1,0 +1,1214 @@
+fdcreadsector EQU $F000
+fdcskipsector EQU $F013
+fdcwritesector EQU $F024
+fdcfillsector EQU $F037
+fdcreadtrack EQU $F04A
+fdcwritetrack EQU $F058
+fdcrestore EQU $F066
+fdcseektrack EQU $F06F
+fdcseekin EQU $F07D
+fdcseekout EQU $F086
+fdcforceinterrupt EQU $F08F
+countdown EQU $F0A7
+nmivec EQU $F0B0
+coldstart EQU $F0F0
+runopsys EQU $F146
+hwsetup EQU $F15D
+qchipsetup EQU $F1BB
+clearram EQU $F1E5
+loadopsys EQU $F20D
+readsysparams EQU $F2AF
+checkos EQU $F306
+showerrcode EQU $F33C
+preparefd EQU $F38C
+loadossector EQU $F3AC
+gototrack EQU $F3F1
+seterrcode EQU $F413
+saveparams EQU $F425
+restoreparams EQU $F437
+readsector EQU $F448
+writesector EQU $F476
+gototrack2 EQU $F4A4
+enablefd EQU $F4C6
+disablefd EQU $F4D6
+timer2int EQU $F4DF
+unknown1 EQU $F514
+unknown2 EQU $F52D
+unknown3 EQU $F541
+copybytes EQU $F55B
+swapbytes EQU $F564
+unknown4 EQU $F571
+unknown5 EQU $F5BE
+unknown6 EQU $F5DC
+unknown7 EQU $F5E7
+unknown8 EQU $F5F1
+unknown9 EQU $F6DD
+ledpatterns EQU $FB4D
+resetvec EQU $FC7F
+ospanic EQU $FC91
+
+ORG $F000
+
+*** Ensoniq Mirage DSK ROM
+*** listing by Tim Victor, Jul 4-6 1999
+*** mailto:TimVictor@aol.com
+*** ------------------------
+*** Read sector from current track
+*** sector number in $8003, data addr in X
+*** (How does this terminate?)
+// it terminates because NMI fires when the FDC completes a command
+
+fdcreadsector:
+F000: B6 80 03    LDA   $8003		; Sector number
+F003: 97 02       STA   $02		; sector register, DA mode
+F005: 86 88       LDA   #$88           ;Read Sector command
+				; read, single sector, spin up, nodelay
+F007: B7 80 00    STA   $8000	; save command?
+F00A: 97 00       STA   $00	; command register
+F00C: 13          SYNC  	; wait for interrupt
+F00D: 96 03       LDA   $03	; get data
+F00F: A7 80       STA   ,X+	; store in X
+F011: 20 F9       BRA   $F00C	; keep going until NMI
+
+
+*** Skip (verify?) sector in current track
+*** sector number in $8003, ignore data
+; returns from NMI with last byte in A - possibly directory?
+fdcskipsector:
+F013: B6 80 03    LDA   $8003	; sector number
+F016: 97 02       STA   $02	; sector register
+F018: 86 88       LDA   #$88           ;Read Sector command
+F01A: B7 80 00    STA   $8000	; store command?
+F01D: 97 00       STA   $00	; command register
+F01F: 13          SYNC  	; wait for interrupt
+F020: 96 03       LDA   $03	; data register
+F022: 20 FB       BRA   $F01F	; keep going until NMI
+
+
+*** Write sector to current track
+*** sector number in $8003, data addr in X
+fdcwritesector:
+F024: B6 80 03    LDA   $8003	; fetch sector
+F027: 97 02       STA   $02	; sector register
+F029: 86 A8       LDA   #$A8           ;Write Sector command
+F02B: B7 80 00    STA   $8000	; save command
+F02E: 97 00       STA   $00	; command register
+F030: 13          SYNC  	; wait for interrupt
+F031: A6 80       LDA   ,X+	; fetch memory
+F033: 97 03       STA   $03	; data register
+F035: 20 F9       BRA   $F030	; loop until NMI
+
+
+*** Fill sector in current track with data byte
+*** sector number in $8003, data addr in X
+fdcfillsector:
+F037: B6 80 03    LDA   $8003
+F03A: 97 02       STA   $02
+F03C: 86 A8       LDA   #$A8           ;Write Sector command
+F03E: B7 80 00    STA   $8000
+F041: 97 00       STA   $00
+F043: 13          SYNC  
+F044: A6 84       LDA   ,X
+F046: 97 03       STA   $03
+F048: 20 F9       BRA   $F043
+
+
+*** Read all of current track
+*** data addr in X
+fdcreadtrack:
+F04A: 86 E8       LDA   #$E8           ;Read Track command
+F04C: B7 80 00    STA   $8000
+F04F: 97 00       STA   $00
+F051: 13          SYNC  
+F052: 96 03       LDA   $03
+F054: A7 80       STA   ,X+
+F056: 20 F9       BRA   $F051
+
+
+*** Write current track (format)
+*** data addr in X
+fdcwritetrack:
+F058: 86 F8       LDA   #$F8           ;Write Track command
+F05A: B7 80 00    STA   $8000
+F05D: 97 00       STA   $00
+F05F: 13          SYNC  
+F060: A6 80       LDA   ,X+
+F062: 97 03       STA   $03
+F064: 20 F9       BRA   $F05F
+
+
+*** Step drive head to track 0
+fdcrestore:
+F066: 86 0C       LDA   #$0C           ;Restore command
+F068: B7 80 00    STA   $8000
+F06B: 97 00       STA   $00
+F06D: 20 FE       BRA   $F06D
+
+
+*** Step drive head to track
+*** track number in $8002
+fdcseektrack:
+F06F: B6 80 02    LDA   $8002
+F072: 97 03       STA   $03
+F074: 86 1C       LDA   #$1C           ;Seek command
+F076: B7 80 00    STA   $8000
+F079: 97 00       STA   $00
+F07B: 20 FE       BRA   $F07B
+
+
+*** Step drive head inward by one track
+fdcseekin:
+F07D: 86 58       LDA   #$58           ;Step In command
+F07F: B7 80 00    STA   $8000
+F082: 97 00       STA   $00
+F084: 20 FE       BRA   $F084
+
+
+*** Step drive head outward by one track
+fdcseekout:
+F086: 86 78       LDA   #$78           ;Step Out command
+F088: B7 80 00    STA   $8000
+F08B: 97 00       STA   $00
+F08D: 20 FE       BRA   $F08D
+
+
+*** Reset fdc, cancel pending operations
+fdcforceinterrupt:
+F08F: 86 D0       LDA   #$D0           ;Force Interrupt command
+F091: B7 80 00    STA   $8000
+F094: 97 00       STA   $00
+F096: D6 00       LDB   $00            ;while fdc Busy bit set
+F098: C5 01       BITB  #$01
+F09A: 26 FA       BNE   $F096
+F09C: F7 80 06    STB   $8006
+F09F: 10 8E 00 01 LDY   #$0001
+F0A3: 17 00 01    LBSR  countdown
+F0A6: 39          RTS   
+
+
+*** Delay loop using count in Y reg
+*** 15 clock cycles per loop
+countdown:
+F0A7: 12          NOP   
+F0A8: 12          NOP   
+F0A9: 12          NOP   
+F0AA: 12          NOP   
+F0AB: 31 3F       LEAY  $FFFF,Y        ;dec Y
+F0AD: 26 F8       BNE   countdown
+F0AF: 39          RTS   
+
+
+*** FDC interrupt (NMI) handler
+nmivec:
+F0B0: 32 6C       LEAS  $000C,S        ;pop INT context (12 bytes)
+F0B2: D6 00       LDB   $00            ;read fdc status reg
+F0B4: F7 80 06    STB   $8006	; fdc status reg
+F0B7: B6 80 00    LDA   $8000	; fdc command saved
+F0BA: 81 88       CMPA  #$88           ;if Read Sector command
+F0BC: 27 07       BEQ   nmiread
+F0BE: B6 80 00    LDA   $8000
+F0C1: 81 E8       CMPA  #$E8           ;or Write Sector command,
+F0C3: 26 0A       BNE   nmiwrit
+nmiread:
+F0C5: F6 80 06    LDB   $8006	; saved status byte
+F0C8: C4 5C       ANDB  #$5C           ;keep 4 bits of status byte
+				; 0x40 Write Protect
+				; 0x10 Record not found, seek error
+				; 0x08 CRC error
+				; 0x04 Lost Byte
+F0CA: F7 80 06    STB   $8006	; write it back
+F0CD: 20 20       BRA   $F0EF
+nmiwrit:
+F0CF: B6 80 00    LDA   $8000
+F0D2: 81 A8       CMPA  #$A8           ;if Read Track command
+F0D4: 27 07       BEQ   $F0DD
+F0D6: B6 80 00    LDA   $8000
+F0D9: 81 F8       CMPA  #$F8           ;or Write Track command,
+F0DB: 26 0A       BNE   $F0E7
+F0DD: F6 80 06    LDB   $8006
+F0E0: C4 5C       ANDB  #$5C           ;keep 4 bits of status byte
+F0E2: F7 80 06    STB   $8006
+F0E5: 20 08       BRA   $F0EF
+
+F0E7: F6 80 06    LDB   $8006
+F0EA: C4 18       ANDB  #$18           ;else keep 2 bits of status
+F0EC: F7 80 06    STB   $8006
+F0EF: 39          RTS   
+
+/*
+DDRA
+0 LED segment
+1 LED segment
+2 LED segment
+3 anode 1 active low
+4 anode 2 active low
+5 keypad row 0
+6 keypad row 1
+7 keypad row 2
+
+DDRB
+0 bank 0/1
+1 upper/lower
+2 mic/line
+3 sample/play
+4 drive /select/motor
+5 DOC CA3
+6 disk /READY
+7 serial clock
+
+
+*** Start up machine, assume nothing
+coldstart:
+F0F0: 1A 50       ORCC  #$50           ;disab VIA, QChip, UART ints
+F0F2: 86 1F       LDA   #$1F
+F0F4: B7 E2 02    STA   $E202          ;set VIA DDRB
+F0F7: 86 10       LDA   #$10
+F0F9: B7 E2 00    STA   $E200          ;fd off, RAM bank 0
+F0FC: 8E E4 00    LDX   #$E400         ;reset VCF chips
+F0FF: 6F 80       CLR   ,X+
+F101: 8C E4 08    CMPX  #$E408
+F104: 26 F9       BNE   $F0FF
+F106: B7 E4 18    STA   $E418          ;write mpx addr preset
+F109: 10 CE BF 80 LDS   #$BF80         ;init system SP
+F10D: BD F1 E5    JSR   clearram
+F110: BD F1 5D    JSR   hwsetup
+F113: BD F4 C6    JSR   enablefd
+F116: 86 40       LDA   #$40
+F118: B4 E2 00    ANDA  $E200
+F11B: 81 00       CMPA  #$00           ;disk loaded?
+F11D: 27 12       BEQ   $F131
+F11F: BD F2 0D    JSR   loadopsys
+F122: B6 80 06    LDA   $8006
+F125: 81 00       CMPA  #$00
+F127: 27 06       BEQ   $F12F
+F129: BD F4 13    JSR   seterrcode
+F12C: BD F3 06    JSR   checkos
+F12F: 20 0E       BRA   $F13F
+
+F131: BD F4 D6    JSR   disablefd
+F134: 86 07       LDA   #$07
+F136: B7 80 06    STA   $8006
+F139: B7 80 07    STA   $8007          ;error code (P98) = "nd"
+F13C: BD F3 06    JSR   checkos
+F13F: B6 80 06    LDA   $8006
+F142: 81 00       CMPA  #$00           ;if no err,
+F144: 26 CA       BNE   $F110          ;fall thru & run os
+
+*** Jump to operating system in RAM
+runopsys:
+F146: 96 01       LDA   $01
+F148: B7 80 02    STA   $8002          ;copy fdc track reg
+F14B: 86 A6       LDA   #$A6
+F14D: B7 E2 0E    STA   $E20E          ;VIA intr enab reg
+F150: 86 95       LDA   #$95
+F152: B7 E1 00    STA   $E100          ;UART control reg
+F155: 86 30       LDA   #$30
+F157: B7 E2 00    STA   $E200
+F15A: 7E 80 0E    JMP   $800E          ;OS entry vector
+
+
+*** Initialize VIA, QChip, UART
+hwsetup:
+F15D: 86 E8       LDA   #$E8           ;Direct Page reg = FDC
+F15F: 1F 8B       TFR   A,DP
+F161: BD F0 8F    JSR   fdcforceinterrupt
+F164: 86 7F       LDA   #$7F
+F166: B7 E2 0E    STA   $E20E          ;VIA intr enab reg, all except SET/CLEAR
+F169: 86 CC       LDA   #$CC
+F16B: B7 E2 0B    STA   $E20B          ;VIA aux ctrl reg, T1 = squarewave on PB7, shift in under ext clock
+					; note that the shift register is used for the local keyboard
+F16E: 86 0E       LDA   #$0E
+F170: B7 E2 0C    STA   $E20C          ;VIA periph ctrl reg // CB2 in/falling, CA1 falling, CA2 high out, CA1 falling
+F173: 86 1F       LDA   #$1F
+F175: B7 E2 03    STA   $E203          ;VIA data dir 1 reg
+F178: 86 30       LDA   #$30
+F17A: B7 E2 00    STA   $E200          ;disab fdc, sync QChip
+F17D: 7F E2 06    CLR   $E206          ;clear VIA timer 1
+F180: 7F E2 07    CLR   $E207
+F183: 7F E2 04    CLR   $E204
+F186: 7F E2 05    CLR   $E205
+F189: CC 13 88    LDD   #$1388         ;preset VIA timer 2, CAS/5000
+F18C: F7 E2 08    STB   $E208
+F18F: B7 E2 09    STA   $E209
+F192: 86 FF       LDA   #$FF
+F194: B7 EC E1    STA   $ECE1          ;init QChip
+F197: 8E EC 00    LDX   #$EC00
+F19A: 6F 80       CLR   ,X+
+F19C: 8C EC E0    CMPX  #$ECE0
+F19F: 26 F9       BNE   $F19A
+F1A1: BD F1 BB    JSR   qchipsetup
+F1A4: 86 03       LDA   #$03		// UART master reset
+F1A6: B7 E1 00    STA   $E100          ;UART control reg
+F1A9: 7F 80 06    CLR   $8006          ;clear fd status vars
+F1AC: 7F 80 07    CLR   $8007
+F1AF: 7F 80 02    CLR   $8002
+F1B2: 7F 80 03    CLR   $8003
+F1B5: 86 01       LDA   #$01
+F1B7: B7 BF 8C    STA   $BF8C          ;set flag for OS load
+F1BA: 39          RTS   
+
+
+*** Initialize QChip
+*** (todo)
+qchipsetup:
+F1BB: 8E EC 80    LDX   #$EC80		// wavetable pointers
+F1BE: 86 10       LDA   #$10
+F1C0: A7 80       STA   ,X+
+F1C2: 8C EC A0    CMPX  #$ECA0
+F1C5: 26 F7       BNE   $F1BE
+F1C7: 8E EC A0    LDX   #$ECA0		// oscillator control registers
+F1CA: 86 63       LDA   #$63		// channel 6, oneshot, stopped?
+F1CC: A7 80       STA   ,X+
+F1CE: 8C EC C0    CMPX  #$ECC0
+F1D1: 26 F7       BNE   $F1CA
+F1D3: C6 20       LDB   #$20
+F1D5: B6 EC E0    LDA   $ECE0		// interrupt register
+F1D8: 10 8E 00 0C LDY   #$000C
+F1DC: BD F0 A7    JSR   countdown
+F1DF: 5A          DECB  
+F1E0: C1 00       CMPB  #$00
+F1E2: 26 F1       BNE   $F1D5
+F1E4: 39          RTS   
+
+
+*** Fill all sample RAM banks w/ $7F
+clearram:
+F1E5: 7F BF 85    CLR   $BF85
+F1E8: B6 BF 85    LDA   $BF85
+F1EB: BA E2 00    ORA   $E200
+F1EE: B7 E2 00    STA   $E200          ;RAM bank select
+F1F1: 8E 00 00    LDX   #$0000
+F1F4: 86 7F       LDA   #$7F
+F1F6: A7 80       STA   ,X+
+F1F8: 8C 80 00    CMPX  #$8000
+F1FB: 26 F9       BNE   $F1F6
+F1FD: 7C BF 85    INC   $BF85
+F200: B6 BF 85    LDA   $BF85
+F203: 81 04       CMPA  #$04           ;all four banks
+F205: 26 E1       BNE   $F1E8
+F207: 86 10       LDA   #$10
+F209: B7 E2 00    STA   $E200
+F20C: 39          RTS   
+
+
+*** Read operating system into $8000
+loadopsys:
+F20D: BD F0 66    JSR   fdcrestore
+F210: B6 80 06    LDA   $8006
+F213: 81 00       CMPA  #$00
+F215: 27 03       BEQ   $F21A
+F217: 16 00 91    LBRA  $F2AB          ;bail on err
+
+F21A: 7F BF 85    CLR   $BF85          ;first part of OS
+F21D: 8E 80 00    LDX   #$8000         ;load addr=$8000
+F220: BF 80 04    STX   $8004
+F223: B6 BF 85    LDA   $BF85
+F226: 48          ASLA  
+F227: 48          ASLA  
+F228: B7 BF 80    STA   $BF80          ;index into param table
+F22B: 10 8E FB 80 LDY   #$FB80         ;... at $FB80
+F22F: BD F3 8C    JSR   preparefd
+F232: B6 80 06    LDA   $8006
+F235: 81 00       CMPA  #$00
+F237: 27 03       BEQ   $F23C
+F239: 16 00 6F    LBRA  $F2AB          ;bail on err
+
+F23C: B6 BF 81    LDA   $BF81          ;set track#
+F23F: B7 80 02    STA   $8002
+F242: B6 BF 82    LDA   $BF82          ;set sector#
+F245: B7 80 03    STA   $8003
+F248: B6 BF 8C    LDA   $BF8C          ;test OS load flag,
+F24B: 27 03       BEQ   $F250          ;set at $F1B7 (dumb)
+F24D: BD F4 25    JSR   saveparams
+F250: BD F3 AC    JSR   loadossector
+F253: B6 80 06    LDA   $8006
+F256: 81 00       CMPA  #$00
+F258: 27 02       BEQ   $F25C
+F25A: 20 4F       BRA   $F2AB          ;bail on err
+
+F25C: B6 BF 8C    LDA   $BF8C          ;test OS load flag
+F25F: 27 0A       BEQ   $F26B
+F261: 34 10       PSHS  X
+F263: BD F4 37    JSR   restoreparams
+F266: 7F BF 8C    CLR   $BF8C          ;clr OS load flag
+F269: 35 10       PULS  X
+F26B: BF 80 04    STX   $8004
+F26E: 7C 80 03    INC   $8003          ;do next sector
+F271: B6 80 03    LDA   $8003
+F274: 81 06       CMPA  #$06           ;while sector <= 5
+F276: 26 D0       BNE   $F248
+F278: 7C 80 02    INC   $8002          ;increment track
+F27B: B6 80 02    LDA   $8002
+F27E: B1 BF 83    CMPA  $BF83          ;quit if trk > max trk
+F281: 22 0C       BHI   $F28F
+F283: BD F3 F1    JSR   gototrack
+F286: B6 80 06    LDA   $8006
+F289: 81 00       CMPA  #$00
+F28B: 27 02       BEQ   $F28F
+F28D: 20 1C       BRA   $F2AB          ;bail on err
+
+F28F: B6 80 02    LDA   $8002          ;redundant track test
+F292: B1 BF 83    CMPA  $BF83
+F295: 23 AB       BLS   $F242          ;to top of trk loop
+F297: 7C BF 85    INC   $BF85          ;second part of OS
+F29A: B6 BF 85    LDA   $BF85
+F29D: 81 02       CMPA  #$02
+F29F: 27 07       BEQ   $F2A8
+F2A1: 8C BE 00    CMPX  #$BE00         ;all loaded? ($B000-$BDFF?)
+F2A4: 10 26 FF 7B LBNE  $F223          ;to top of main loop
+F2A8: BD F2 AF    JSR   readsysparams
+F2AB: BD F4 D6    JSR   disablefd
+F2AE: 39          RTS   
+
+
+*** Copy OS parameters to $8011-$802E
+readsysparams:
+F2AF: 10 8E FB 88 LDY   #$FB88         ;param table at $FB88
+F2B3: 7F BF 80    CLR   $BF80          ;table index = 0
+F2B6: BD F3 8C    JSR   preparefd
+F2B9: B6 80 06    LDA   $8006
+F2BC: 81 00       CMPA  #$00
+F2BE: 27 03       BEQ   $F2C3
+F2C0: 16 00 42    LBRA  $F305          ;bail on err
+
+F2C3: 8E 00 00    LDX   #$0000         ;read sect to sample RAM
+F2C6: BF 80 04    STX   $8004          ;load address = $0000
+F2C9: B6 BF 81    LDA   $BF81          ;set track#
+F2CC: B7 80 02    STA   $8002
+F2CF: B6 BF 82    LDA   $BF82          ;set sector#
+F2D2: B7 80 03    STA   $8003
+F2D5: BD F3 AC    JSR   loadossector
+F2D8: B6 80 06    LDA   $8006
+F2DB: 81 00       CMPA  #$00
+F2DD: 27 02       BEQ   $F2E1
+F2DF: 20 24       BRA   $F305          ;bail on err
+
+F2E1: 10 8E 80 2E LDY   #$802E
+F2E5: 10 BF BF 8D STY   $BF8D
+F2E9: 10 8E 00 00 LDY   #$0000
+F2ED: 8E 80 11    LDX   #$8011         ;copy data to $8011
+F2F0: A6 A0       LDA   ,Y+
+F2F2: A7 80       STA   ,X+
+F2F4: BC BF 8D    CPX   $BF8D
+F2F7: 26 F7       BNE   $F2F0
+F2F9: 8E 00 00    LDX   #$0000         ;clear sample RAM
+F2FC: 86 7F       LDA   #$7F
+F2FE: A7 80       STA   ,X+
+F300: 8C 02 00    CMPX  #$0200
+F303: 26 F9       BNE   $F2FE
+F305: 39          RTS   
+
+
+*** Check Disk Error Code (P98)
+*** flash error msg if non-zero
+checkos:
+F306: B6 80 07    LDA   $8007
+F309: 81 01       CMPA  #$01
+F30B: 26 08       BNE   $F315
+F30D: CC 7A 9E    LDD   #$7A9E         ;1 = "dE"
+F310: FD BF 8A    STD   $BF8A
+F313: 20 16       BRA   $F32B
+
+F315: 81 06       CMPA  #$06
+F317: 26 08       BNE   $F321
+F319: CC 38 7A    LDD   #$387A         ;6 = "ud"
+F31C: FD BF 8A    STD   $BF8A
+F31F: 20 0A       BRA   $F32B
+
+F321: 81 07       CMPA  #$07
+F323: 26 06       BNE   $F32B
+F325: CC 2A 7A    LDD   #$2A7A         ;7 = "nd"
+F328: FD BF 8A    STD   $BF8A
+F32B: 86 7F       LDA   #$7F
+F32D: B7 BF 85    STA   $BF85
+F330: BD F3 3C    JSR   showerrcode
+F333: 7A BF 85    DEC   $BF85          ;flash 128 times
+F336: B6 BF 85    LDA   $BF85
+F339: 26 F5       BNE   $F330
+F33B: 39          RTS   
+
+
+*** Display error msg on LEDs
+showerrcode:
+F33C: FC BF 8A    LDD   $BF8A          ;16-bit msg data
+F33F: B7 BF 88    STA   $BF88
+F342: F7 BF 89    STB   $BF89
+F345: 5F          CLRB  
+F346: F7 BF 87    STB   $BF87
+F349: 1F 98       TFR   B,A
+F34B: 8A 18       ORA   #$18
+F34D: C6 80       LDB   #$80           ;check for "1" bits in data
+F34F: F5 BF 86    BITB  $BF86
+F352: 26 05       BNE   $F359
+F354: 78 BF 88    ASL   $BF88
+F357: 20 07       BRA   $F360
+
+F359: 78 BF 88    ASL   $BF88
+F35C: 24 02       BCC   $F360
+F35E: 84 F7       ANDA  #$F7
+F360: C6 80       LDB   #$80
+F362: F5 BF 86    BITB  $BF86
+F365: 26 05       BNE   $F36C
+F367: 78 BF 89    ASL   $BF89
+F36A: 20 07       BRA   $F373
+
+F36C: 78 BF 89    ASL   $BF89
+F36F: 24 02       BCC   $F373
+F371: 84 EF       ANDA  #$EF
+F373: B7 E2 01    STA   $E201          ;multiplexed, two segs at a time
+F376: 10 8E 01 00 LDY   #$0100
+F37A: 31 3F       LEAY  $FFFF,Y
+F37C: 26 FC       BNE   $F37A          ;pause
+F37E: 7C BF 86    INC   $BF86
+F381: F6 BF 87    LDB   $BF87
+F384: 5C          INCB                 ;next bit position
+F385: C1 07       CMPB  #$07
+F387: 10 23 FF BB LBLS  $F346
+F38B: 39          RTS   
+
+
+*** Prepare for disk transfer
+*** read params from table, step to track
+preparefd:
+F38C: B6 BF 80    LDA   $BF80
+F38F: 30 A6       LEAX  A,Y
+F391: A6 80       LDA   ,X+            ;get track#
+F393: B7 BF 81    STA   $BF81
+F396: B7 80 02    STA   $8002
+F399: A6 80       LDA   ,X+            ;get sector#
+F39B: B7 BF 82    STA   $BF82
+F39E: A6 80       LDA   ,X+            ;max track
+F3A0: B7 BF 83    STA   $BF83
+F3A3: A6 84       LDA   ,X             ;max sector
+F3A5: B7 BF 84    STA   $BF84
+F3A8: BD F3 F1    JSR   gototrack
+F3AB: 39          RTS   
+
+
+*** Read sector of operating system
+*** restore params if OS flag set
+loadossector:
+F3AC: 86 0A       LDA   #$0A           ;retry count = 10
+F3AE: B7 80 01    STA   $8001
+F3B1: BE 80 04    LDX   $8004          ;X = buffer address
+F3B4: BD F0 00    JSR   fdcreadsector
+F3B7: B6 80 06    LDA   $8006
+F3BA: 81 00       CMPA  #$00
+F3BC: 27 08       BEQ   $F3C6
+F3BE: B6 BF 8C    LDA   $BF8C          ;test OS load flag
+F3C1: 27 03       BEQ   $F3C6
+F3C3: BD F4 37    JSR   restoreparams
+F3C6: 7A 80 01    DEC   $8001          ;dec retry count
+F3C9: B6 80 01    LDA   $8001
+F3CC: 27 07       BEQ   $F3D5          ;exit if count = 0
+F3CE: B6 80 06    LDA   $8006
+F3D1: 81 00       CMPA  #$00
+F3D3: 26 DC       BNE   $F3B1
+F3D5: B6 80 06    LDA   $8006          ;convoluted logic!
+F3D8: 81 00       CMPA  #$00
+F3DA: 27 14       BEQ   $F3F0          ;normal exit if no err
+F3DC: BD F0 86    JSR   fdcseekout
+F3DF: BD F0 7D    JSR   fdcseekin
+F3E2: B6 BF 8C    LDA   $BF8C          ;test OS load flag
+F3E5: 27 03       BEQ   $F3EA
+F3E7: BD F4 37    JSR   restoreparams
+F3EA: BE 80 04    LDX   $8004
+F3ED: BD F0 00    JSR   fdcreadsector  ;one last try?
+F3F0: 39          RTS   
+
+
+*** Move fd head to track, with retry
+gototrack:
+F3F1: 86 02       LDA   #$02           ;retry count
+F3F3: B7 80 01    STA   $8001
+F3F6: BD F0 6F    JSR   fdcseektrack
+F3F9: B6 80 06    LDA   $8006
+F3FC: 81 00       CMPA  #$00
+F3FE: 27 06       BEQ   $F406
+F400: BD F0 66    JSR   fdcrestore     ;home disk if seek failed
+F403: 7A 80 01    DEC   $8001
+F406: B6 80 01    LDA   $8001          ;try again?
+F409: 27 07       BEQ   $F412
+F40B: B6 80 06    LDA   $8006
+F40E: 81 00       CMPA  #$00
+F410: 26 E4       BNE   $F3F6
+F412: 39          RTS   
+
+
+*** Set Disk Error Code (P98) after OS load error
+*** based on fdc status copy in $8006
+seterrcode:
+F413: 86 01       LDA   #$01           ;1=Disk Drive Error
+F415: B7 80 07    STA   $8007
+F418: 86 10       LDA   #$10
+F41A: F5 80 06    BITB  $8006          ;test "not found" bit
+F41D: 27 05       BEQ   $F424
+F41F: 86 06       LDA   #$06           ;6=Unformatted Disk
+F421: B7 80 07    STA   $8007
+F424: 39          RTS   
+
+
+*** Copy disk transfer params from $8000-8007 to $BF8D-BF94
+saveparams:
+F425: 8E BF 8D    LDX   #$BF8D
+F428: 10 8E 80 00 LDY   #$8000
+F42C: A6 A0       LDA   ,Y+
+F42E: A7 80       STA   ,X+
+F430: 10 8C 80 08 CMPY  #$8008
+F434: 26 F6       BNE   $F42C
+F436: 39          RTS   
+
+
+*** Copy disk transfer params from $BF8D-BF94 to $8000-8007
+restoreparams:
+F437: 8E 80 00    LDX   #$8000
+F43A: 10 8E BF 8D LDY   #$BF8D
+F43E: A6 A0       LDA   ,Y+
+F440: A7 80       STA   ,X+
+F442: 8C 80 08    CMPX  #$8008
+F445: 26 F7       BNE   $F43E
+F447: 39          RTS   
+
+
+*** Read sector from floppy
+*** similar to loadossector
+*** not used by ROM code
+readsector:
+F448: 86 0A       LDA   #$0A           ;retry count = 10
+F44A: B7 80 01    STA   $8001
+F44D: BE 80 04    LDX   $8004          ;X = buffer address
+F450: BD F0 00    JSR   fdcreadsector
+F453: 7A 80 01    DEC   $8001          ;dec retry count
+F456: B6 80 01    LDA   $8001
+F459: 27 07       BEQ   $F462          ;exit if count = 0
+F45B: B6 80 06    LDA   $8006
+F45E: 81 00       CMPA  #$00
+F460: 26 EB       BNE   $F44D
+F462: B6 80 06    LDA   $8006
+F465: 81 00       CMPA  #$00
+F467: 27 0C       BEQ   $F475          ;normal exit if no err
+F469: BD F0 86    JSR   fdcseekout
+F46C: BD F0 7D    JSR   fdcseekin
+F46F: BE 80 04    LDX   $8004
+F472: BD F0 00    JSR   fdcreadsector  ;one last try?
+F475: 39          RTS   
+
+
+*** Write sector to floppy
+*** not used by ROM code
+writesector:
+F476: 86 0A       LDA   #$0A           ;retry count = 10
+F478: B7 80 01    STA   $8001
+F47B: BE 80 04    LDX   $8004          ;X = buffer address
+F47E: BD F0 24    JSR   fdcwritesector
+F481: 7A 80 01    DEC   $8001          ;dec retry count
+F484: B6 80 01    LDA   $8001
+F487: 27 07       BEQ   $F490          ;exit if count = 0
+F489: B6 80 06    LDA   $8006
+F48C: 81 00       CMPA  #$00
+F48E: 26 EB       BNE   $F47B
+F490: B6 80 06    LDA   $8006
+F493: 81 00       CMPA  #$00
+F495: 27 0C       BEQ   $F4A3          ;normal exit if no err
+F497: BD F0 86    JSR   fdcseekout
+F49A: BD F0 7D    JSR   fdcseekin
+F49D: BE 80 04    LDX   $8004
+F4A0: BD F0 24    JSR   fdcwritesector ;one last try?
+F4A3: 39          RTS   
+
+
+*** Move fd head to track, with retry
+*** identical to gototrack ($F3F1)
+*** not used by ROM code
+gototrack2:
+F4A4: 86 02       LDA   #$02
+F4A6: B7 80 01    STA   $8001
+F4A9: BD F0 6F    JSR   fdcseektrack
+F4AC: B6 80 06    LDA   $8006
+F4AF: 81 00       CMPA  #$00
+F4B1: 27 06       BEQ   $F4B9
+F4B3: BD F0 66    JSR   fdcrestore
+F4B6: 7A 80 01    DEC   $8001
+F4B9: B6 80 01    LDA   $8001
+F4BC: 27 07       BEQ   $F4C5
+F4BE: B6 80 06    LDA   $8006
+F4C1: 81 00       CMPA  #$00
+F4C3: 26 E4       BNE   $F4A9
+F4C5: 39          RTS   
+
+
+*** Clear FDC Enable bit in VIA
+enablefd:
+F4C6: B6 E2 00    LDA   $E200
+F4C9: 84 EF       ANDA  #$EF
+F4CB: B7 E2 00    STA   $E200          ;VIA data reg 2
+F4CE: 10 8E FF FF LDY   #$FFFF
+F4D2: BD F0 A7    JSR   countdown
+F4D5: 39          RTS   
+
+
+*** Set FDC Enable bit in VIA
+disablefd:
+F4D6: B6 E2 00    LDA   $E200
+F4D9: 8A 10       ORA   #$10
+F4DB: B7 E2 00    STA   $E200          ;VIA data reg 2
+F4DE: 39          RTS   
+
+
+*** Handler for VIA timer 2 interrupt
+*** increment/decrement/toggle variables in OS direct page
+timer2int:
+F4DF: CC 13 88    LDD   #$1388
+F4E2: B7 E2 09    STA   $E209
+F4E5: 1C BF       ANDCC #$BF           ;clear FIRQ mask bit
+F4E7: 03 2E       COM   $2E
+F4E9: 27 04       BEQ   $F4EF
+F4EB: 0A 2F       DEC   $2F
+F4ED: 20 04       BRA   $F4F3
+
+F4EF: 0A 30       DEC   $30
+F4F1: 0C 36       INC   $36
+F4F3: 0A 33       DEC   $33
+F4F5: 96 37       LDA   $37
+F4F7: 27 03       BEQ   $F4FC
+F4F9: 4A          DECA  
+F4FA: 97 37       STA   $37
+F4FC: 96 31       LDA   $31
+F4FE: 27 03       BEQ   $F503
+F500: 4A          DECA  
+F501: 97 31       STA   $31
+F503: 96 32       LDA   $32
+F505: 27 03       BEQ   $F50A
+F507: 4A          DECA  
+F508: 97 32       STA   $32
+F50A: DC 34       LDD   $34
+F50C: 27 05       BEQ   $F513
+F50E: 83 00 01    SUBD  #$0001
+F511: DD 34       STD   $34
+F513: 3B          RTI   
+
+
+*** Perform some kind of lookup using table at $F94D-$FB4C
+*** B reg has offset (in 16-bit words) into table
+*** A reg has multiplier/shift value (0-7)
+*** 16-bit result returned in A & B (D) register
+unknown1:
+F514: 40          NEGA  
+F515: 8B 09       ADDA  #$09
+F517: 34 02       PSHS  A
+F519: 8E F9 4D    LDX   #$F94D
+F51C: 3A          ABX   
+F51D: 3A          ABX   
+F51E: EC 84       LDD   ,X
+F520: 6D E4       TST   ,S
+F522: 2B 06       BMI   $F52A
+F524: 44          LSRA  
+F525: 56          RORB  
+F526: 6A E4       DEC   ,S
+F528: 2A FA       BPL   $F524
+F52A: 32 61       LEAS  $0001,S
+F52C: 39          RTS   
+
+
+*** Timer thing, I guess
+unknown2:
+F52D: CC 13 88    LDD   #$1388		// 5000
+F530: F7 E2 08    STB   $E208          ;restart VIA Timer 2
+F533: B7 E2 09    STA   $E209
+F536: 86 A6       LDA   #$A6
+F538: B7 E2 0E    STA   $E20E          ;VIA int enab reg
+F53B: CC 80 38    LDD   #$8038
+F53E: 1F 8B       TFR   A,DP
+F540: 39          RTS   
+
+
+*** Seems to re-init some HW
+unknown3:
+F541: 86 7F       LDA   #$7F
+F543: B7 E2 0E    STA   $E20E          ;VIA int enab reg
+F546: 86 03       LDA   #$03
+F548: B7 E1 00    STA   $E100          ;UART command reg
+F54B: 7F E2 00    CLR   $E200
+F54E: 12          NOP   
+F54F: 12          NOP   
+F550: 86 30       LDA   #$30
+F552: B7 E2 00    STA   $E200          ;VIA data reg 2
+F555: 86 18       LDA   #$18
+F557: B7 E2 0F    STA   $E20F          ;VIA int enab reg
+F55A: 39          RTS   
+
+
+*** Copy from X to U, count in Y
+copybytes:
+F55B: A6 80       LDA   ,X+
+F55D: A7 C0       STA   ,U+
+F55F: 31 3F       LEAY  $FFFF,Y
+F561: 26 F8       BNE   copybytes
+F563: 39          RTS   
+
+
+*** Swap bytes at X with U, count in Y
+swapbytes:
+F564: A6 84       LDA   ,X
+F566: E6 C4       LDB   ,U
+F568: A7 C0       STA   ,U+
+F56A: E7 80       STB   ,X+
+F56C: 31 3F       LEAY  $FFFF,Y
+F56E: 26 F4       BNE   swapbytes
+F570: 39          RTS   
+
+
+*** QChip dealie of some sort
+unknown4:
+F571: C1 10       CMPB  #$10
+F573: 27 03       BEQ   $F578
+F575: 7E FC 91    JMP   ospanic		// what's B got to do with it?
+
+F578: F7 E2 00    STB   $E200          ;VIA data reg 2
+F57B: C6 B0       LDB   #$B0	
+F57D: BD F5 DC    JSR   unknown6
+F580: 8D 3C       BSR   unknown5
+F582: 10 8E 00 00 LDY   #$0000
+F586: 8D 36       BSR   unknown5
+F588: 8D 34       BSR   unknown5
+F58A: 8D 32       BSR   unknown5
+F58C: 8D 30       BSR   unknown5
+F58E: 10 8C 00 00 CMPY  #$0000
+F592: 27 18       BEQ   $F5AC
+F594: 10 8C 0F A0 CMPY  #$0FA0
+F598: 24 12       BCC   $F5AC
+F59A: 10 8C 00 85 CMPY  #$0085
+F59E: 25 03       BCS   $F5A3
+F5A0: 5C          INCB  
+F5A1: 20 DA       BRA   $F57D
+
+F5A3: 10 8C 00 80 CMPY  #$0080
+F5A7: 22 03       BHI   $F5AC
+F5A9: 5A          DECB  
+F5AA: 20 D1       BRA   $F57D
+
+F5AC: C0 7A       SUBB  #$7A
+F5AE: E7 C8 18    STB   $18,U
+F5B1: 5F          CLRB  
+F5B2: BD F5 DC    JSR   unknown6
+F5B5: E7 10       STB   $FFF0,X
+F5B7: 39          RTS   
+
+F5B8: 12          NOP   
+F5B9: 12          NOP   
+F5BA: 12          NOP   
+F5BB: 12          NOP   
+F5BC: 12          NOP   
+F5BD: 12          NOP   
+
+*** Another QChip dealie
+unknown5:
+F5BE: B6 EC E2    LDA   $ECE2		// DOC ADC
+F5C1: 8D 19       BSR   unknown6
+F5C3: 31 21       LEAY  $0001,Y		// inc y? load effective address pointed to by y+1
+F5C5: 27 14       BEQ   $F5DB		// return if zero, it seems
+F5C7: B6 EC E2    LDA   $ECE2		// DOC ADC
+F5CA: 81 90       CMPA  #$90		
+F5CC: 25 F3       BCS   $F5C1		// less? who knows, keep going
+F5CE: 8D 0C       BSR   unknown6
+F5D0: 31 21       LEAY  $0001,Y		// pretty sure that's inc y
+F5D2: 27 07       BEQ   $F5DB		// end, if zero
+F5D4: B6 EC E2    LDA   $ECE2		// get DOC ADC
+F5D7: 81 70       CMPA  #$70		// 70?
+F5D9: 22 F3       BHI   $F5CE		// loop if higher?
+F5DB: 39          RTS   
+
+
+*** Another QChip dealie
+unknown6:
+F5DC: 86 FF       LDA   #$FF		// what's X set to when we get here?
+F5DE: A7 84       STA   ,X
+F5E0: A7 10       STA   $FFF0,X		// -16?
+F5E2: E7 84       STB   ,X
+F5E4: E7 18       STB   $FFF8,X		// -8?
+F5E6: 39          RTS   
+
+
+*** Another QChip dealie
+unknown7:
+F5E7: A7 C4       STA   ,U
+F5E9: A7 58       STA   $FFF8,U
+F5EB: E7 C0       STB   ,U+
+F5ED: E7 C8 EF    STB   -$11,U
+F5F0: 39          RTS   
+
+
+*** Another QChip dealie
+unknown8:
+F5F1: 1A 50       ORCC  #$50
+F5F3: 35 40       PULS  U
+F5F5: 35 06       PULS  A,B
+F5F7: E7 88 83    STB   -$7D,X
+F5FA: A7 88 A3    STA   -$5D,X
+F5FD: E7 88 84    STB   -$7C,X
+F600: A7 88 A4    STA   -$5C,X
+F603: 35 06       PULS  A,B
+F605: E7 88 81    STB   -$7F,X
+F608: A7 88 A1    STA   -$5F,X
+F60B: E7 88 82    STB   -$7E,X
+F60E: A7 88 A2    STA   -$5E,X
+F611: 1C AF       ANDCC #$AF
+F613: 6E C4       JMP   ,U
+
+F615: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F625: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F635: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F645: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F655: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F665: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F675: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F685: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F695: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F6A5: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F6B5: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F6C5: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F6D5: FF FF FF FF FF FF FF FF 
+
+
+*** Another QChip dealie
+// don't think this is Q-chip
+unknown9:
+F6DD: 1A 50       ORCC  #$50		// Mask FIRQ/IRQ
+F6DF: EC 62       LDD   $0002,S		// stack+2, return address?
+F6E1: A7 A8 C2    STA   -$3E,Y		
+F6E4: A7 A8 C1    STA   -$3F,Y
+F6E7: E7 A8 C3    STB   -$3D,Y
+F6EA: E7 A8 C4    STB   -$3C,Y
+F6ED: 1C AF       ANDCC #$AF		// unmask FIRQ/IRQ
+F6EF: 35 06       PULS  A,B		// top value off stack
+F6F1: ED E4       STD   ,S		// put return address back
+F6F3: 39          RTS   		// return
+
+F6F4: FF FF FF FF FF FF FF FF FF FF FF FF 
+
+F700: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F710: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F720: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F730: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F740: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F750: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F760: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+F770: FF FF FF FF FF FF FF FF FF FF FF FF FF 00 00 00 
+F780: 00 00 00 00 00 01 01 01 01 01 01 01 02 02 02 02 
+F790: 02 03 03 03 03 04 04 05 05 06 06 07 07 08 08 09 
+F7A0: 09 0A 0A 0B 0B 0C 0C 0D 0D 0E 0E 0F 0F 10 11 12 
+F7B0: 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 
+F7C0: 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30 31 32 
+F7D0: 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 40 42 43 
+F7E0: 45 46 48 4A 4C 4E 50 52 54 56 58 5A 5C 5E 61 63 
+F7F0: 66 69 6C 6F 72 75 78 7B 7F 7F 7F 7F 7F FF FF 80 
+F800: 00 40 00 2E E0 20 00 17 70 10 00 0B B8 08 00 06 
+F810: 66 05 1E 04 10 03 33 02 8F 02 19 01 99 01 47 01 
+F820: 06 00 CF 00 A3 00 83 00 68 00 53 00 42 00 36 00 
+F830: 29 00 21 00 1A 00 14 00 10 00 0D 00 0A 00 08 00 
+F840: 06 00 05 00 04 00 03 00 02 00 01 00 00 00 02 04 
+F850: 06 08 0A 0C 0E 10 12 14 16 18 1A 1C 1E 20 22 24 
+F860: 26 28 2A 2C 2E 30 32 34 36 38 3A 3C 3E 40 42 44 
+F870: 46 48 4A 4C 4E 50 52 54 56 58 5A 5C 5E 60 62 64 
+F880: 66 68 6A 6C 6E 70 72 74 75 76 77 78 79 7A 79 78 
+F890: 77 76 75 74 72 70 6E 6C 6A 68 66 64 62 60 5E 5C 
+F8A0: 5A 58 56 54 52 50 4E 4C 4A 48 46 44 42 40 3E 3C 
+F8B0: 3A 38 36 34 32 30 2E 2C 2A 28 26 24 22 20 1E 1C 
+F8C0: 1A 18 16 14 12 10 0E 0C 0A 08 06 04 02 00 FE FC 
+F8D0: FA F8 F6 F4 F2 F0 EE EC EA E8 E6 E4 E2 E0 DE DC 
+F8E0: DA D8 D6 D4 D2 D0 CE CC CA C8 C6 C4 C2 C0 BE BC 
+F8F0: BA B8 B6 B4 B2 B0 AE AC AA A8 A6 A4 A2 A0 9E 9C 
+F900: 9A 98 96 94 92 90 8E 8C 8B 8A 89 88 87 86 87 88 
+F910: 89 8A 8B 8C 8E 90 92 94 96 98 9A 9C 9E A0 A2 A4 
+F920: A6 A8 AA AC AE B0 B2 B4 B6 B8 BA BC BE C0 C2 C4 
+F930: C6 C8 CA CC CE D0 D2 D4 D6 D8 DA DC DE E0 E2 E4 
+F940: E6 E8 EA EC EE F0 F2 F4 F6 F8 FA FC FE 49 11 49 
+F950: 44 49 76 49 A9 49 DC 4A 10 4A 43 4A 77 4A AA 4A 
+F960: DE 4B 12 4B 46 4B 7B 4B AF 4B E3 4C 18 4C 4D 4C 
+F970: 82 4C B7 4C EC 4D 22 4D 57 4D 8D 4D C3 4D F9 4E 
+F980: 2F 4E 65 4E 9B 4E D2 4F 09 4F 40 4F 77 4F AE 4F 
+F990: E5 50 1D 50 54 50 8C 50 C4 50 FC 51 34 51 6C 51 
+F9A0: A5 51 DE 52 16 52 4F 52 89 52 C2 52 FB 53 35 53 
+F9B0: 6F 53 A9 53 E3 54 1D 54 57 54 92 54 CC 55 07 55 
+F9C0: 42 55 7E 55 B9 55 F4 56 30 56 6C 56 A8 56 E4 57 
+F9D0: 20 57 5D 57 99 57 D6 58 13 58 50 58 8E 58 CB 59 
+F9E0: 09 59 47 59 84 59 C3 5A 01 5A 3F 5A 7E 5A BD 5A 
+F9F0: FC 5B 3B 5B 7A 5B BA 5B F9 5C 39 5C 79 5C BA 5C 
+FA00: FA 5D 3A 5D 7B 5D BC 5D FD 5E 3E 5E 80 5E C1 5F 
+FA10: 03 5F 45 5F 87 5F C9 60 0C 60 4F 60 91 60 D4 61 
+FA20: 18 61 5B 61 9F 61 E2 62 26 62 6B 62 AF 62 F3 63 
+FA30: 38 63 7D 63 C2 64 07 64 4D 64 92 64 D8 65 1E 65 
+FA40: 64 65 AB 65 F1 66 38 66 7F 66 C6 67 0D 67 55 67 
+FA50: 9D 67 E4 68 2D 68 75 68 BD 69 06 69 4F 69 98 69 
+FA60: E1 6A 2B 6A 75 6A BE 6B 09 6B 53 6B 9D 6B E8 6C 
+FA70: 33 6C 7E 6C C9 6D 15 6D 61 6D AD 6D F9 6E 45 6E 
+FA80: 91 6E DE 6F 2B 6F 78 6F C6 70 13 70 61 70 AF 70 
+FA90: FD 71 4C 71 9A 71 E9 72 38 72 88 72 D7 73 27 73 
+FAA0: 77 73 C7 74 17 74 68 74 B9 75 0A 75 5B 75 AC 75 
+FAB0: FE 76 50 76 A2 76 F4 77 47 77 9A 77 ED 78 40 78 
+FAC0: 93 78 E7 79 3B 79 8F 79 E4 7A 38 7A 8D 7A E2 7B 
+FAD0: 37 7B 8D 7B E3 7C 39 7C 8F 7C E5 7D 3C 7D 93 7D 
+FAE0: EA 7E 41 7E 99 7E F1 7F 49 7F A1 7F FA 80 53 80 
+FAF0: AC 81 05 81 5F 81 B9 82 13 82 6D 82 C7 83 22 83 
+FB00: 7D 83 D9 84 34 84 90 84 EC 85 48 85 A5 86 01 86 
+FB10: 5E 86 BC 87 19 87 77 87 D5 88 33 88 92 88 F1 89 
+FB20: 50 89 AF 8A 0E 8A 6E 8A CE 8B 2F 8B 8F 8B F0 8C 
+FB30: 51 8C B3 8D 14 8D 76 8D D8 8E 3B 8E 9E 8F 01 8F 
+FB40: 64 8F C7 90 2B 90 8F 90 F4 91 58 91 BD 
+
+
+*** LED display patterns for hexadecimal 0-F
+ledpatterns:
+FB4D: FC 60 DA F2 66 B6 BE E0 FE E6 EE 3E 9C 7A 9E 8E 
+
+
+*** more LED display patterns: L n o P r U _ - [top bar] c u
+FB5D: 1C 2A 3A CE 0A 7C 10 02 80 1A 38 
+
+
+*** fascinating permutation of values from
+*** 0 to 23, no idea why
+FB68: 10 03 01 11 06 04 12 09 07 15 05 0E 16 08 0C 17 
+FB78: 00 0F 14 02 0D 13 0A 0B 
+
+
+*** track/sector info for OS load
+FB80: 00 00 01 05 02 05 0A 05 
+
+
+*** track/sector info for system parameters
+FB88: 0B 05 0B 05 
+
+
+*** track/sector info for OS flags
+FB8C: 20 05 22 05 
+
+
+*** track/sector info for lower sounds
+FB90: 02 00 0E 04 1C 00 28 04 36 00 42 04 
+
+
+*** track/sector info for upper sounds
+FB9C: 0F 00 1B 04 29 00 35 04 43 00 4F 04 
+
+
+*** track/sector info for short sequences
+FBA8: 14 05 17 05 23 05 26 05 37 05 3A 05 18 05 1B 05 
+FBB8: 1C 05 1F 05 27 05 2A 05 2B 05 2E 05 3B 05 3E 05 
+
+
+*** track/sector info for long sequences
+FBC8: 0C 05 1F 05 23 05 36 05 37 05 4A 05 
+
+FBD4: 00 00 00 02 08 20 04 00 10 00 40 06 18 60 01 02 
+FBE4: 04 08 10 20 40 80 01 02 04 E6 9D 7B FE FD FB FE 
+FBF4: FE FD FD FB 01 01 01 02 02 02 02 03 03 03 03 03 
+FC04: 04 04 04 04 04 04 05 05 05 05 05 05 05 06 06 06 
+FC14: 06 06 06 06 06 07 07 07 07 07 07 07 07 07 08 08 
+FC24: 08 08 08 08 08 08 09 09 09 09 09 09 09 09 0A 0A 
+FC34: 0A 0A 0A 0A 0A 0B 0B 0B 0B 0B 0B 0C 0C 0C 0C 0C 
+FC44: 0D 0D 0D 0D 0D 0E 0E 0E 0E 0F 0F 0F 0F 0F 10 10 
+FC54: 10 10 11 11 11 12 12 13 13 14 14 15 16 17 19 1B 
+FC64: 1E 21 23 26 29 2C 2F 32 36 3B 41 48 51 5A 64 6E 
+FC74: 79 7F 7F 7F 7F 7F 7F 7F 7F 7F 7F 
+
+
+*** Check for expansion cartridge, jump to startup code
+;// appears to check for 16 bytes of zeros at the start of the cart ROM?
+resetvec:
+FC7F: 4F          CLRA  
+FC80: 8E C0 00    LDX   #$C000
+FC83: A1 80       CMPA  ,X+
+FC85: 10 26 F4 67 LBNE  coldstart	// not zero?
+FC89: 4C          INCA  
+FC8A: 81 10       CMPA  #$10
+FC8C: 26 F5       BNE   $FC83
+FC8E: 7E C0 10    JMP   $C010
+
+ospanic:
+FC91: 86 02       LDA   #$02
+FC93: B7 80 03    STA   $8003
+FC96: 86 7F       LDA   #$7F
+FC98: B7 80 01    STA   $8001
+FC9B: CC FD B7    LDD   #$FDB7         ;flash ".O.S" message
+FC9E: FD BF 8A    STD   $BF8A
+FCA1: BD F3 3C    JSR   showerrcode
+FCA4: 7A 80 01    DEC   $8001
+FCA7: B6 80 01    LDA   $8001
+FCAA: 26 F5       BNE   $FCA1
+FCAC: 7A 80 03    DEC   $8003
+FCAF: B6 80 03    LDA   $8003
+FCB2: 26 E2       BNE   $FC96
+FCB4: 7E F0 F0    JMP   coldstart
+
+FCB7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FCC7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FCD7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FCE7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FCF7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD07: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD17: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD27: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD37: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD47: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD57: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD67: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD77: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD87: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FD97: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FDA7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FDB7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FDC7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FDD7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FDE7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FDF7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE07: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE17: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE27: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE37: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE47: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE57: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE67: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE77: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE87: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FE97: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FEA7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FEB7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FEC7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FED7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FEE7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FEF7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF07: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF17: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF27: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF37: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF47: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF57: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF67: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF77: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF87: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FF97: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FFA7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FFB7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FFC7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FFD7: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+FFE7: FF FF FF FF FF FF FF FF FF 
+
+
+*** CPU vectors
+FFF0: FC 7F                            ;reserved vector
+
+FFF2: FC 7F                            ;SWI3 vector
+
+FFF4: FC 7F                            ;SWI2 vector
+
+FFF6: 80 0B                            ;FIRQ vector
+
+FFF8: 80 08                            ;IRQ vector
+
+FFFA: FC 7F                            ;SWI vector
+
+FFFC: F0 B0                            ;NMI vector
+
+FFFE: FC 7F                            ;RESET vector
+
