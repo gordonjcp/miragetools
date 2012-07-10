@@ -62,7 +62,7 @@ void via_run() {
 
 tt_u8 via_rreg(int reg) {
 
-	tt_u8 val;
+	tt_u8 val=0;
 
 	switch(reg) {
 		case 0:

@@ -41,7 +41,7 @@ char	*str;
 delim(c)
 char	c;
 {
-	if( any(c," \t\n"))
+	if( any(c," \t\n\r"))
 		return(YES);
 	return(NO);
 }
@@ -221,7 +221,7 @@ char *str1,*str2;
 		}
 	if(*str1 == *str2)return(YES);
 	if(*str2==EOS)
-		if( any(*str1," \t\n,+-];*") )return(YES);
+		if( any(*str1," \t\n\r,+-];*") )return(YES);
 	return(NO);
 }
 

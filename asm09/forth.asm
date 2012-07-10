@@ -34,7 +34,7 @@ fdcerr	fcb $00			error message for ROM routine
 
 * jump table, IRQs point to this
 irqj	jmp start
-firqj	jmp firqhandler
+firqj	jmp start
 osj	jmp start
 
 
@@ -43,22 +43,9 @@ osj	jmp start
 
 
 	org	sysram+$230 		top of data stack
-firqhandler
-	pshs	a
-	lda	$e101		get byte
-	sta	charin
-	puls	a
-	rti
-charin	fcb 0	
-* initializations, start up forth
-start	orcc	#%50		mask interrupts
-	lda	#$7f		disable VIA interrupts
-	sta	$e20e
-	andcc	#%40		only enable FIRQ
-	lda	#$80		ACIA receive interrupt
-	sta	$e100
 	
-	lds	#rstack		set up return stack
+* initializations, start up forth
+start	lds	#rstack		set up return stack
 	ldu	#dstack		set up data stack
 * if desired, you can implement a startup messaage here
 * insert the message at the very end of this file.
@@ -208,19 +195,22 @@ rets	clra			zero high byte
 	fcb	$80
 	fcc	'tuo$'
 	fdb	lesequ
-dolout	ldd	,u++		get char from stack
+dolout
+	lda $e100
+	bita #$02		test for tx empty
+	beq dolout	
+	ldd	,u++		get char from stack
 	stb	$e101		put in ACIA
 	rts
 * ' $in' - input character from terminal
 	fcb	$80
 	fcc	'ni$'
 	fdb	dolout
-dolin	
-	clra
-	ldb	charin
-	cmpb	#$00
+dolin	lda	$e100		character available?
+	bita	#$01		yes
 	beq	dolin
-	sta	charin
+	clra
+	ldb	$e101
 	std	,--u		save on stack
 	rts
 * 'emit' - output character to general output

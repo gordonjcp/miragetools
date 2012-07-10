@@ -14,6 +14,7 @@
 #define NULL_OP 9       /* null pseudo op               */
 #define PAGE    10      /* new page                     */
 #define SET     11      /* Set ("re-Equate")            */
+#define FCCZ    12      /* Form Constant Characters     */
 
 struct oper pseudo[] = {
 "bsz",  PSEUDO, ZMB,    0,
@@ -21,6 +22,7 @@ struct oper pseudo[] = {
 "equ",  PSEUDO, EQU,    0,
 "fcb",  PSEUDO, FCB,    0,
 "fcc",  PSEUDO, FCC,    0,
+"fccz",  PSEUDO, FCCZ,  0,
 "fdb",  PSEUDO, FDB,    0,
 "fill", PSEUDO, FILL,   0,
 "nam",  PSEUDO, NULL_OP,0,
@@ -106,6 +108,19 @@ int op; /* which op */
                                 emit(*Optr++);
                         if(*Optr == fccdelim)
                                 Optr++;
+                        else
+                                error("Missing Delimiter");
+                        break;
+                case FCCZ:                       /* form constant characters */
+                        if(*Operand==EOS)
+                                break;
+                        fccdelim = *Optr++;
+                        while( *Optr != EOS && *Optr != fccdelim)
+                                emit(*Optr++);
+                        if(*Optr == fccdelim) {
+                                Optr++;
+                                emit(0);
+                               }
                         else
                                 error("Missing Delimiter");
                         break;

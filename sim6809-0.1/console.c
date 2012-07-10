@@ -31,6 +31,7 @@
 // hardware drivers
 #include "acia.h"
 #include "fdc.h"
+#include "via.h"
 
 long cycles = 0;
 

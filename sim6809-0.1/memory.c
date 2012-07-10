@@ -25,6 +25,7 @@
 #include "console.h"
 #include "acia.h"
 #include "fdc.h"
+#include "via.h"
 
 //#define DEBUGDEV
 
@@ -82,6 +83,7 @@ tt_u8 get_memb(tt_u16 adr) {
 			#endif
 			break;
 	}
+	 return ramdata[adr];
 }
 
 tt_u16 get_memw(tt_u16 adr)
