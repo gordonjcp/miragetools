@@ -1,5 +1,5 @@
-/* vim: set noexpandtab ai ts=4 sw=4 tw=4: */
-/* acia.c -- emulation of 6850 ACIA
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+   acia.c -- emulation of 6850 ACIA
    Copyright (C) 2012 Gordon JC Pearce
 
 	TODO: implement interrupts
@@ -39,7 +39,7 @@
    RTS, CTS and DCD are not used, with the latter two held grounded
 */
 
-static	int master, slave;
+static int master, slave;
 static long acia_cycles;
 
 int acia_init() {
