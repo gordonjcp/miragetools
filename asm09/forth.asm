@@ -33,20 +33,55 @@ fdcstat	fcb $00			fdc status
 fdcerr	fcb $00			error message for ROM routine	
 
 * jump table, IRQs point to this
-irqj	jmp start
-firqj	jmp start
+irqj	jmp irqhandler
+firqj	jmp firqhandler
 osj	jmp start
 
-
 * the Mirage OS saves parameters from $8010 to $802e
-	
-
-
 	org	sysram+$230 		top of data stack
 	
+irqhandler
+	orcc #$40	disable FIRQ
+	lda $e20d	get VIA IFR
+	bita #$20	timer?
+	beq irqend
+*	inc ledval
+	lda ledval
+	anda #$0f
+*	ora #$18
+	sta $e201
+	
+	lda #$1f
+	sta $e201
+	lda $e201	read port
+	anda #$e0	mask off buttons
+	cmpa #$20	enter+cancel?
+	bne irq1	no...
+	jmp start	yes, restart forth
+irq1:
+	cmpa #$00	enter+cancel+sample lower?
+	bne irqend	no, just return
+	jmp $fc7f	reboot system
+irqend	rti
+
+ledf	fcb 10
+firqhandler
+	pshs	a
+	lda 	$e100	get status byte
+	
+		
+	puls	a
+	rti
 * initializations, start up forth
-start	lds	#rstack		set up return stack
+start	
+	lda #$0
+	andcc #$bf		enable interrupt
+	orcc #$55	disable
+
+	lds	#rstack		set up return stack
 	ldu	#dstack		set up data stack
+	lda	#$18
+	sta	$e201
 * if desired, you can implement a startup messaage here
 * insert the message at the very end of this file.
 	ldx	#strtmsg	point to startup message
@@ -67,9 +102,11 @@ redmsg	fccz	'redef: '	re-definition indicator
 
 delmsg	fcb	8,32,8,0	bug when using strings?
 
-strtmsg fcb	$0d,$0a
+strtmsg 
+	fcb	$f0,$0f,$7f,$7f,$0d,$0a
 	fcc	"Mirage micro forth"
 	fcb	$0d,$0a,0
+ledval	fcb 0
 
 *
 * start	of user	dictionary
@@ -195,10 +232,17 @@ rets	clra			zero high byte
 	fcb	$80
 	fcc	'tuo$'
 	fdb	lesequ
-dolout
+dolout	
+	jmp dolout1
 	lda $e100
 	bita #$02		test for tx empty
 	beq dolout	
+	ldb #$f1
+	stb $e101
+dolout1:
+	lda $e100
+	bita #$02		test for tx empty
+	beq dolout1	
 	ldd	,u++		get char from stack
 	stb	$e101		put in ACIA
 	rts
@@ -209,8 +253,10 @@ dolout
 dolin	lda	$e100		character available?
 	bita	#$01		yes
 	beq	dolin
-	clra
 	ldb	$e101
+	cmpb	#$f1
+	beq dolin
+	clra
 	std	,--u		save on stack
 	rts
 * 'emit' - output character to general output
@@ -653,6 +699,7 @@ num2	ldb	,y+		get char from souce
 	subb	#'0'		convert to binary
 	cmpb	#9		is it numeric digit?
 	bls	num1		yes, its ok
+	andb	#$df		smash case
 	subb	#7		convert from alpha
 	cmpb	#$0a		is it a valid number?
 	blo	num3		no, cause error
