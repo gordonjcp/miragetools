@@ -1,6 +1,7 @@
 /* vim: set noexpandtab ai ts=4 sw=4 tw=4:
    miditerm.c -- MIDI-connected terminal, for Mirage Forth
    Copyright (C) 2012 Gordon JC Pearce <gordon@gjcp.net>
+   somewhat based on tinyterm.c by Sebastian Linke
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -32,7 +33,8 @@ int main (int argc, char *argv[]) {
     
     gtk_box_pack_start (GTK_BOX (hbox), terminal, TRUE, TRUE, 0);
     gtk_box_pack_start (GTK_BOX (hbox), scrollbar, FALSE, FALSE, 0);
-    gtk_container_add (GTK_CONTAINER (window), design);
+    gtk_container_add (GTK_CONTAINER (window), hbox);
     gtk_widget_show_all (window);
+    alsa_init();
     gtk_main ();
 }
