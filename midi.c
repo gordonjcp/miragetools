@@ -19,15 +19,20 @@
 
 #include <glib.h>
 #include <alsa/asoundlib.h>
+#include "miditerm.h"
 
 snd_seq_t * g_seq_ptr;
 pthread_t g_alsa_midi_tid;
 
 void *alsa_midi_thread(void * context_ptr) {
 	snd_seq_event_t * event_ptr;
+	unsigned char buf;
 
 	while (snd_seq_event_input(g_seq_ptr, &event_ptr) >= 0) {
-		printf("eventloop\n");
+		if (event_ptr->type == SND_SEQ_EVENT_QFRAME) {
+			buf=event_ptr->data.control.value;
+			vte_terminal_feed(VTE_TERMINAL(terminal),  &buf, 1);
+		}
 	}
 }
 

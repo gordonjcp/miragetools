@@ -18,10 +18,11 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <vte/vte.h>
+#include "miditerm.h"
 
 int main (int argc, char *argv[]) {
 
-    GtkWidget *window, *terminal, *scrollbar, *hbox;
+    GtkWidget *window, *scrollbar, *hbox;
     gtk_init (&argc, &argv);
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
     terminal = vte_terminal_new ();
