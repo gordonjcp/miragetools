@@ -67,6 +67,8 @@ irqhandler
 	rti		dummy routine
 firqhandler
 	pshs a,x	save registers
+	lda #$07
+	sta $e201
 	ldx aciain	input pointer
 	lda aciasr	get ACIA status
 	bita #$80	IRQ fired?

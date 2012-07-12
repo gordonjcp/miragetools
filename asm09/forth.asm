@@ -15,11 +15,10 @@
 osram	equ	$8000
 sysram	equ	$8030
 width	equ	65		terminal screen width margin
-lstlok	equ	osram		pointer to last word processed from input buffer
-temp	equ	lstlok+2	temporary storage
-inpbuf	equ	temp+2		input buffer
 rstack	equ	sysram+254	return stack
 dstack	equ	sysram+510	data stack
+aciasr	equ $e100
+aciadr	equ $e101
 
 * the Mirage has IRQ handlers and stuff at the start
 	org	osram		beginning of forth code
@@ -37,53 +36,100 @@ irqj	jmp irqhandler
 firqj	jmp firqhandler
 osj	jmp start
 
-* the Mirage OS saves parameters from $8010 to $802e
-	org	sysram+$230 		top of data stack
-	
-irqhandler
-	orcc #$40	disable FIRQ
-	lda $e20d	get VIA IFR
-	bita #$20	timer?
-	beq irqend
-*	inc ledval
-	lda ledval
-	anda #$0f
-*	ora #$18
-	sta $e201
-	
-	lda #$1f
-	sta $e201
-	lda $e201	read port
-	anda #$e0	mask off buttons
-	cmpa #$20	enter+cancel?
-	bne irq1	no...
-	jmp start	yes, restart forth
-irq1:
-	cmpa #$00	enter+cancel+sample lower?
-	bne irqend	no, just return
-	jmp $fc7f	reboot system
-irqend	rti
+sysvars	equ *
+lstlok	fdb 0
+temp	fdb 0
+inpbuf	equ *
+*lstlok	equ	sysvars		pointer to last word processed from input buffer
+*temp	equ	lstlok+2	temporary storage
+*inpbuf	equ	temp+2		input buffer
 
-ledf	fcb 10
-firqhandler
-	pshs	a
-	lda 	$e100	get status byte
+* the Mirage OS saves parameters from $8011 to $802e
+	org	sysram+$230 		top of data stack
+*** set up FIRQ handler, runopsys configured the UART for us
+serialinit		
+	orcc #$55	disable interrupts
+	ldx #aciabuffer
+	stx aciain
+	stx aciaout	buffer is empty
+	clra
+serial_loop1
+	sta ,x+		zero out 16 bytes
+	cmpx #aciain
+	bne serial_loop1
+	lda #$95	ACIA control = RX interrupt, 8n1, no TX interrupt
+	sta aciasr
+	rts
+
+*** test if a character is available
+serialchr
+	pshs x
+	ldx aciain
+	cmpx aciaout
+	puls x
+	rts
 	
-		
-	puls	a
-	rti
+*** get a character from buffer
+serialget
+	pshs x
+	ldx aciaout
+	ldb ,x+
+	cmpx #aciain
+	bne serialgetend
+	ldx #aciabuffer
+serialgetend
+	stx aciaout
+	puls x
+	rts
+
+serialput
+	pshs a
+serialput1
+	lda aciasr
+	bita #$02	transmit flag?
+	beq serialput1
+	stb aciadr
+	puls a
+	rts
+
+irqhandler
+	rti		dummy routine
+firqhandler
+	pshs a,x	save registers
+	lda #$07
+	sta $e201
+	ldx aciain	input pointer
+	lda aciasr	get ACIA status
+	bita #$80	IRQ fired?
+	beq firqend	no, must have been an error but we don't care
+	lda aciadr	get the data from the ACIA
+	sta ,x+		save and nudge the pointer
+	cmpx #aciain	ran off end?
+	bne firqend
+	ldx #aciabuffer
+firqend
+	stx aciain	save pointer
+	puls x,a	restore
+	rti		
+
+aciabuffer
+	fcb 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
+aciain	fdb aciabuffer
+aciaout	fdb aciabuffer
+
+
+
 * initializations, start up forth
 start	
 	lda #$0
-	andcc #$bf		enable interrupt
-	orcc #$55	disable
-
 	lds	#rstack		set up return stack
 	ldu	#dstack		set up data stack
-	lda	#$18
+	lda	#$18		turn off LEDs
 	sta	$e201
-* if desired, you can implement a startup messaage here
-* insert the message at the very end of this file.
+	jsr serialinit
+	
+	andcc #$bf		enable interrupt
+
 	ldx	#strtmsg	point to startup message
 	lbsr	pmsg1		display it
 	jsr	[boot+3]	execute preset routine (usually 'quit')
@@ -233,29 +279,26 @@ rets	clra			zero high byte
 	fcc	'tuo$'
 	fdb	lesequ
 dolout	
-	lda $e100
-	bita #$02		test for tx empty
-	beq dolout	
-	ldb #$f1		prefix with MIDI quarterframe message
-	stb $e101
-dolout1:
-	lda $e100
-	bita #$02		test for tx empty
-	beq dolout1	
+	ldb #$f1
+	jsr serialput	
 	ldd	,u++		get char from stack
 	andb	#$7f		mask top bit
-	stb	$e101		put in ACIA
+	jsr serialput
 	rts
-* ' $in' - input character from terminal
+* '$in' - input character from terminal
 	fcb	$80
 	fcc	'ni$'
 	fdb	dolout
-dolin	lda	$e100		character available?
-	bita	#$01		yes
-	beq	dolin
-	ldb	$e101
-	cmpb	#$f1
+dolin	
+	jsr serialchr
 	beq dolin
+	jsr serialget
+	cmpb #$f1
+	bne dolin
+dolin1
+	jsr serialchr
+	beq dolin1
+	jsr serialget
 	clra
 	std	,--u		save on stack
 	rts
@@ -677,7 +720,6 @@ tster1	rts
 tick	bsr	lookup		look up word
 	bne	tster1		found, return
 	lbra	lokerr		word not found, cause error
-* 'exec' - execute at address
 	fcb	$80
 	fcc	'cexe'
 	fdb	tick
