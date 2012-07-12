@@ -31,6 +31,7 @@ int main (int argc, char *argv[]) {
     
     g_signal_connect (window, "delete-event", gtk_main_quit, NULL);
     g_signal_connect (terminal, "child-exited", gtk_main_quit, NULL);
+    g_signal_connect_after(GTK_OBJECT(terminal), "commit", G_CALLBACK(term_in), NULL);
     
     gtk_box_pack_start (GTK_BOX (hbox), terminal, TRUE, TRUE, 0);
     gtk_box_pack_start (GTK_BOX (hbox), scrollbar, FALSE, FALSE, 0);
@@ -38,4 +39,5 @@ int main (int argc, char *argv[]) {
     gtk_widget_show_all (window);
     alsa_init();
     gtk_main ();
+    alsa_destroy();
 }

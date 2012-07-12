@@ -28,7 +28,7 @@ def build(bld):
     # the main program
     bld(
         features = 'c cprogram',
-        source = ['miditerm.c','midi.c', ],
+        source = ['midi.c', 'miditerm.c' ],
         target = 'miditerm',
         uselib = "GTK ALSA VTE",
         includes = '. /usr/include')
