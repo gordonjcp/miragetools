@@ -4,6 +4,8 @@
 *	(mostly ACIA)
 
 osram	equ $8000	bottom of OS ram
+aciasr	equ $e100
+aciadr	equ $e101
 
 	org $8008
 irqvec	jmp irqhandler	VIA and DOC
@@ -14,6 +16,7 @@ osvec	jmp start
 *** I see no reason to change this
 
 	org $8030	
+
 *** set up FIRQ handler, runopsys configured the UART for us
 serialinit		
 	orcc #$55	disable interrupts
@@ -22,26 +25,43 @@ serialinit
 	stx aciaout	buffer is empty
 	clra
 serial_loop1
-	sta ,x+
+	sta ,x+		zero out 16 bytes
 	cmpx #aciain
 	bne serial_loop1
+	lda #$95	ACIA control = RX interrupt, 8n1, no TX interrupt
+	sta aciasr
 	rts
 	
-
 irqhandler
 	rti		dummy routine
 firqhandler
-	rti		dummy routine
+	pshs a,x	save registers
+	ldx aciain	input pointer
+	lda aciasr	get ACIA status
+	bita #$80	IRQ fired?
+	beq firqend	no, must have been an error but we don't care
+	lda aciadr	get the data from the ACIA
+	sta ,x+		save and nudge the pointer
+	cmpx #aciain	ran off end?
+	bne firqend
+	ldx #aciabuffer
+firqend
+	stx aciain	save pointer
+	puls x,a	restore
+	rti		
 
 aciabuffer
 	fcb 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
 aciain	fdb aciabuffer
 aciaout	fdb aciabuffer
 
+
+
 *** test code
 start	
-	lds	#$9000
+	lds #$9000
 	jsr serialinit	clear the buffer and set pointers
+	andcc #$aa	enable FIRQ
 hang	jmp hang
 	
 

@@ -135,6 +135,7 @@ void acia_wreg(int reg, tt_u8 val) {
 	// handle writes to ACIA registers
 	switch (reg & 0x01) {   // not fully mapped
 		case ACIA_CR:
+			acia.cr = val;
 			break;
 		case ACIA_TDR:
 			acia.tdr = val;
