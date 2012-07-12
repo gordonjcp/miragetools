@@ -94,6 +94,8 @@ tt_u16 get_memw(tt_u16 adr)
 void set_memb(tt_u16 adr, tt_u8 val) {
 	// write byte to memory, or dispatch a call to the device handler
 
+	if (last_rpc<0x8000 && activate_console==0) activate_console=1;
+
 	if (adr>0xf000) {
 		#ifdef DEBUGROM
 		printf("$%04x: write to ROM %04x=%02x\n", last_rpc, adr, val);
