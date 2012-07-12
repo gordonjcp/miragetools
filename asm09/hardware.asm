@@ -31,6 +31,27 @@ serial_loop1
 	lda #$95	ACIA control = RX interrupt, 8n1, no TX interrupt
 	sta aciasr
 	rts
+
+*** test if a character is available
+serialchr
+	pshs x
+	ldx aciain
+	cmpx aciaout
+	puls x
+	rts
+	
+*** get a character from buffer
+serialget
+	pshs x
+	ldx aciaout
+	lda ,x+
+	cmpx #aciain
+	bne serialgetend
+	ldx #aciabuffer
+serialgetend
+	stx aciaout
+	puls x
+	rts
 	
 irqhandler
 	rti		dummy routine
