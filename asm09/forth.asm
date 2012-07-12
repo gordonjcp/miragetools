@@ -126,6 +126,8 @@ start
 	ldu	#dstack		set up data stack
 	lda	#$18		turn off LEDs
 	sta	$e201
+	lda #$7f
+	sta $e20e		disable VIA interrupts
 	jsr serialinit
 	
 	andcc #$bf		enable interrupt
@@ -152,7 +154,9 @@ strtmsg
 	fcb	$0d,$0a
 	fcc	"Mirage micro forth"
 	fcb	$0d,$0a,0
-ledval	fcb 0
+ledval	fdb 0
+ledctr	fdb 0
+ledctr1 fdb 0
 
 *
 * start	of user	dictionary
@@ -289,15 +293,32 @@ dolout
 	fcb	$80
 	fcc	'ni$'
 	fdb	dolout
-dolin	
-	jsr serialchr
-	beq dolin
+dolin	jsr serialchr
+	bne dolin1
+dolin0
+	inc ledctr
+	bne dolin
+	inc ledctr1
+	lda ledctr1
+	cmpa #$0a
+	bne dolin
+	clr ledctr1
+	lda ledval
+	inca
+	cmpa #$6
+	bne dolin2
+	clra
+dolin2	sta ledval
+	ora #$08
+	sta $e201
+	bra dolin
+dolin1
 	jsr serialget
 	cmpb #$f1
 	bne dolin
-dolin1
+dolin9
 	jsr serialchr
-	beq dolin1
+	beq dolin9
 	jsr serialget
 	clra
 	std	,--u		save on stack
@@ -853,6 +874,7 @@ qui1	jsr	qskip		adance to non-blank
 	bita	#$02		ok to execute interactivly?
 	bne	conerr		no, force error
 	jsr	[,u++]		execute word
+	andcc #$bf		FIXME EVIL HACK nmi routine comes back with FIRQ disabled
 	cmpu	#dstack		did stack underflow?
 	bls	qui1		no, keep interpreting
 	bsr	error		generate error message
@@ -1412,7 +1434,7 @@ inpt	jsr	variab		variable subroutine
 	fcc	')og('
 	fdb	inpt
 boot	jsr	variab		variable subroutine
-	fdb	quit		defualt is 'quit'
+	fdb	quit		default is 'quit'
 * '>in' - pointer to position in input buffer
 	fcb	$80
 	fcc	'ni>'
@@ -1424,7 +1446,7 @@ inptr	jsr	variab		variable subroutine
 	fcc	'esab'
 	fdb	inptr
 base	jsr	variab		variable subroutine
-	fdb	10		default is base 10
+	fdb	16		default is base 10
 * 'free' - address of free memory following dictionary
 	fcb	$80
 	fcc	'eerf'
@@ -1444,17 +1466,6 @@ reboot	jmp $fc7f
 ospanic	jmp $fc91
 
 * 'setfilter' - take filter, cutoff, resonance and use ROM to poke filter
-*** this appears to do the filter tuning
-*B96E: CE B0 50    LDU   #$B050	unknown
-*B971: 8E E4 18    LDX   #$E418	first DAC channel
-**B974: C6 10       LDB   #$10	
-*B976: BD F5 71    JSR   unknown4 sweep one filter
-*B979: 33 C8 4D    LEAU  $4D,U
-*B97C: 30 01       LEAX  $0001,X	next channel
-*B97E: 8C E4 1F    CMPX  #$E41F	done?
-*B981: 23 F1       BLS   $B974	no, loop
-*B983: BD B9 35    JSR   $B935
-*B986: 39          RTS  
 	fcb $80
 	fcc 'retliftes'
 	fdb ospanic
@@ -1471,12 +1482,67 @@ setfilter
 	stb $e410,x
 	puls x
 	rts
-
+* motor
+	fcb $80
+	fcc 'rotom'
+	fdb setfilter
+motor	ldd ,u++	* on, off
+	bitb #$01
+	beq motor1
+	jmp $f4c6	* rom motor on
+	
+motor1	jmp $f4d6
+	rts
+* seektrk
+	fcb $80
+	fcc 'krtkees'
+	fdb motor
+seektrk
+	ldd ,u++	unstack track
+	stb $8002
+	jsr $f06f
+	andcc #$bf
+	rts
+* loadsec
+	fcb $80
+	fcc 'cesdaol'
+	fdb seektrk
+loadsec	ldd ,u++
+	std $8004	load address
+	ldd ,u++
+	stb $8003	sector
+	ldd ,u++
+	stb $8002	track
+	orcc #$55
+	lda #$7f	
+	jsr $f06f
+	jsr $f448
+	stx ,--u
+	andcc #$bf
+	rts
+* savesec
+	fcb $80
+	fcc 'cesevas'
+	fdb loadsec
+savesec	ldd ,u++
+	std $8004	load address
+	ldd ,u++
+	stb $8003	sector
+	ldd ,u++
+	stb $8002	track
+	orcc #$55
+	lda #$7f	
+	jsr $f06f
+	jsr $f476
+	stx ,--u
+	andcc #$bf
+	rts
+	
 * 'here' - address of last word in dictionary
 	fcb	$80
 	fcc	'ereh'
-	fdb	setfilter
+	fdb	savesec
 here	jsr	variab		variable subroutine
-	fdb	here		defualt is itself
+	fdb	here		default is itself
 * dictionary grows from here
 usrspc	equ	*
