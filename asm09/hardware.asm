@@ -52,7 +52,17 @@ serialgetend
 	stx aciaout
 	puls x
 	rts
-	
+
+serialput
+	pshs b
+serialput1
+	ldb aciasr
+	bitb #$02	transmit flag?
+	beq serialput1
+	sta aciadr
+	puls b
+	rts
+
 irqhandler
 	rti		dummy routine
 firqhandler
@@ -77,12 +87,21 @@ aciain	fdb aciabuffer
 aciaout	fdb aciabuffer
 
 
-
+counter fdb 0
 *** test code
 start	
 	lds #$9000
 	jsr serialinit	clear the buffer and set pointers
 	andcc #$aa	enable FIRQ
-hang	jmp hang
 	
-
+	ldx 0
+	stx counter
+loop	jsr serialchr
+	bne showchr
+	inc counter
+	bne loop
+	jmp loop
+showchr
+	jsr serialget
+	jsr serialput
+	jmp loop
