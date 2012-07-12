@@ -103,7 +103,7 @@ redmsg	fccz	'redef: '	re-definition indicator
 delmsg	fcb	8,32,8,0	bug when using strings?
 
 strtmsg 
-	fcb	$f0,$0f,$7f,$7f,$0d,$0a
+	fcb	$0d,$0a
 	fcc	"Mirage micro forth"
 	fcb	$0d,$0a,0
 ledval	fcb 0
@@ -233,17 +233,17 @@ rets	clra			zero high byte
 	fcc	'tuo$'
 	fdb	lesequ
 dolout	
-	jmp dolout1
 	lda $e100
 	bita #$02		test for tx empty
 	beq dolout	
-	ldb #$f1
+	ldb #$f1		prefix with MIDI quarterframe message
 	stb $e101
 dolout1:
 	lda $e100
 	bita #$02		test for tx empty
 	beq dolout1	
 	ldd	,u++		get char from stack
+	andb	#$7f		mask top bit
 	stb	$e101		put in ACIA
 	rts
 * ' $in' - input character from terminal
@@ -1389,10 +1389,51 @@ base	jsr	variab		variable subroutine
 	fdb	base
 free	jsr	variab		variable subroutine
 	fdb	usrspc		default is end of dictionary
+
+* 'reboot' - reboot the system
+* 'ospanic' - show OS panic error and reboot
+	fcb $80
+	fcc 'toober'
+	fdb free
+reboot	jmp $fc7f
+	fcb $80
+	fcc 'cinapso'
+	fdb reboot
+ospanic	jmp $fc91
+
+* 'setfilter' - take filter, cutoff, resonance and use ROM to poke filter
+*** this appears to do the filter tuning
+*B96E: CE B0 50    LDU   #$B050	unknown
+*B971: 8E E4 18    LDX   #$E418	first DAC channel
+**B974: C6 10       LDB   #$10	
+*B976: BD F5 71    JSR   unknown4 sweep one filter
+*B979: 33 C8 4D    LEAU  $4D,U
+*B97C: 30 01       LEAX  $0001,X	next channel
+*B97E: 8C E4 1F    CMPX  #$E41F	done?
+*B981: 23 F1       BLS   $B974	no, loop
+*B983: BD B9 35    JSR   $B935
+*B986: 39          RTS  
+	fcb $80
+	fcc 'retliftes'
+	fdb ospanic
+setfilter
+	ldu #$b050
+	ldx #$e418
+setfilter1
+	ldb #$10
+	jsr $f571
+	leau $4d,u
+	leax $01,x
+	cmpx #$e41f
+	bls setfilter1
+	rts
+
+
+
 * 'here' - address of last word in dictionary
 	fcb	$80
 	fcc	'ereh'
-	fdb	free
+	fdb	setfilter
 here	jsr	variab		variable subroutine
 	fdb	here		defualt is itself
 * dictionary grows from here
