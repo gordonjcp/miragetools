@@ -1417,18 +1417,18 @@ ospanic	jmp $fc91
 	fcc 'retliftes'
 	fdb ospanic
 setfilter
-	ldu #$b050
-	ldx #$e418
-setfilter1
-	ldb #$10
-	jsr $f571
-	leau $4d,u
-	leax $01,x
-	cmpx #$e41f
-	bls setfilter1
+	pshs x
+	ldd ,u++	voice
+	clra
+	andb #$07	only eight of 'em
+	pshs d
+	puls x		get it in X
+	ldd ,u++	resonance
+	stb $e408,x
+	ldd ,u++	cutoff
+	stb $e410,x
+	puls x
 	rts
-
-
 
 * 'here' - address of last word in dictionary
 	fcb	$80
