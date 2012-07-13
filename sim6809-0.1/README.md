@@ -41,6 +41,12 @@ The hardware emulation is very much a work-in-progress.  The current state is:
 * DOC - not really implemented, but can show registers being accessed
 * FDC - partly implemented, sufficient to boot a disk image
 
+TODO list
+--------
+
+* improve hardware support
+* allow loading disk and rom images from command line and console
+* support MIDI ports as well as /dev/pts
 
 
 
