@@ -25,6 +25,7 @@ int main (int argc, char *argv[]) {
     GtkWidget *window, *scrollbar, *hbox;
     gtk_init (&argc, &argv);
     window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "MIDIterm");
     terminal = vte_terminal_new ();
     scrollbar = gtk_vscrollbar_new (VTE_TERMINAL (terminal)->adjustment);
     hbox = gtk_hbox_new (FALSE, 0);
