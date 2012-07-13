@@ -7,8 +7,8 @@ There should be just about enough information in the README.md files to get you 
 
 Clone the repository, then go into miragetools/miditerm and and build it:
 
-    $ ./waf
     $ ./waf configure
+    $ ./waf
 
 If all goes well you should be able to run MIDIterm with:
 
