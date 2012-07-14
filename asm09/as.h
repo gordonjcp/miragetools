@@ -57,6 +57,8 @@
 #define PSEUDO  35      /* Pseudo ops                   */
 
 /* global variables */
+int srcarg;
+char cur_file[64];	// current filename
 int     Line_num =0;            /* current line number          */
 int     Err_count =0;           /* total number of errors       */
 char    Line[MAXBUF] = {0};     /* input line buffer            */
@@ -121,4 +123,4 @@ struct oper {   /* an entry in the mnemonic table */
 struct  nlist *root;            /* root node of the tree */
   
 FILE    *Objfil =0;             /* object file's file descriptor*/
-char    Obj_name[] = {"             "};
+char    Obj_name[64];

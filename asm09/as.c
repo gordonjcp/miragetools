@@ -1,5 +1,13 @@
+/* vim: set noexpandtab ai ts=4 sw=4 tw=4:
+
+	as.c - part of as9 6809 assembler
+*/
+
+
 #include <string.h>
-static char *rcs_id = "$Id: as.c,v 1.2 1995/09/07 19:08:27 wadeh Exp $";
+#include <unistd.h>
+
+static char *rcs_id = "Mirage asm09 2012 <gordon@gjcp.net>";
 
 char mapdn();
 char *alloc();
@@ -7,116 +15,128 @@ void PrintHelp (char *pszName);
 /*
  *	as ---	cross assembler main program
  */
-main(argc,argv)
-int	argc;
-char	**argv;
-{
+int main(int argc, char **argv) {
 	char	**np;
 	char	*i;
-	FILE	*fopen();
-	int	j = 0;
+	int	j = 0, c, srcarg;
 
 	if(argc < 2){
-/*		printf("Usage: %s [files]\n",argv[j]); */
 	   PrintHelp (argv[0]);
 	   exit(1);
 	}
 	Argv = argv;
 	initialize();
 
-        /* skip the input files */
-	while ((*argv[j] != '-') && (j<argc))
-	   j++;
-	N_files = j-1;
+	while ((c = getopt (argc, argv, "lscxo:")) != -1)
+		switch (c) {
+			case 'o':
+				strncpy(Obj_name, optarg, 64);
+				break;
+			case 'l':
+				Lflag = 1;
+				break;
+			case 's':
+				Sflag = 1;
+				break;
+			case 'c':
+				Cflag = 1;
+				break;
+			case 'x':
+				CREflag = 1;
+				break;
+			case '?':
+				if (optopt == 'o') {
+					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+				}
+				if (isprint (optopt)) {
+					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+				} else {
+					fprintf (stderr, "Unknown option character `\\x%x'.\n", optopt);
+				}
+				return 1;
+			default:
+				abort ();
+           }
 
-        /* process command line args */
-	if (j < argc )
-	{
-	  argv[j]++;
-	  while (j<argc)
-	  {
-	   for (i = argv[j]; *i != 0; i++)
-	     if ((*i <= 'Z') && (*i >= 'A'))
-	       *i = *i + 32;
-	   if (strcmp(argv[j],"l")==0)
-	     Lflag = 1;
-	   else if (strcmp(argv[j],"nol")==0)
-	     Lflag = 0;
-	   else if (strcmp(argv[j],"c")==0)
-	      Cflag = 1;
-	   else if (strcmp(argv[j],"noc")==0)
-	     Cflag = 0;
-	   else if (strcmp(argv[j],"s")==0)
-	     Sflag = 1;
-	   else if (strcmp(argv[j],"cre")==0)
-	     CREflag = 1;
-           if ((*argv[j] == '?')||(*argv[j] == 'h')||(*argv[j] == 'H')) {
-	     PrintHelp (argv[0]);
-	     exit(0);
-	   } else if (*argv[j] == 'V') {
-             fprintf (stderr, "%s: Version:  %s\n", argv[0], rcs_id);
-	     exit(0);
-	   }
-	   j++;
-	  }
-	 }
 	root = NULL;
+	N_files = argc - optind;
 
-	Cfn = 0;
-	np = argv;
+	if (strlen(Obj_name)==0) {
+		// copy first filename as object name
+		strcpy(Obj_name,argv[optind]);
+		i = strrchr(Obj_name, '.');
+		strncpy(i, ".s19", 4);
+	}
+
+	if( (Objfil = fopen(Obj_name,"w")) == NULL) fatal("Can't create object file");
+
+	// first pass
 	Line_num = 0; /* reset line number */
-	while( ++Cfn <= N_files )
-		if((Fd = fopen(*++np,"r")) == NULL)
-			printf("as: can't open %s\n",*np);
-		else{
+	
+	srcarg = optind;  // get the first filename
+	while (srcarg < argc) {
+		Fd = fopen(argv[srcarg], "r");
+		strncpy(cur_file, argv[srcarg], 64);	// save filename for warnings etc
+
+		if (!Fd) {
+			printf("as: cannot open source file %s\n", argv[srcarg]);
+		} else {
 			make_pass();
 			fclose(Fd);
 		}
-	if( Err_count == 0 ){
-		Pass++;
-		re_init();
-		Cfn = 0;
-		np = argv;
-		Line_num = 0;
-		while( ++Cfn <= N_files)
-			if((Fd = fopen(*++np,"r")) != NULL)
-			    {
-				make_pass();
-				fclose(Fd);
-			     }
-			if (Sflag == 1)
-			  {
-			    printf ("\f");
-			    stable (root);
-			  }
-			if (CREflag == 1)
-			  {
-			    printf ("\f");
-			    cross (root);
-			  }
-		fprintf(Objfil,"S9030000FC\n"); /* at least give a decent ending */
+		srcarg++;
+	}
+
+	if (Err_count) exit(Err_count);
+	
+	Pass++;
+	re_init();
+	Line_num = 0;
+	srcarg = optind;
+
+	while (srcarg < argc) {
+		Fd = fopen(argv[srcarg], "r");
+		strncpy(cur_file, argv[srcarg], 64);	// save filename for warnings etc
+		if (!Fd) {
+			printf("as: cannot open source file %s\n", argv[srcarg]);
+		} else {
+			make_pass();
+			fclose(Fd);
 		}
-	exit(Err_count);
+		
+		if (Sflag == 1) {
+			printf ("\f");
+			stable (root);
+		}
+		if (CREflag == 1) {
+			printf ("\f");
+			cross (root);
+		}
+		srcarg++;
+	}
+
+	fprintf(Objfil,"S9030000FC\n"); /* at least give a decent ending */
+	if (Err_count) exit(Err_count);
+	else return 0;
 }
 
 void PrintHelp (char *pszName)
 {
   fprintf (stderr, "%s:  assembler for Motorola MPUs\n", pszName);
   fprintf (stderr, "  Usage:    %s file1 file2 -option1 -option2...\n", pszName);
-  fprintf (stderr, "  Options:  l   - generate listing\n");
-  fprintf (stderr, "            nol - listing off (default)\n");
-  fprintf (stderr, "            c   - cycle count on\n");
-  fprintf (stderr, "            noc - cycle count off (default)\n");
-  fprintf (stderr, "            s   - symbol table on (default=off)\n");
-  fprintf (stderr, "            cre - cross reference flag (default=off)\n");
-  fprintf (stderr, "            h  - this listing\n");
-  fprintf (stderr, "            V  - print version information\n");
+  fprintf (stderr, "  Options:  l - generate listing\n");
+  fprintf (stderr, "            c - cycle count on\n");
+  fprintf (stderr, "            s - symbol table on\n");
+  fprintf (stderr, "            x - cross reference flag\n");
+  fprintf (stderr, "            o [file] - specify output filename\n");
+  //fprintf (stderr, "            h  - this listing\n");
+  //fprintf (stderr, "            V  - print version information\n");
   fprintf (stderr, "  Version:  %s\n", rcs_id);
 }
 
 initialize()
 {
-	FILE	*fopen();
+
 	int	i = 0;
 
 #ifdef DEBUG
@@ -132,16 +152,6 @@ initialize()
 	CREflag   = 0;
 	N_page	  = 0;
 	Line[MAXBUF-1] = NEWLINE;
-
-	strcpy(Obj_name,Argv[1]); /* copy first file name into array */
-	do {
-	    if (Obj_name[i]=='.')
-	       Obj_name[i]=0;
-	}
-	while (Obj_name[i++] != 0);
-	strcat(Obj_name,".s19");  /* append .out to file name. */
-	if( (Objfil = fopen(Obj_name,"w")) == NULL)
-		fatal("Can't create object file");
 	fwdinit();	/* forward ref init */
 	localinit();	/* target machine specific init. */
 }
@@ -159,8 +169,7 @@ re_init()
 	fwdreinit();
 }
 
-make_pass()
-{
+make_pass() {
 	char	*fgets();
 
 #ifdef DEBUG

@@ -2,8 +2,6 @@
    acia.c -- emulation of 6850 ACIA
    Copyright (C) 2012 Gordon JC Pearce
 
-	TODO: implement interrupts
-
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 2, or (at your option)
@@ -43,8 +41,10 @@
 static long acia_cycles;
 
 static int master, slave;
+
 static snd_rawmidi_t *m_out = NULL;
 static snd_rawmidi_t *m_in = NULL;
+static snd_rawmidi_status_t *st = NULL;
 
 static void acia_run_pty();
 static void acia_run_midi();
@@ -53,10 +53,13 @@ void (*acia_run)() = NULL;
 
 static int midi_init() {
 	int i;
-	if ((i = snd_rawmidi_open(&m_in, &m_out, "virtual", SND_RAWMIDI_SYNC | SND_RAWMIDI_NONBLOCK)) < 0) {
+	if ((i = snd_rawmidi_open(&m_in, &m_out, "virtual", SND_RAWMIDI_SYNC)) < 0) {
 		printf("Couldn't open MIDI port: %s", snd_strerror(i));
 		return -1;
 	}
+	snd_rawmidi_nonblock (m_in, 1);
+	//snd_rawmidi_status(&m_in, &st);
+
 	acia_run = &acia_run_midi;
 	return 0;
 }
@@ -156,6 +159,8 @@ static void acia_run_pty() {
 	}
 }
 
+int fct=0;
+
 static void acia_run_midi() {
 	// call this every time around the loop
 	int i;
@@ -165,7 +170,7 @@ static void acia_run_midi() {
 	acia_cycles = cycles + ACIA_CLK;	// nudge timer
 	// read a character?
 	i =snd_rawmidi_read(m_in, &buf, 1);
-	if(i != -1) {
+	if(i != -11) {
 		acia.rdr = buf;
 		acia.sr |= 0x01;
 		if (acia.cr & 0x80) {

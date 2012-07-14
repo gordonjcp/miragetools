@@ -1,11 +1,13 @@
 /*
  *	fatal --- fatal error handler
  */
+
+
 fatal(str)
 char	*str;
 {
-	printf("%s\n",str);
-	exit(-1);
+	printf("\nFatal: %s\n",str);
+//	exit(-1);
 }
 
 /*
@@ -16,7 +18,8 @@ error(str)
 char	*str;
 {
 	if(N_files > 1)
-		printf("%s,",Argv[Cfn]);
+		printf("%s,",cur_file);
+
 	printf("%d| ",Line_num);
 	printf("%s\n",str);
 	Err_count++;
@@ -29,7 +32,8 @@ warn(str)
 char	*str;
 {
 	if(N_files > 1)
-		printf("%s,",Argv[Cfn]);
+		printf("%s,",cur_file);
+
 	printf("%d: ",Line_num);
 	printf("Warning --- %s\n",str);
 }
