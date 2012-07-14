@@ -23,9 +23,9 @@ These need to be adapted to use waf.
 Using asm09
 ----------
 
-There aren't many options.  It must be noted that there is a bug in asm09 which will make it segfault if you run it with no command-line switches.  To build Forth, for example:
+There aren't many options.  This version of asm09 has different command-line switches, which can be seen by typing in "./as9" on its own.  When handling multiple input files, the first one sets the name of the object file unless it is overwritten with the -o switch. 
 
-    $ ./as9 forth.asm -nol # assembles forth.asm and suppresses listing
+    $ ./as9 forth.asm      # assembles forth.asm
     $ ./as9 forth.asm -l   # same, but outputs the listing to stdout
     
 There are a couple of enhancements to as9 in this version.  Most notably, the line parser has been modified to accept both \r and \n as signifying the end of a line.  The fcc pseudo-op has now got a counterpart fccz which constructs a zero-terminated string.
