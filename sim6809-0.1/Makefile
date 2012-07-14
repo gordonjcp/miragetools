@@ -16,9 +16,9 @@
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
 CC = gcc
-LIBS = -lutil
+LIBS = -lutil -lasound
 INC = 
-CDEBUG = -g
+CDEBUG = -ggdb
 CFLAGS = $(CDEBUG) $(INC) -Wall
 LDFLAGS = -g
 

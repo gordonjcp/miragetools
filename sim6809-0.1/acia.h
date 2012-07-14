@@ -29,9 +29,9 @@
 // at 31250bps there will be 320 clocks between characters
 #define ACIA_CLK 320
 
-int acia_init();
+int acia_init(int device);
 void acia_destroy();
-void acia_run();
+void (*acia_run)();
 tt_u8 acia_rreg(int reg);
 void acia_wreg(int reg, tt_u8 val);
 

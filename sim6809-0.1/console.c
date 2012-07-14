@@ -104,7 +104,7 @@ int execute()
   do {
     while ((n = m6809_execute()) > 0 && !activate_console) {
       cycles += n;
-    acia_run();
+    (*acia_run)();
     fdc_run();
     via_run();
 	last_rpc = rpc;
@@ -450,7 +450,7 @@ int main(int argc, char **argv) {
 	setup_brkhandler();
 
 	// setup hardware drivers
-	acia_init();
+	acia_init(0);
 	fdc_init();
 
 	// into the main loop

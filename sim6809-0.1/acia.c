@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <pty.h>
 #include <fcntl.h>
+#include <alsa/asoundlib.h>
 
 #include "config.h"
 #include "emu6809.h"
@@ -39,16 +40,31 @@
    RTS, CTS and DCD are not used, with the latter two held grounded
 */
 
-static int master, slave;
 static long acia_cycles;
 
-int acia_init() {
+static int master, slave;
+static snd_rawmidi_t *m_out = NULL;
+static snd_rawmidi_t *m_in = NULL;
+
+static void acia_run_pty();
+static void acia_run_midi();
+
+void (*acia_run)() = NULL;
+
+static int midi_init() {
+	int i;
+	if ((i = snd_rawmidi_open(&m_in, &m_out, "virtual", SND_RAWMIDI_SYNC | SND_RAWMIDI_NONBLOCK)) < 0) {
+		printf("Couldn't open MIDI port: %s", snd_strerror(i));
+		return -1;
+	}
+	acia_run = &acia_run_midi;
+	return 0;
+}
+
+static int pty_init() {
 	// configure a PTY and print its name on the console
 	int i;
 
-	// tx register empty
-	acia.sr = 0x02;
-	
 	pid_t pid = openpty(&master, &slave, NULL, NULL, NULL);
 	if (pid == -1) {
 		printf("openpty failed");
@@ -77,6 +93,8 @@ int acia_init() {
 			perror ("ERROR setting current terminal's attributes");
 			return -1;
 		}
+
+		acia_run = &acia_run_pty;
 		return master; //Return the file descriptor
 	}
 	
@@ -85,12 +103,30 @@ int acia_init() {
 	return -1;
 }
 
-void acia_destroy() {
-	close(master);
-	close(slave);
+
+int acia_init(int device) {
+
+	// tx register empty
+	acia.sr = 0x02;
+	
+	if (device == 0) { // MIDI
+		return midi_init();
+	} else {
+		return pty_init();
+	}
+	return -1;
 }
 
-void acia_run() {
+void acia_destroy() {
+	if (master) close(master);
+	if (slave) close(slave);
+
+	if (m_in) snd_rawmidi_close(m_in);
+	if (m_out) snd_rawmidi_close(m_out);	
+
+}
+
+static void acia_run_pty() {
 	// call this every time around the loop
 	int i;
 	char buf;
@@ -119,6 +155,37 @@ void acia_run() {
 		}
 	}
 }
+
+static void acia_run_midi() {
+	// call this every time around the loop
+	int i;
+	char buf;
+
+	if (cycles < acia_cycles) return;  // nothing to do yet
+	acia_cycles = cycles + ACIA_CLK;	// nudge timer
+	// read a character?
+	i =snd_rawmidi_read(m_in, &buf, 1);
+	if(i != -1) {
+		acia.rdr = buf;
+		acia.sr |= 0x01;
+		if (acia.cr & 0x80) {
+			acia.sr |= 0x80;
+			firq();
+		}
+	}
+	
+	// got a character to send?
+	if (!(get_memb(0xe100) & 0x02)) {
+		buf = acia.tdr;
+		snd_rawmidi_write(m_out, &buf, 1);
+		acia.sr |= 0x02;
+		if ((acia.cr & 0x60) == 0x20) {
+			acia.sr |= 0x80;
+			firq();
+		}
+	}
+}
+
 
 tt_u8 acia_rreg(int reg) {
 	// handle reads from ACIA registers

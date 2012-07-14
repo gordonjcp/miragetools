@@ -72,13 +72,13 @@ gboolean alsa_init() {
 		goto fail;
 	}
 
-	snd_seq_set_client_name(g_seq_ptr, "miditerm");
+	snd_seq_set_client_name(g_seq_ptr, "MIDIterm");
 
-	midi_out = snd_seq_create_simple_port(g_seq_ptr, "midi in",
+	midi_out = snd_seq_create_simple_port(g_seq_ptr, "terminal in",
 		SND_SEQ_PORT_CAP_WRITE | SND_SEQ_PORT_CAP_SUBS_WRITE,
 		SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION);
 
-	midi_out = snd_seq_create_simple_port(g_seq_ptr, "midi out",
+	midi_out = snd_seq_create_simple_port(g_seq_ptr, "terminal out",
 		SND_SEQ_PORT_CAP_READ | SND_SEQ_PORT_CAP_SUBS_READ,
 		SND_SEQ_PORT_TYPE_MIDI_GENERIC | SND_SEQ_PORT_TYPE_APPLICATION);
 
