@@ -52,4 +52,3 @@ self-resonate.
 
 Happy hacking!
 
-@gordonjcp

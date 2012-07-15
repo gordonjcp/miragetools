@@ -263,7 +263,7 @@ header ul {
 	color: #b09600
 }
 
-.sidenav a.active {
+.sidenav a.selected {
 	color: #ffd900;
 }
 

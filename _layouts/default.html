@@ -21,13 +21,11 @@
         <h1 class="header">Mirage Tools</h1>
         <p class="header">Tools and documentation for hacking on the Ensoniq Mirage.</p>
         <ul class="sidenav">
-        {% for p in site.pages | sort:weight %}
-    <li>
-      <a {% if p.url == page.url %}class="active"{% endif %} href="{{ p.url }}">
-        {{ p.title }}
-      </a>
-    </li>
-  {% endfor %}
+	<li><a href="index.html">Mirage Tools</a></li>
+	<li><a href="asm09.html">Assembler</a></li>
+	<li><a href="miditerm.html">MIDIterm</a></li>
+	
+
         </ul>
         <ul class="hdownload">
           <li class="download"><a class="buttons" href="https://github.com/gordonjcp/miragetools/zipball/master">Download ZIP</a></li>
