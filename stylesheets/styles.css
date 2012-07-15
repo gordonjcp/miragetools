@@ -253,7 +253,22 @@ header ul {
   padding:0;
 }
 
-header li {
+.sidenav li {
+	list-style-type: none;
+	padding: 0px;
+
+}
+
+.sidenav a {
+	color: #b09600
+}
+
+.sidenav a.active {
+	color: #ffd900;
+}
+
+
+.hdownload li {
 	list-style-type: none;
   width:132px;
   height:15px;
@@ -277,7 +292,7 @@ header li {
 	
 }
 
-header li:hover {
+.hdownload li:hover {
 	background: #c3a600;
 	background: -moz-linear-gradient(top, #c3a600 0%, #957c01 100%);
   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f8f8f8), color-stop(100%,#dddddd));
@@ -286,6 +301,7 @@ header li:hover {
   background: -ms-linear-gradient(top, #c3a600 0%,#957c01 100%);
   background: linear-gradient(top, #c3a600 0%,#957c01 100%);
 }
+
 
 a.buttons {
 	-webkit-font-smoothing: antialiased;
