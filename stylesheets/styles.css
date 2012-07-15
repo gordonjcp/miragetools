@@ -1,5 +1,3 @@
-@import url(http://fonts.googleapis.com/css?family=Arvo:400,700,400italic);
-
 /* MeyerWeb Reset */
 
 html, body, div, span, applet, object, iframe,
@@ -47,9 +45,9 @@ p, ul, ol, table, dl {
 }
 
 h1, h2, h3 {
-	font-family: 'Arvo', Monaco, serif;
+	font-family: 'Arimo', Monaco, serif;
   line-height:1.3;
-	font-weight: normal;
+	font-weight: 700;
 }
 
 h1,h2, h3 {
@@ -71,7 +69,7 @@ h3 {
 }
 
 h4, h5, h6 {
-	font-family: 'Arvo', Monaco, serif;
+	font-family: 'Arimo', Monaco, serif;
 	font-weight: 700;
 }
 
@@ -181,7 +179,7 @@ table {
  }
 
 th {
-  font-family: 'Arvo', Helvetica, Arial, sans-serif;
+  font-family: 'Arimo', Helvetica, Arial, sans-serif;
 	font-size: 18px;
 	font-weight: normal;
   padding: 10px;
@@ -226,16 +224,19 @@ p.header {
 }
 
 h1.header {
-	font-family: 'Arvo', sans-serif;
+	font-family: 'Arimo', sans-serif;
 	font-size: 30px;
-	font-weight: 300;
+	font-weight: 700;
 	line-height: 1.3em;
 	border-bottom: none;
 	margin-top: 0;
 }
 
+h1.header {
+	color: #ffd900;
+}
 
-h1.header, a.header, a.name, header a{
+a.header, a.name, header a{
 	color: #fff;
 }
 
