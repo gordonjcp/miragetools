@@ -27,7 +27,7 @@ Switch to the asm09 directory.  Build the assembler and disk writer, then build 
 
     $ gcc as9.c -o as9
     $ gcc writeos.c -o writeos
-    $ ./as9 forth.asm -nol
+    $ ./as9 forth.asm
 
 Get a blank formatted diskette (or format one, with the instructions in miragetools/asm09/README.md) and write the Forth image:
 
