@@ -180,7 +180,7 @@ static void acia_run_midi() {
 	}
 	
 	// got a character to send?
-	if (!(get_memb(0xe100) & 0x02)) {
+	if (!(acia.sr & 0x02)) {
 		buf = acia.tdr;
 		snd_rawmidi_write(m_out, &buf, 1);
 		acia.sr |= 0x02;

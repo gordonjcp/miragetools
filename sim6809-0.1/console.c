@@ -323,6 +323,7 @@ void console_command()
       printf("   u               : toggle dump registers\n");
       printf("   y [0]           : show number of 6809 cycles [or set it to 0]\n");
       printf("   z [adr]         : reset and run until <adr>\n");
+      printf("   #               : reload 'hardware.s19' and start from $800e\n");
       break;
     case 'l' :
       if (more_params(&strptr))
@@ -330,6 +331,18 @@ void console_command()
       else
 	printf("Syntax Error. Type 'h' to show help.\n");
       break;
+    case '#' :
+		load_motos1("hardware.s19");
+		rpc = 0x800e;
+		console_active = 0;
+		execute();
+		if (regon) {
+			m6809_dumpregs();
+			printf("Next PC: ");
+			dis6809(rpc, stdout);
+		}
+		memadr = rpc;
+		break;
     case 'm' :
       if (more_params(&strptr)) {
 	n = readhex(&strptr);

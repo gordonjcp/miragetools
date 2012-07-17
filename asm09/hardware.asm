@@ -44,7 +44,8 @@ serialchr
 serialget
 	pshs x
 	ldx aciaout
-	lda ,x+
+	ldb ,x
+	leax 1,x
 	cmpx #aciain
 	bne serialgetend
 	ldx #aciabuffer
@@ -54,16 +55,17 @@ serialgetend
 	rts
 
 serialput
-	pshs b
-serialput1
-	ldb aciasr
-	bitb #$02	transmit flag?
-	beq serialput1
-	sta aciadr
-	puls b
+	lda aciasr
+	bita #$02	transmit flag?
+	beq serialput
+	stb aciadr
 	rts
 
+*** If we're going to run the Mirage IRQ handler, we need to either
+*** disable the VIA timer interrupt, or handle T2 timing out here
+*** T2 is a one-shot and if it times out then it takes off at 10kHz
 irqhandler
+
 	rti		dummy routine
 firqhandler
 	pshs a,x	save registers
@@ -87,4 +89,25 @@ aciabuffer
 	fcb 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
 aciain	fdb aciabuffer
 aciaout	fdb aciabuffer
+
+*** functions for use in our Forth stack
+* _getch - wait until we get a character
+* return with it in B (low byte of D)
+_getch	jsr serialchr
+	beq _getch
+	jsr serialget
+	cmpb #$f1
+	bne _getch	* not a quarterframe message
+_getch1	jsr serialchr
+	beq _getch1
+	jsr serialget	* safe to assume another character is following
+	clra
+	rts
+* _putch - put a character out over serial
+_putch	pshs d
+	ldb #$f1
+	jsr serialput
+	puls d
+	jsr serialput
+	rts
 

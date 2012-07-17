@@ -58,6 +58,7 @@ void *alsa_midi_thread(void * context_ptr) {
 	while (snd_seq_event_input(g_seq_ptr, &event_ptr) >= 0) {
 		if (event_ptr->type == SND_SEQ_EVENT_QFRAME) {
 			buf=event_ptr->data.control.value;
+			printf("%02x\n", buf);
 			vte_terminal_feed(VTE_TERMINAL(terminal),  &buf, 1);
 		}
 	}
