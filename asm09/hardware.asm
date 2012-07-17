@@ -88,25 +88,3 @@ aciabuffer
 aciain	fdb aciabuffer
 aciaout	fdb aciabuffer
 
-
-counter fdb 0
-*** test code
-start	
-	lds #$9000
-	lda #$18
-	sta $e201
-	
-	jsr serialinit	clear the buffer and set pointers
-	andcc #$bf	enable FIRQ
-
-	ldx 0
-	stx counter
-loop	jsr serialchr
-	bne showchr
-	inc counter
-	bne loop
-	jmp loop
-showchr
-	jsr serialget
-	jsr serialput
-	jmp loop

@@ -71,12 +71,11 @@ int main(int argc, char **argv) {
 	if( (Objfil = fopen(Obj_name,"w")) == NULL) fatal("Can't create object file");
 
 	// first pass
-	Line_num = 0; /* reset line number */
-	
 	srcarg = optind;  // get the first filename
 	while (srcarg < argc) {
 		Fd = fopen(argv[srcarg], "r");
 		strncpy(cur_file, argv[srcarg], 64);	// save filename for warnings etc
+		Line_num = 0; /* reset line number */
 
 		if (!Fd) {
 			printf("as: cannot open source file %s\n", argv[srcarg]);
@@ -97,6 +96,7 @@ int main(int argc, char **argv) {
 	while (srcarg < argc) {
 		Fd = fopen(argv[srcarg], "r");
 		strncpy(cur_file, argv[srcarg], 64);	// save filename for warnings etc
+		Line_num = 0; /* reset line number */		
 		if (!Fd) {
 			printf("as: cannot open source file %s\n", argv[srcarg]);
 		} else {
