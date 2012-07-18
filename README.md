@@ -1,3 +1,8 @@
+---
+title: Ensoniq Mirage Tools
+layout: default
+---
+
 Ensoniq Mirage Tools
 ==================
 
@@ -22,7 +27,7 @@ Switch to the asm09 directory.  Build the assembler and disk writer, then build 
 
     $ gcc as9.c -o as9
     $ gcc writeos.c -o writeos
-    $ ./as9 forth.asm -nol
+    $ ./as9 forth.asm
 
 Get a blank formatted diskette (or format one, with the instructions in miragetools/asm09/README.md) and write the Forth image:
 
@@ -34,7 +39,7 @@ At this point, you are running what is probably the first wholly new software to
 
 Unfortunately the forth.asm source isn't hugely well-documented.  My own additions don't really help either.  Note that this version starts off with base set to 16 by default - this means that any numbers you type in or any it displays are hexadecimal.  This may be surprising for the unwary.
 
-At the "ok>" prompt, type "vlist" and you should see it list off all the Forth words the environment knows.  You can read Dave Dunfield's (notes on his implementation)[http://www.classiccmp.org/dunfield/d6809/d/forth.txt] on his website.
+At the "ok>" prompt, type "vlist" and you should see it list off all the Forth words the environment knows.  You can read Dave Dunfield's [notes on his implementation](http://www.classiccmp.org/dunfield/d6809/d/forth.txt) on his website.
 
 To make your Mirage make a noise, just to prove it can be done:
 
@@ -47,4 +52,3 @@ self-resonate.
 
 Happy hacking!
 
-@gordonjcp
