@@ -76,7 +76,6 @@ int main(int argc, char **argv) {
 		Fd = fopen(argv[srcarg], "r");
 		strncpy(cur_file, argv[srcarg], 64);	// save filename for warnings etc
 		Line_num = 0; /* reset line number */
-
 		if (!Fd) {
 			printf("as: cannot open source file %s\n", argv[srcarg]);
 		} else {
@@ -90,13 +89,13 @@ int main(int argc, char **argv) {
 	
 	Pass++;
 	re_init();
-	Line_num = 0;
 	srcarg = optind;
 
 	while (srcarg < argc) {
 		Fd = fopen(argv[srcarg], "r");
 		strncpy(cur_file, argv[srcarg], 64);	// save filename for warnings etc
 		Line_num = 0; /* reset line number */		
+
 		if (!Fd) {
 			printf("as: cannot open source file %s\n", argv[srcarg]);
 		} else {
