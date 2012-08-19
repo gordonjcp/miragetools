@@ -1,0 +1,44 @@
+Hardware notes
+----
+
+ACIA
+$e100 control
+$e101 data
+
+VIA
+
+$e200 PORTB
+0 bank 0/1
+1 upper/lower
+2 mic/line
+3 sample/play
+4 drive /select/motor
+5 DOC CA3
+6 disk /READY
+7 serial clock
+
+$e201 PORTB
+0 LED segment
+1 LED segment
+2 LED segment
+3 anode 1 active low
+4 anode 2 active low
+5 keypad row 0
+6 keypad row 1
+7 keypad row 2
+
+$e408-$e40f - MUX resonance
+$e410-$e418 - MUX cutoff
+
+$e800 FDC
+
+$ec00 DOC
+$ece1 number of voices $2e
+$ec00 phase acc LSB
+$ec20 phase acc MSB
+$ec40 gain
+$ec60 osc byte
+$ec80 wavetable
+$eca0 wave pointer offset shift ($00)
+$ecc0 voice control ($00)
+
