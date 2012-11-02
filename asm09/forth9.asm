@@ -1,73 +1,20 @@
 **************************************************
 *                                                *
 *               forth for the 6809               *
-*                                                *
-*    this version of forth was written to be     *
-*    used as a rom-able bare bones operating     *
-*    system for a 6809 based micro-controller.   *
-*    the high level defintions are based on      *
-*    thomas newman's 8086/88 implementation of   *
-*    the forth interest group's model in order   *
-*    to insure the portability of existing       *
-*    code. all of the primitives were written    *
-*    during july 1990 by:                        *
-*                                                *
-*                    mike pashea                 *
-*          southern illinois university          *
-*          dept. of engineering box 1801         *
-*          edwardsville, il. 62026-1801          *
-*                  (618)-692-2391                *
-*                                                *
-*    this forth is direct threaded for speed,    *
-*    however none of the assembly routines       *
-*    have been optimized yet. it appears that    *
-*    all of the bugs have been worked out        *
-*    though.                                     *
-*                                                *
-*    the forth interest group's publications     *
-*    are public domain and may be obtained       *
-*    from:                                       *
-*                                                *
-*            the forth interest group            *
-*            p.o. box 1105                       *
-*            san carlos, ca. 94070               *
-*                                                *
-*    the goal of this project has been to get    *
-*    a small system up and running as quickly    *
-*    as possible. the following source code      *
-*    will assemble using the motorola freeware   *
-*    6809 assembler, with the number of          *
-*    primitives being kept at a minimum.         *
-*    hopefully this will encourage translation   *
-*    to similar motorola processors, such as     *
-*    the 68hc11. i've also commented the         *
-*    primatives as much as possible to aid in    *
-*    the translation.                            *
-*                                                *
-*    the target system for which this forth      *
-*    was written has the following memory map:   *
-*                                                *
-*    0000-0400  a 2k eeprom  (for saving code)   *
-*    9800-9801  6850 acia    (serial port)       *
-*    c000-dfff  an 8k ram    (forth dictionary,  *
-*                             tib and stacks)    *
-*    e000-ffff  an 8k rom    (romable forth)     *
-*                                                *
-*    the current target system is being used     *
-*    to develop other micro-controller systems   *
-*    with eeprom. later hardware versions will   *
-*    contain some parallel ports for doing data  *
-*    aquisition and control.                     *
-*                                                *
-*    for the moment, there is no editor. in the  *
-*    current system additional definitions are   *
-*    written on an ibm pc and saved as an ascii  *
-*    file. the definitions are then uploaded     *
-*    through the serial port using kermit. i     *
-*    have written an assembler however, and      *
-*    i'll give it out as soon as the bugs are    *
-*    fixed.                                      *
-*                                                *
+
+* Adapted for the Ensoniq Mirage from original code
+* from windforth.zip
+
+* the Mirage has 32K sample pages from $0000 to $7fff
+* and 16K of OS RAM from 0x8000 to $0xbfff
+
+* many assumptions must be changed in this code, because
+* it is supposed to be run from ROM with certain things
+* copied to a small amount of RAM.  Obviously on the Mirage
+* everything is in RAM.
+
+
+
 *    forth register assignments                  *
 *                                                *
 *    forth  6809     forth preservation rules    *
@@ -131,7 +78,7 @@ aciad   equ   $e101          ; acia data
 
 **************************************************
 *                                                *
-*             start of romable forth             *
+*             start of forth             *
 *                                                *
 **************************************************
 	org $800e
@@ -173,7 +120,7 @@ rpp     fdb   initr0         ; initial return stack pointer
 **************************************************
 dp0     fcb   $83
         fcc   'li'
-        fcb   $d4            ; 't'+$80
+        fcb   $f4            ; 't'+$80
         fdb   $0000          ; lfa of zero indicates start of dictionary
 lit     fdb   *+2
         ldd   ,y++           ; get literal
@@ -183,7 +130,7 @@ lit     fdb   *+2
 
         fcb   $87
         fcc   'execut'
-        fcb   $c5
+        fcb   $e5
         fdb   lit-6
 exec    fdb   *+2
         pulu  x              ; get cfa from parameter stack
@@ -191,7 +138,7 @@ exec    fdb   *+2
 
         fcb   $86
         fcc   'branc'
-        fcb   $c8
+        fcb   $e8
         fdb   exec-10
 bran    fdb   *+2
 bran1   ldd   ,y             ; get offset value
@@ -201,7 +148,7 @@ bran1   ldd   ,y             ; get offset value
 
         fcb   $87
         fcc   '0branc'
-        fcb   $c8
+        fcb   $e8
         fdb   bran-9
 zbran   fdb   *+2
         pulu  d
@@ -245,7 +192,7 @@ xdo     fdb   *+2
         jmp   [,x++]
 
         fcb   $81
-        fcb   $c9
+        fcb   $e9
         fdb   xdo-7
 ido     fdb   *+2
         ldd   0,s            ; get the index
@@ -255,7 +202,7 @@ ido     fdb   *+2
 
         fcb   $85
         fcc   'digi'
-        fcb   $d4
+        fcb   $f4
         fdb   ido-4
 digit   fdb   *+2
         clra                 ; clear high byte
@@ -271,7 +218,7 @@ digit   fdb   *+2
         subb  #7             ; legal letter - convert to binary
 digi1   cmpb  1,u            ; compare number to base (on top of stack)
 
-                bhs   digi2          ; error if greater than or equal
+        bhs   digi2          ; error if greater than or equal
         std   2,u            ; no error leave number on the stack
         ldd   #1             ; true flag
         std   0,u            ; put flag on top of stack
@@ -324,7 +271,7 @@ pfin7   ldx   0,x            ; get lfa
 
         fcb   $87
         fcc   'enclos'
-        fcb   $c5
+        fcb   $e5
         fdb   pfind-9
 encl    fdb   *+2
         pshs  y              ; save the ip
@@ -359,7 +306,7 @@ encl5   pshu  y,x            ; do the push
 
         fcb   $84
         fcc   'emi'
-        fcb   $d4
+        fcb   $f4
         fdb   encl-10
 emit    fdb   docol
         fdb   pemit
@@ -370,7 +317,7 @@ emit    fdb   docol
 
         fcb   $83
         fcc   'ke'
-        fcb   $d9
+        fcb   $f9
         fdb   emit-7
 key     fdb   docol
         fdb   pkey
@@ -378,7 +325,7 @@ key     fdb   docol
 
         fcb   $89
         fcc   '?termina'
-        fcb   $cc
+        fcb   $ec
         fdb   key-6
 qterm   fdb   docol
         fdb   pqter
@@ -386,7 +333,7 @@ qterm   fdb   docol
 
         fcb   $82
         fcc   'c'
-        fcb   $d2
+        fcb   $f2
         fdb   qterm-12
 cr      fdb   docol
         fdb   lit
@@ -399,7 +346,7 @@ cr      fdb   docol
 
         fcb   $85
         fcc   'cmov'
-        fcb   $c5
+        fcb   $e5
         fdb   cr-5
 cmove   fdb   *+2
         pshs  y              ; save the instruction pointer
@@ -490,7 +437,7 @@ usla4   ldx   ,y++           ; next
 
         fcb   $83
         fcc   'an'
-        fcb   $c4
+        fcb   $e4
         fdb   uslas-5
 andd    fdb   *+2
         pulu  d              ; get top of stack
@@ -502,7 +449,7 @@ andd    fdb   *+2
 
         fcb   $82
         fcc   'o'
-        fcb   $d2
+        fcb   $f2
         fdb   andd-6
 orr     fdb   *+2
         pulu  d              ; get top of stack
@@ -514,7 +461,7 @@ orr     fdb   *+2
 
         fcb   $83
         fcc   'xo'
-        fcb   $d2
+        fcb   $f2
         fdb   orr-5
 xorr    fdb   *+2
         pulu  d              ; get top stack
@@ -567,7 +514,7 @@ rpsto   fdb   *+2
 
         fcb   $82
         fcc   ';'
-        fcb   $d3
+        fcb   $f3
         fdb   rpsto-6
 semis   fdb   *+2
         puls  y              ; fetch old ip
@@ -576,7 +523,7 @@ semis   fdb   *+2
 
         fcb   $85
         fcc   'leav'
-        fcb   $c5
+        fcb   $e5
         fdb   semis-5
 leave   fdb   *+2
         ldd   0,s            ; get index
@@ -586,7 +533,7 @@ leave   fdb   *+2
 
         fcb   $82
         fcc   '>'
-        fcb   $d2
+        fcb   $f2
         fdb   leave-8
 tor     fdb   *+2
         pulu  d              ; get top of parameter stack
@@ -667,7 +614,7 @@ dplu1   lda   3,x            ; get a byte from d2
 
         fcb   $85
         fcc   'minu'
-        fcb   $d3
+        fcb   $f3
         fdb   dplus-5
 minus   fdb   *+2
         clra
@@ -679,7 +626,7 @@ minus   fdb   *+2
 
         fcb   $86
         fcc   'dminu'
-        fcb   $d3
+        fcb   $f3
         fdb   minus-8
 dminu   fdb   *+2
         com   0,u            ; complement the high order bytes of
@@ -697,7 +644,7 @@ dmin1   ldx   ,y++           ; next
 
         fcb   $84
         fcc   'ove'
-        fcb   $d2
+        fcb   $f2
         fdb   dminu-9
 over    fdb   *+2
         ldd   2,u            ; get 2nd item on stack
@@ -707,7 +654,7 @@ over    fdb   *+2
 
         fcb   $84
         fcc   'dro'
-        fcb   $d0
+        fcb   $f0
         fdb   over-7
 drop    fdb   *+2
         leau  2,u            ; adjust stack pointer
@@ -716,7 +663,7 @@ drop    fdb   *+2
 
         fcb   $84
         fcc   'swa'
-        fcb   $d0
+        fcb   $f0
         fdb   drop-7
 swap    fdb   *+2
         pulu  d              ; get top of stack
@@ -728,7 +675,7 @@ swap    fdb   *+2
 
         fcb   $83
         fcc   'du'
-        fcb   $d0
+        fcb   $f0
         fdb   swap-7
 dup     fdb   *+2
         ldd   0,u            ; get top of stack
@@ -738,7 +685,7 @@ dup     fdb   *+2
 
         fcb   $84
         fcc   '2du'
-        fcb   $d0
+        fcb   $f0
         fdb   dup-6
 tdup    fdb   *+2
         ldd   0,u            ; get high order word
@@ -761,7 +708,7 @@ pstor   fdb   *+2
 
         fcb   $86
         fcc   'toggl'
-        fcb   $c5
+        fcb   $e5
         fdb   pstor-5
 toggl   fdb   *+2
         pulu  d,x            ; get bit pattern in b, address in x
@@ -869,14 +816,14 @@ semi    fdb   docol
 
         fcb   $84
         fcc   'noo'
-        fcb   $d0
+        fcb   $f0
         fdb   semi-4
 noop    fdb   docol
         fdb   semis
 
         fcb   $88
         fcc   'constan'
-        fcb   $d4
+        fcb   $f4
         fdb   noop-7
 con     fdb   docol
         fdb   creat
@@ -890,7 +837,7 @@ docon   ldd   0,x            ; get data pointed to by wp
 
         fcb   $88
         fcc   'variabl'
-        fcb   $c5
+        fcb   $e5
         fdb   con-11
 var     fdb   docol
         fdb   con
@@ -901,7 +848,7 @@ dovar   pshu  x              ; push the word pointer on the stack
 
         fcb   $84
         fcc   'use'
-        fcb   $d2
+        fcb   $f2
         fdb   var-11
 user    fdb   docol
         fdb   con
@@ -938,49 +885,49 @@ three   fdb   docon
 
         fcb   $82
         fcc   'b'
-        fcb   $cc
+        fcb   $ec
         fdb   three-4
 bls     fdb   docon
         fdb   $20
 
         fcb   $83
         fcc   'c/'
-        fcb   $cc
+        fcb   $ec
         fdb   bls-5
 csll    fdb   docon
         fdb   64
 
         fcb   $85
         fcc   'firs'
-        fcb   $d4
+        fcb   $f4
         fdb   csll-6
 first   fdb   docon
         fdb   buf1
 
         fcb   $85
         fcc   'limi'
-        fcb   $d4
+        fcb   $f4
         fdb   first-8
 limit   fdb   docon
         fdb   em
 
         fcb   $85
         fcc   'b/bu'
-        fcb   $c6
+        fcb   $e6
         fdb   limit-8
 bbuf    fdb   docon
         fdb   kbbuf
 
         fcb   $85
         fcc   'b/sc'
-        fcb   $d2
+        fcb   $f2
         fdb   bbuf-8
 bscr    fdb   docon
         fdb   $08
 
         fcb   $87
         fcc   '+origi'
-        fcb   $ce
+        fcb   $ee
         fdb   bscr-8
 porig   fdb   docol
         fdb   lit
@@ -1009,126 +956,126 @@ rzero   fdb   douse
 
         fcb   $83
         fcc   'ti'
-        fcb   $c2
+        fcb   $e2
         fdb   rzero-5
 tib     fdb   douse
         fdb   10
 
         fcb   $85
         fcc   'widt'
-        fcb   $c8
+        fcb   $e8
         fdb   tib-6
 width   fdb   douse
         fdb   12
 
         fcb   $87
         fcc   'warnin'
-        fcb   $c7
+        fcb   $e7
         fdb   width-8
 warn    fdb   douse
         fdb   14
 
         fcb   $85
         fcc   'fenc'
-        fcb   $c5
+        fcb   $e5
         fdb   warn-10
 fence   fdb   douse
         fdb   16
 
         fcb   $82
         fcc   'd'
-        fcb   $d0
+        fcb   $f0
         fdb   fence-8
 dp      fdb   douse
         fdb   18
 
         fcb   $88
         fcc   'voc-lin'
-        fcb   $cb
+        fcb   $eb
         fdb   dp-5
 vocl    fdb   douse
         fdb   20
 
         fcb   $83
         fcc   'bl'
-        fcb   $cb
+        fcb   $eb
         fdb   vocl-11
 blk     fdb   douse
         fdb   22
 
         fcb   $82
         fcc   'i'
-        fcb   $ce
+        fcb   $ee
         fdb   blk-6
 inn     fdb   douse
         fdb   24
 
         fcb   $83
         fcc   'ou'
-        fcb   $d4
+        fcb   $f4
         fdb   inn-5
 outt    fdb   douse
         fdb   26
 
         fcb   $83
         fcc   'sc'
-        fcb   $d2
+        fcb   $f2
         fdb   outt-6
 scr     fdb   douse
         fdb   28
 
         fcb   $86
         fcc   'offse'
-        fcb   $d4
+        fcb   $f4
         fdb   scr-6
 ofset   fdb   douse
         fdb   30
 
         fcb   $87
         fcc   'contex'
-        fcb   $d4
+        fcb   $f4
         fdb   ofset-9
 cont    fdb   douse
         fdb   32
 
         fcb   $87
         fcc   'curren'
-        fcb   $d4
+        fcb   $f4
         fdb   cont-10
 curr    fdb   douse
         fdb   34
 
         fcb   $85
         fcc   'stat'
-        fcb   $c5
+        fcb   $e5
         fdb   curr-10
 state   fdb   douse
         fdb   36
 
         fcb   $84
         fcc   'bas'
-        fcb   $c5
+        fcb   $e5
         fdb   state-8
 base    fdb   douse
         fdb   38
 
         fcb   $83
         fcc   'dp'
-        fcb   $cc
+        fcb   $ec
         fdb   base-7
 dpl     fdb   douse
         fdb   40
 
         fcb   $83
         fcc   'fl'
-        fcb   $c4
+        fcb   $e4
         fdb   dpl-6
 fld     fdb   douse
         fdb   42
 
         fcb   $83
         fcc   'cs'
-        fcb   $d0
+        fcb   $f0
         fdb   fld-6
 cspp    fdb   douse
         fdb   44
@@ -1142,7 +1089,7 @@ rnum    fdb   douse
 
         fcb   $83
         fcc   'hl'
-        fcb   $c4
+        fcb   $e4
         fdb   rnum-5
 hld     fdb   douse
         fdb   48
