@@ -1,6 +1,5 @@
 : saw 100 0 do i i c! loop 1 0 c! ; ( loop from $00 to $ff, writing loop counter to memory - set byte 0 to 1)
-: square 100 0 do i 80 < fe * 1 + i 100 + c! loop;
+: square 100 0 do i 80 < fe * 1 + i 100 + c! loop ;
 ( loop from $00 to $ff, if i < halfscale 1 on stack, mult 254, add 1 so range is 1 or 255, store at $100-$1ff)
 : sweep ( voice -- ) 0 100 do dup i 80 rot setfilter -1 +loop ;
-
 
