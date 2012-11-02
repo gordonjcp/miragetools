@@ -126,15 +126,18 @@ BUF1    EQU   $E000          ; First disk buffer
 INITR0  EQU   BUF1-US        ; Base of return stack
 INITS0  EQU   INITR0-RTS     ; Base of parameter stack
 
-ACIAC   EQU   $9800          ; ACIA Control
-ACIAD   EQU   $9801          ; ACIA Data
+ACIAC   EQU   $e100          ; ACIA Control
+ACIAD   EQU   $e101          ; ACIA Data
 
 **************************************************
 *                                                *
 *             START OF ROMABLE FORTH             *
 *                                                *
 **************************************************
-        ORG   $E000
+	org $800e
+	jmp ORIG
+
+        ORG   $8100
 ORIG    LDA   #$03           ; Configure the ACIA
         STA   ACIAC
         LDA   #$16
@@ -2607,7 +2610,15 @@ PQTER1  LDD   #0
 PQTER2  LDX   ,Y++           ; NEXT
         JMP   [,X++]
 
+* gjcp - EMIT seems to embed the ACIA driver right here
 PEMIT   FDB   *+2
+	ldb #$f1	; MIDI Quarterframe
+pemit0	lda ACIAC
+	asra
+	asra
+	bcc pemit0	; loop waiting for ACIA to go ready
+	stb ACIAD	; write the character
+	
         PULU  D              ; Character in B register
         ANDB  #$7F           ; Mask off the highest bit
 PEMIT1  LDA   ACIAC          ; Get ACIA status
