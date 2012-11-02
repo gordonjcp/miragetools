@@ -114,15 +114,15 @@ ff      equ   $00c0          ; a form feed
 *               memory allocation                *
 *                                                *
 **************************************************
-rams    equ   $c000          ; start of ram
-em      equ   $e000          ; end of ram + 1
+rams    equ   $8000          ; start of ram
+em      equ   $b000          ; end of ram + 1
 nscr    equ   $0000          ; number of 1024 byte screens
 kbbuf   equ   $0080          ; data bytes per disk buffer
 us      equ   $0040          ; user variable space
 rts     equ   $00a0          ; return stack and terminal buffer
 co      equ   $0084          ; data bytes per buffer plus 4
 nbuf    equ   $0000          ; number of buffers
-buf1    equ   $e000          ; first disk buffer
+buf1    equ   $b000          ; first disk buffer
 initr0  equ   buf1-us        ; base of return stack
 inits0  equ   initr0-rts     ; base of parameter stack
 
@@ -143,8 +143,8 @@ orig    lda   #$03           ; configure the acia
         lda   #$16
         sta   aciac
         ldy   #entry
-        lds   #$dfa0         ; initial stack pointers
-        ldu   #$df20
+        lds   #$c000         ; initial stack pointers
+        ldu   #$bf00
         ldx   ,y++           ; set up is done, now do forth
         jmp   [,x++]
 entry   fdb   cold
@@ -2311,10 +2311,10 @@ warm    fdb   docol
         fcb   $c4
         fdb   warm-7
 cold    fdb   docol
+        fdb   lit	
+        fdb   utable		; user variable table
         fdb   lit
-        fdb   utable
-        fdb   lit
-        fdb   up
+        fdb   up		
         fdb   at
         fdb   lit
         fdb   6
