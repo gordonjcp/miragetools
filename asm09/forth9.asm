@@ -1,3290 +1,3290 @@
 **************************************************
 *                                                *
-*               FORTH for the 6809               *
+*               forth for the 6809               *
 *                                                *
-*    This version of FORTH was written to be     *
-*    used as a ROM-able bare bones operating     *
+*    this version of forth was written to be     *
+*    used as a rom-able bare bones operating     *
 *    system for a 6809 based micro-controller.   *
-*    The high level defintions are based on      *
-*    Thomas Newman's 8086/88 implementation of   *
-*    the Forth Interest Group's model in order   *
+*    the high level defintions are based on      *
+*    thomas newman's 8086/88 implementation of   *
+*    the forth interest group's model in order   *
 *    to insure the portability of existing       *
-*    code. All of the primitives were written    *
-*    during July 1990 by:                        *
+*    code. all of the primitives were written    *
+*    during july 1990 by:                        *
 *                                                *
-*                    Mike Pashea                 *
-*          Southern Illinois University          *
-*          Dept. of Engineering Box 1801         *
-*          Edwardsville, Il. 62026-1801          *
+*                    mike pashea                 *
+*          southern illinois university          *
+*          dept. of engineering box 1801         *
+*          edwardsville, il. 62026-1801          *
 *                  (618)-692-2391                *
 *                                                *
-*    This FORTH is direct threaded for speed,    *
+*    this forth is direct threaded for speed,    *
 *    however none of the assembly routines       *
-*    have been optimized yet. It appears that    *
+*    have been optimized yet. it appears that    *
 *    all of the bugs have been worked out        *
 *    though.                                     *
 *                                                *
-*    The Forth Interest Group's publications     *
+*    the forth interest group's publications     *
 *    are public domain and may be obtained       *
 *    from:                                       *
 *                                                *
-*            The Forth Interest Group            *
-*            P.O. Box 1105                       *
-*            San Carlos, Ca. 94070               *
+*            the forth interest group            *
+*            p.o. box 1105                       *
+*            san carlos, ca. 94070               *
 *                                                *
-*    The goal of this project has been to get    *
+*    the goal of this project has been to get    *
 *    a small system up and running as quickly    *
-*    as possible. The following source code      *
-*    will assemble using the Motorola Freeware   *
-*    6809 Assembler, with the number of          *
+*    as possible. the following source code      *
+*    will assemble using the motorola freeware   *
+*    6809 assembler, with the number of          *
 *    primitives being kept at a minimum.         *
-*    Hopefully this will encourage translation   *
-*    to similar Motorola processors, such as     *
-*    the 68HC11. I've also commented the         *
+*    hopefully this will encourage translation   *
+*    to similar motorola processors, such as     *
+*    the 68hc11. i've also commented the         *
 *    primatives as much as possible to aid in    *
 *    the translation.                            *
 *                                                *
-*    The target system for which this FORTH      *
+*    the target system for which this forth      *
 *    was written has the following memory map:   *
 *                                                *
-*    0000-0400  A 2k EEPROM  (for saving code)   *
-*    9800-9801  6850 ACIA    (serial port)       *
-*    C000-DFFF  An 8k RAM    (FORTH dictionary,  *
-*                             TIB and stacks)    *
-*    E000-FFFF  An 8k ROM    (ROMable FORTH)     *
+*    0000-0400  a 2k eeprom  (for saving code)   *
+*    9800-9801  6850 acia    (serial port)       *
+*    c000-dfff  an 8k ram    (forth dictionary,  *
+*                             tib and stacks)    *
+*    e000-ffff  an 8k rom    (romable forth)     *
 *                                                *
-*    The current target system is being used     *
+*    the current target system is being used     *
 *    to develop other micro-controller systems   *
-*    with EEPROM. Later hardware versions will   *
+*    with eeprom. later hardware versions will   *
 *    contain some parallel ports for doing data  *
 *    aquisition and control.                     *
 *                                                *
-*    For the moment, there is no editor. In the  *
+*    for the moment, there is no editor. in the  *
 *    current system additional definitions are   *
-*    written on an IBM PC and saved as an ascii  *
-*    file. The definitions are then uploaded     *
-*    through the serial port using Kermit. I     *
+*    written on an ibm pc and saved as an ascii  *
+*    file. the definitions are then uploaded     *
+*    through the serial port using kermit. i     *
 *    have written an assembler however, and      *
-*    I'll give it out as soon as the bugs are    *
+*    i'll give it out as soon as the bugs are    *
 *    fixed.                                      *
 *                                                *
-*    FORTH Register Assignments                  *
+*    forth register assignments                  *
 *                                                *
-*    FORTH  6809     FORTH Preservation Rules    *
+*    forth  6809     forth preservation rules    *
 *    -----  ----     ------------------------    *
 *                                                *
-*    IP      Y       INTERPRETER POINTER.        *
-*                    MUST BE PRESERVED           *
-*                    ACROSS FORTH WORDS.         *
+*    ip      y       interpreter pointer.        *
+*                    must be preserved           *
+*                    across forth words.         *
 *                                                *
-*    W       X       WORD POINTER                *
+*    w       x       word pointer                *
 *                                                *
-*    SP      U       PARAMETER STACK POINTER.    *
-*                    MUST BE PRESERVED ACROSS    *
-*                    FORTH WORDS.                *
+*    sp      u       parameter stack pointer.    *
+*                    must be preserved across    *
+*                    forth words.                *
 *                                                *
-*    RP      S       RETURN STACK.               *
-*                    MUST BE PRESERVED ACROSS    *
-*                    FORTH WORDS.                *
+*    rp      s       return stack.               *
+*                    must be preserved across    *
+*                    forth words.                *
 *                                                *
-*           RELEASE AND VERSION NUMBERS          *
+*           release and version numbers          *
 *                                                *
 **************************************************
-FIGREL  EQU   1
-FIGREV  EQU   0
-USRVER  EQU   0
+figrel  equ   1
+figrev  equ   0
+usrver  equ   0
 
 **************************************************
 *                                                *
-*            ASCII CHARACTERS USED               *
+*            ascii characters used               *
 *                                                *
 **************************************************
-ABL     EQU   $0020          ; A blank
-ACR     EQU   $00D0          ; A carriage return
-ADOT    EQU   $002E          ; A period
-BELL    EQU   $0007          ; A bell (^G)
-BSIN    EQU   $005F          ; An input delete
-BSOUT   EQU   $0008          ; A output backspace
-DLE     EQU   $0010          ; (^P)
-LF      EQU   $00A0          ; A line feed
-FF      EQU   $00C0          ; A form feed
+abl     equ   $0020          ; a blank
+acr     equ   $00d0          ; a carriage return
+adot    equ   $002e          ; a period
+bell    equ   $0007          ; a bell (^g)
+bsin    equ   $005f          ; an input delete
+bsout   equ   $0008          ; a output backspace
+dle     equ   $0010          ; (^p)
+lf      equ   $00a0          ; a line feed
+ff      equ   $00c0          ; a form feed
 
 **************************************************
 *                                                *
-*               MEMORY ALLOCATION                *
+*               memory allocation                *
 *                                                *
 **************************************************
-RAMS    EQU   $C000          ; Start of RAM
-EM      EQU   $E000          ; End of RAM + 1
-NSCR    EQU   $0000          ; Number of 1024 byte screens
-KBBUF   EQU   $0080          ; Data bytes per disk buffer
-US      EQU   $0040          ; User variable space
-RTS     EQU   $00A0          ; Return stack and terminal buffer
-CO      EQU   $0084          ; Data bytes per buffer plus 4
-NBUF    EQU   $0000          ; Number of buffers
-BUF1    EQU   $E000          ; First disk buffer
-INITR0  EQU   BUF1-US        ; Base of return stack
-INITS0  EQU   INITR0-RTS     ; Base of parameter stack
+rams    equ   $c000          ; start of ram
+em      equ   $e000          ; end of ram + 1
+nscr    equ   $0000          ; number of 1024 byte screens
+kbbuf   equ   $0080          ; data bytes per disk buffer
+us      equ   $0040          ; user variable space
+rts     equ   $00a0          ; return stack and terminal buffer
+co      equ   $0084          ; data bytes per buffer plus 4
+nbuf    equ   $0000          ; number of buffers
+buf1    equ   $e000          ; first disk buffer
+initr0  equ   buf1-us        ; base of return stack
+inits0  equ   initr0-rts     ; base of parameter stack
 
-ACIAC   EQU   $e100          ; ACIA Control
-ACIAD   EQU   $e101          ; ACIA Data
+aciac   equ   $e100          ; acia control
+aciad   equ   $e101          ; acia data
 
 **************************************************
 *                                                *
-*             START OF ROMABLE FORTH             *
+*             start of romable forth             *
 *                                                *
 **************************************************
 	org $800e
-	jmp ORIG
+	jmp orig
 
-        ORG   $8100
-ORIG    LDA   #$03           ; Configure the ACIA
-        STA   ACIAC
-        LDA   #$16
-        STA   ACIAC
-        LDY   #ENTRY
-        LDS   #$DFA0         ; Initial stack pointers
-        LDU   #$DF20
-        LDX   ,Y++           ; Set up is done, now do FORTH
-        JMP   [,X++]
-ENTRY   FDB   COLD
-
-**************************************************
-*                                                *
-*                INITIAL USER TABLE              *
-*                                                *
-**************************************************
-TOP     FDB   RTASK-7        ; Top word in FORTH vocabulary
-UTABLE  FDB   INITS0         ; Initial parameter stack base
-        FDB   INITR0         ; Initial return stack base
-        FDB   INITS0         ; Initial TIB
-        FDB   32             ; Initial WIDTH
-        FDB   0              ; Initial WARNING
-        FDB   INITDP         ; Initial FENCE
-        FDB   INITDP         ; Initial DP
-        FDB   RFORTH+6       ; Initial VOC-LINK
-UP      FDB   INITR0         ; Initial user area pointer
-RPP     FDB   INITR0         ; Initial return stack pointer
+        org   $8100
+orig    lda   #$03           ; configure the acia
+        sta   aciac
+        lda   #$16
+        sta   aciac
+        ldy   #entry
+        lds   #$dfa0         ; initial stack pointers
+        ldu   #$df20
+        ldx   ,y++           ; set up is done, now do forth
+        jmp   [,x++]
+entry   fdb   cold
 
 **************************************************
 *                                                *
-*           START OF THE FORTH DICTIONARY        *
+*                initial user table              *
 *                                                *
 **************************************************
-DP0     FCB   $83
-        FCC   'LI'
-        FCB   $D4            ; 'T'+$80
-        FDB   $0000          ; LFA of zero indicates start of dictionary
-LIT     FDB   *+2
-        LDD   ,Y++           ; Get Literal
-        PSHU  D              ; Push to user stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $87
-        FCC   'EXECUT'
-        FCB   $C5
-        FDB   LIT-6
-EXEC    FDB   *+2
-        PULU  X              ; Get CFA from parameter stack
-        JMP   [,X++]         ; Execute NEXT
-
-        FCB   $86
-        FCC   'BRANC'
-        FCB   $C8
-        FDB   EXEC-10
-BRAN    FDB   *+2
-BRAN1   LDD   ,Y             ; Get offset value
-        LEAY  D,Y            ; Add offset to instruction pointer
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $87
-        FCC   '0BRANC'
-        FCB   $C8
-        FDB   BRAN-9
-ZBRAN   FDB   *+2
-        PULU  D
-        CMPD  #0             ; Is top of stack zero?
-        BEQ   BRAN1          ; Yes, must branch
-        LEAY  2,Y            ; No, skip branch offset
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $86
-        FCC   '(LOOP'
-        FCB   $A9
-        FDB   ZBRAN-10
-XLOOP   FDB   *+2
-        LDD   #$0001         ; Assume an increment of 1
-XLOO1   ADDD  0,S            ; Add increment to loop index
-        STD   0,S            ; Put the new index on the stack
-        CMPD  2,S            ; Compare index with limit
-        BLT   BRAN1          ; Branch if index < limit
-        LEAS  4,S            ; Drop the index and the limit
-        LEAY  2,Y            ; Skip the branch offset
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $87
-        FCC   '(+LOOP'
-        FCB   $A9
-        FDB   XLOOP-9
-XPLOO   FDB   *+2
-        PULU  D              ; Get the increment value
-        BRA   XLOO1          ; Go do loop
-
-        FCB   $84
-        FCC   '(DO'
-        FCB   $A9
-        FDB   XPLOO-10
-XDO     FDB   *+2
-        PULU  D,X            ; Get initial index and limit values
-        PSHS  X,D            ; Push to system stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $C9
-        FDB   XDO-7
-IDO     FDB   *+2
-        LDD   0,S            ; Get the index
-        PSHU  D              ; Push it to the parameter stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $85
-        FCC   'DIGI'
-        FCB   $D4
-        FDB   IDO-4
-DIGIT   FDB   *+2
-        CLRA                 ; Clear high byte
-        LDB   3,U            ; Ascii digit is low byte of 2nd on the stack
-        SUBB  #$30           ; Convert to binary
-        BLO   DIGI2          ; Not a number
-        CMPB  #$0A           ; Ascii 0-9?
-        BLO   DIGI1          ; Yes, check against base
-        CMPB  #$11           ; Ascii A-Z?
-        BLO   DIGI2          ; No, less than 'A'
-        CMPB  #$2A
-        BHI   DIGI2          ; No, greater than 'Z'
-        SUBB  #7             ; Legal letter - convert to binary
-DIGI1   CMPB  1,U            ; Compare number to base (on top of stack)
-
-                BHS   DIGI2          ; Error if greater than or equal
-        STD   2,U            ; No error leave number on the stack
-        LDD   #1             ; True flag
-        STD   0,U            ; Put flag on top of stack
-        BRA   DIGI3          ; NEXT
-DIGI2   LEAU  2,U            ; Adjust stack
-        LDD   #0             ; False flag
-        STD   0,U            ; Put it on the stack
-DIGI3   LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $86
-        FCC   '(FIND'
-        FCB   $A9
-        FDB   DIGIT-8
-PFIND   FDB   *+2
-        PSHS  Y              ; Save IP
-        PULU  X              ; LFA of first word in the dictionary search
-PFIN1   LDY   0,U            ; Location of packed string (HERE)
-        LDB   0,X            ; Get dictionary word length
-        TFR   B,A            ; Save the length byte temporarily
-        ANDB  #$3F           ; Mask off the two highest bits
-        CMPB  0,Y            ; Compare it with the packed string
-        BNE   PFIN5          ; Lengths don't match - get another word
-PFIN2   LEAX  1,X            ; OK so far - look at the text
-        LEAY  1,Y            ;
-        LDB   0,X            ; Get next character
-        CMPB  0,Y            ; Compare with packed string
-        BEQ   PFIN2          ; OK so far - go on to next character
-        ANDB  #$7F           ; Doesn't match - toggle high bit
-        CMPB  0,Y            ; Try again
-        BNE   PFIN6          ; Doesn't match - go get next word
-PFIN3   LEAX  5,X            ; We have an exact match - get PFA
-        TFR   A,B            ; Retrieve length byte
-        CLRA                 ; D now contains the string length byte
-        STX   0,U            ; Replace location of packed string with PFA
-        LDX   #1             ; Boolean TRUE flag
-        PSHU  D              ; Put string length on the stack
-        PSHU  X              ; Put boolean flag on the stack
-PFIN4   PULS  Y              ; Restore IP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-PFIN5   LEAX  1,X            ; Skip character count
-PFIN6   TST   0,X+           ; Test sign bit
-        BPL   PFIN6          ; Keep looking - sign bit is not set
-PFIN7   LDX   0,X            ; Get LFA
-        CMPX  #0             ; If zero we're at the end of the dictionary
-        BNE   PFIN1          ; Look at next word - LFA in X
-        STX   0,U            ; Put a boolean false on the stack
-        BRA   PFIN4          ; NEXT
-
-        FCB   $87
-        FCC   'ENCLOS'
-        FCB   $C5
-        FDB   PFIND-9
-ENCL    FDB   *+2
-        PSHS  Y              ; Save the IP
-        PULU  D              ; Terminator character is now in B
-        LDX   0,U            ; Get starting address, but keep it on the stack
-        LDY   #-1            ; Set counter
-        LEAX  -1,X           ; Decrement starting address
-ENCL1   LEAY  1,Y            ; Increment counter
-        LEAX  1,X            ; Increment address
-        CMPB  0,X            ; Is character a terminator?
-        BEQ   ENCL1          ; Yes, continue looking
-        PSHU  Y              ; Character must be text, so push count offset
-        TST   0,X            ; Is the character a NULL?
-        BNE   ENCL2          ; No, continue
-        TFR   Y,X            ; Copy counter
-        LEAY  1,Y            ; Increment counter
-        BRA   ENCL5          ; Do the push, get IP and do NEXT
-ENCL2   LEAY  1,Y            ; Increment counter
-        LEAX  1,X            ; Increment address
-        CMPB  0,X            ; Is the character a terminator?
-        BEQ   ENCL4          ; Yes, finish up
-        TST   0,X            ; No, is it a NULL?
-        BNE   ENCL2          ; No, continue looking
-ENCL3   TFR   Y,X            ; Counters are equal
-        BRA   ENCL5          ; Do the push
-ENCL4   TFR   Y,X            ; Copy counter
-        LEAX  1,X            ; Increment the counter
-ENCL5   PSHU  Y,X            ; Do the push
-        PULS  Y              ; Restore IP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   'EMI'
-        FCB   $D4
-        FDB   ENCL-10
-EMIT    FDB   DOCOL
-        FDB   PEMIT
-        FDB   ONE
-        FDB   OUTT
-        FDB   PSTOR
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'KE'
-        FCB   $D9
-        FDB   EMIT-7
-KEY     FDB   DOCOL
-        FDB   PKEY
-        FDB   SEMIS
-
-        FCB   $89
-        FCC   '?TERMINA'
-        FCB   $CC
-        FDB   KEY-6
-QTERM   FDB   DOCOL
-        FDB   PQTER
-        FDB   SEMIS
-
-        FCB   $82
-        FCC   'C'
-        FCB   $D2
-        FDB   QTERM-12
-CR      FDB   DOCOL
-        FDB   LIT
-        FDB   $0D
-        FDB   PEMIT
-        FDB   LIT
-        FDB   $0A
-        FDB   PEMIT
-        FDB   SEMIS
-
-        FCB   $85
-        FCC   'CMOV'
-        FCB   $C5
-        FDB   CR-5
-CMOVE   FDB   *+2
-        PSHS  Y              ; Save the instruction pointer
-        PULU  D              ; Get the count
-        ADDD  0,U            ; Add it to the destination address
-        PULU  X,Y            ; Destination in X, Source in Y
-        PSHU  D              ; Put final destination addr. on stack
-CMOV1   LDA   ,Y+            ; Do the move
-        STA   ,X+
-        CMPX  0,U            ; At the final destination?
-        BLT   CMOV1          ; If not, continue
-        LEAU  2,U            ; Drop final destination from the stack
-        PULS  Y              ; Restore the instruction pointer
-        LDX   ,Y++           ; NEX
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'U'
-        FCB   $AA
-        FDB   CMOVE-8
-USTAR   FDB   *+2            ; Unsigned multiplication subroutine
-        LDD   0,U            ; Get OP2
-        STD   -2,S           ; Save it just below the return stack
-        LDD   2,U            ; Get OP1
-        STD   -4,S           ; Save it also
-        CLR   0,U            ; Clear high order word
-        CLR   1,U            ;
-        LDA   -3,S           ; Get OP1 low byte
-        LDB   -1,S           ; Get OP2 low byte
-        MUL                  ; Multiply
-        STD   2,U            ; Save the first partial product on the stack
-        LDA   -4,S           ; Get OP1 high byte
-        LDB   -1,S           ; Get OP2 low byte
-        MUL                  ; Multiply
-        ADDD  1,U            ; Add to first partial product
-        STD   1,U            ; And update
-        LDA   -3,S           ; Get OP1 low byte
-        LDB   -2,S           ; Get OP2 high byte
-        MUL                  ; Multiply
-        ADDD  1,U            ; Add to second partial product
-        STD   1,U            ; And update
-        BCC   NOCARY         ; Check for a carry into high byte
-        INC   0,U            ; Add carry if neccesary
-NOCARY  LDA   -4,S           ; Get OP1 high byte
-        LDB   -2,S           ; Get OP2 high byte
-        MUL                  ; Multply
-        ADDD  0,U            ; Add to third partial product
-        STD   0,U            ; And update - Result is on stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'U'
-        FCB   $AF
-        FDB   USTAR-5
-USLAS   FDB   *+2            ; 32 by 16 unsigned division routine
-        LDD   0,U            ; Get divisor
-        CMPD  #0             ; Check for a divide by zero
-        BNE   USLA1          ; OK - continue
-        LDD   #-1            ; Trap a divide by zero
-        LEAU  6,U            ; Drop all data from stack
-        PSHU  D              ; Set flags
-        PSHU  D              ;
-        BRA   USLA4          ; NEXT
-USLA1   LDA   #32            ; Set counter for 32 bit division
-        PSHU  A              ; 0,U is the counter - 1,U is the divisor
-        LDD   3,U            ; 3,U and 5,U are the high and low words of
-        CLRA                 ; the dividend
-        CLRB                 ;
-USLA2   ASL   6,U            ; Shift dividend and quotient
-        ROL   5,U
-        ROL   4,U
-        ROL   3,U
-        ROLB                 ; Shift dividend into D register
-        ROLA
-        CMPD  1,U            ; Is dividend greater than the divisor?
-        BLO   USLA3          ; No, skip subtraction
-        SUBD  1,U            ; Yes, do subtraction
-        INC   6,U            ; Increment low byte quotient
-USLA3   DEC   0,U            ; Decrement counter
-        BNE   USLA2          ; Loop for a non-zero count
-        LDX   5,U            ; Now the remainder is in D, the quotient is at 5,U
-        LEAU  7,U            ; Drop data on the stack
-        PSHU  D              ; Push remainder
-        PSHU  X              ; Push quotient
-USLA4   LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'AN'
-        FCB   $C4
-        FDB   USLAS-5
-ANDD    FDB   *+2
-        PULU  D              ; Get top of stack
-        ANDA  0,U            ; AND high order byte
-        ANDB  1,U            ; AND low order byte
-        STD   0,U            ; Leave result on stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'O'
-        FCB   $D2
-        FDB   ANDD-6
-ORR     FDB   *+2
-        PULU  D              ; Get top of stack
-        ORA   0,U            ; OR high order byte
-        ORB   1,U            ; OR low order byte
-        STD   0,U            ; Leave result on stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'XO'
-        FCB   $D2
-        FDB   ORR-5
-XORR    FDB   *+2
-        PULU  D              ; Get top stack
-        EORA  0,U            ; XOR high order byte
-        EORB  1,U            ; XOR low order byte
-        STD   0,U            ; Leave result on stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'SP'
-        FCB   $C0
-        FDB   XORR-6
-SPAT    FDB   *+2
-        TFR   U,D            ; Get current parameter stack pointer
-        PSHU  D              ; Put it on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'SP'
-        FCB   $A1
-        FDB   SPAT-6
-SPSTO   FDB   *+2
-        LDX   UP             ; Initial user pointer
-        LEAX  6,X            ; Point to location in user table
-        LDU   0,X            ; Get parameter stack pointer
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'RP'
-        FCB   $C0
-        FDB   SPSTO-6
-RPAT    FDB   *+2
-        PSHU  S              ; Get current return stack pointer
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'RP'
-        FCB   $A1
-        FDB   RPAT-6
-RPSTO   FDB   *+2
-        LDX   UP             ; Initial user pointer
-        LEAX  8,X            ; Point to location in user table
-        LDS   0,X            ; Get return stack pointer
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   ';'
-        FCB   $D3
-        FDB   RPSTO-6
-SEMIS   FDB   *+2
-        PULS  Y              ; Fetch old IP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $85
-        FCC   'LEAV'
-        FCB   $C5
-        FDB   SEMIS-5
-LEAVE   FDB   *+2
-        LDD   0,S            ; Get index
-        STD   2,S            ; Store at limit
-        LDX   ,Y++           ; NEXT
-        JMP   [0,X]
-
-        FCB   $82
-        FCC   '>'
-        FCB   $D2
-        FDB   LEAVE-8
-TOR     FDB   *+2
-        PULU  D              ; Get top of parameter stack
-        PSHS  D              ; Push it to the return stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'R'
-        FCB   $BE
-        FDB   TOR-5
-FROMR   FDB   *+2
-        PULS  D              ; Get top of return stack
-        PSHU  D              ; Push it to the parameter stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $D2
-        FDB   FROMR-5
-RR      FDB   IDO+2          ; Does the same as I
-
-        FCB   $82
-        FCC   '0'
-        FCB   $BD
-        FDB   RR-4
-ZEQU    FDB   *+2
-        PULU  D              ; Get top of stack
-        LDX   #1             ; Assume TRUE
-        CMPD  #0             ; Compare to zero
-        BEQ   ZEQ1           ; See if assumtion is correct
-        LEAX  -1,X           ; No, it is FALSE
-ZEQ1    PSHU  X              ; Leave flag
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   '0'
-        FCB   $BC
-        FDB   ZEQU-5
-ZLESS   FDB   *+2
-        PULU  D              ; Get top of stack
-        LDX   #1             ; Assume TRUE
-        CMPD  #0             ; Compare to zero
-        BLT   ZLESS1         ; Check assumption
-        LEAX  -1,X           ; No, it is FALSE
-ZLESS1  PSHU  X              ; Leave flag
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $AB
-        FDB   ZLESS-5
-PLUS    FDB   *+2
-        PULU  D              ; Get top of stack
-        ADDD  0,U            ; Add it to new top of stack
-        STD   0,U            ; Put sum on top of stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'D'
-        FCB   $AB
-        FDB   PLUS-4
-DPLUS   FDB   *+2
-        CLRA                 ; Clear A and the carry bit
-        LDB   #4             ; Do four bytes
-        TFR   U,X            ; Get a reference to the top of the stack
-DPLU1   LDA   3,X            ; Get a byte from D2
-        ADCA  7,X            ; Add it to a byte from D1 with the carry
-        STA   7,X            ; Update
-        LEAX  -1,X           ; Adjust X
-        DECB                 ; Decrement counter
-        BNE   DPLU1          ; Loop if not done
-        LEAU  4,U            ; Adjust stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $85
-        FCC   'MINU'
-        FCB   $D3
-        FDB   DPLUS-5
-MINUS   FDB   *+2
-        CLRA
-        CLRB                 ; Clear D
-        SUBD  0,U            ; Get twos complement in D
-        STD   0,U            ; Update
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $86
-        FCC   'DMINU'
-        FCB   $D3
-        FDB   MINUS-8
-DMINU   FDB   *+2
-        COM   0,U            ; Complement the high order bytes of
-        COM   1,U            ; The double number
-        COM   2,U            ;
-        NEG   3,U            ; Twos complement the lowest byte
-        BNE   DMIN1          ; And add carrys as needed
-        INC   2,U            ;
-        BNE   DMIN1          ;
-        INC   1,U            ;
-        BNE   DMIN1          ;
-        INC   0,U            ;
-DMIN1   LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   'OVE'
-        FCB   $D2
-        FDB   DMINU-9
-OVER    FDB   *+2
-        LDD   2,U            ; Get 2nd item on stack
-        PSHU  D              ; Put it on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   'DRO'
-        FCB   $D0
-        FDB   OVER-7
-DROP    FDB   *+2
-        LEAU  2,U            ; Adjust stack pointer
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   'SWA'
-        FCB   $D0
-        FDB   DROP-7
-SWAP    FDB   *+2
-        PULU  D              ; Get top of stack
-        PULU  X              ; Get 2nd on stack
-        PSHU  D              ; Top of stack is now 2nd
-        PSHU  X              ; 2nd is now top of stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $83
-        FCC   'DU'
-        FCB   $D0
-        FDB   SWAP-7
-DUP     FDB   *+2
-        LDD   0,U            ; Get top of stack
-        PSHU  D              ; Push it back on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   '2DU'
-        FCB   $D0
-        FDB   DUP-6
-TDUP    FDB   *+2
-        LDD   0,U            ; Get high order word
-        LDX   2,U            ; Get low order word
-        PSHU  X,D            ; Do the DUP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   '+'
-        FCB   $A1
-        FDB   TDUP-7
-PSTOR   FDB   *+2
-        PULU  X              ; Get address
-        PULU  D              ; Get increment
-        ADDD  0,X            ; Do addition
-        STD   0,X            ; Store addition
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $86
-        FCC   'TOGGL'
-        FCB   $C5
-        FDB   PSTOR-5
-TOGGL   FDB   *+2
-        PULU  D,X            ; Get bit pattern in B, address in X
-        EORB  0,X            ; Do the TOGGLE
-        STB   0,X            ; Replace byte
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $C0
-        FDB   TOGGL-9
-AT      FDB   *+2
-        LDD   [0,U]          ; Fetch word pointed to by top of stack
-        STD   0,U            ; Put word on the top of stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'C'
-        FCB   $C0
-        FDB   AT-4
-CAT     FDB   *+2
-        LDB   [0,U]          ; Fetch byte pointed to by top of stack
-        CLRA                 ; Clear high order byte
-        STD   0,U            ; Put word on the top of the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-
-        FCB   $82
-        FCC   '2'
-        FCB   $C0
-        FDB   CAT-5
-TAT     FDB   *+2
-        PULU  X              ; Get pointer
-        LDD   2,X            ; Get least significant word
-        PSHU  D              ; Push it
-        LDD   0,X            ; Get most significant word
-        PSHU  D              ; Push it
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $A1
-        FDB   TAT-5
-STORE   FDB   *+2
-        PULU  X              ; Get address
-        PULU  D              ; Get word in D register
-        STD   0,X            ; Store word at address
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'C'
-        FCB   $A1
-        FDB   STORE-4
-CSTOR   FDB   *+2
-        PULU  X              ; Get address
-        PULU  D              ; Get byte in B register
-        STB   0,X            ; Store byte at address
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   '2'
-        FCB   $A1
-        FDB   CSTOR-5
-TSTOR   FDB   *+2
-        PULU  X              ; Get address
-        PULU  D              ; Get most significant word
-        STD   0,X            ; Store it
-        PULU  D              ; Get least significant word
-        STD   2,X            ; Store it
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $C1
-        FCB   $BA
-        FDB   TSTOR-5
-COLON   FDB   DOCOL
-        FDB   QEXEC
-        FDB   SCSP
-        FDB   CURR
-        FDB   AT
-        FDB   CONT
-        FDB   STORE
-        FDB   CREAT
-        FDB   RBRAC
-        FDB   PSCOD
-DOCOL   PSHS  Y              ; Store IP
-        LEAY  0,X            ; New IP = WP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $C1
-        FCB   $BB
-        FDB   COLON-4
-SEMI    FDB   DOCOL
-        FDB   QCSP
-        FDB   COMP
-        FDB   SEMIS
-        FDB   SMUDG
-        FDB   LBRAC
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   'NOO'
-        FCB   $D0
-        FDB   SEMI-4
-NOOP    FDB   DOCOL
-        FDB   SEMIS
-
-        FCB   $88
-        FCC   'CONSTAN'
-        FCB   $D4
-        FDB   NOOP-7
-CON     FDB   DOCOL
-        FDB   CREAT
-        FDB   SMUDG
-        FDB   COMMA
-        FDB   PSCOD
-DOCON   LDD   0,X            ; Get data pointed to by WP
-        PSHU  D              ; Push it on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $88
-        FCC   'VARIABL'
-        FCB   $C5
-        FDB   CON-11
-VAR     FDB   DOCOL
-        FDB   CON
-        FDB   PSCOD
-DOVAR   PSHU  X              ; Push the word pointer on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   'USE'
-        FCB   $D2
-        FDB   VAR-11
-USER    FDB   DOCOL
-        FDB   CON
-        FDB   PSCOD
-DOUSE   LDD   UP             ; Get initial user pointer
-        ADDD  0,X            ; Add the offset
-        PSHU  D              ; Put it on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $B0
-        FDB   USER-7
-ZERO    FDB   DOCON
-        FDB   0
-
-        FCB   $81
-        FCB   $B1
-        FDB   ZERO-4
-ONE     FDB   DOCON
-        FDB   1
-
-        FCB   $81
-        FCB   $B2
-        FDB   ONE-4
-TWO     FDB   DOCON
-        FDB   2
-
-        FCB   $81
-        FCB   $B3
-        FDB   TWO-4
-THREE   FDB   DOCON
-        FDB   3
-
-        FCB   $82
-        FCC   'B'
-        FCB   $CC
-        FDB   THREE-4
-BLS     FDB   DOCON
-        FDB   $20
-
-        FCB   $83
-        FCC   'C/'
-        FCB   $CC
-        FDB   BLS-5
-CSLL    FDB   DOCON
-        FDB   64
-
-        FCB   $85
-        FCC   'FIRS'
-        FCB   $D4
-        FDB   CSLL-6
-FIRST   FDB   DOCON
-        FDB   BUF1
-
-        FCB   $85
-        FCC   'LIMI'
-        FCB   $D4
-        FDB   FIRST-8
-LIMIT   FDB   DOCON
-        FDB   EM
-
-        FCB   $85
-        FCC   'B/BU'
-        FCB   $C6
-        FDB   LIMIT-8
-BBUF    FDB   DOCON
-        FDB   KBBUF
-
-        FCB   $85
-        FCC   'B/SC'
-        FCB   $D2
-        FDB   BBUF-8
-BSCR    FDB   DOCON
-        FDB   $08
-
-        FCB   $87
-        FCC   '+ORIGI'
-        FCB   $CE
-        FDB   BSCR-8
-PORIG   FDB   DOCOL
-        FDB   LIT
-        FDB   ORIG
-        FDB   PLUS
-        FDB   SEMIS
+top     fdb   rtask-7        ; top word in forth vocabulary
+utable  fdb   inits0         ; initial parameter stack base
+        fdb   initr0         ; initial return stack base
+        fdb   inits0         ; initial tib
+        fdb   32             ; initial width
+        fdb   0              ; initial warning
+        fdb   initdp         ; initial fence
+        fdb   initdp         ; initial dp
+        fdb   rforth+6       ; initial voc-link
+up      fdb   initr0         ; initial user area pointer
+rpp     fdb   initr0         ; initial return stack pointer
+
+**************************************************
+*                                                *
+*           start of the forth dictionary        *
+*                                                *
+**************************************************
+dp0     fcb   $83
+        fcc   'li'
+        fcb   $d4            ; 't'+$80
+        fdb   $0000          ; lfa of zero indicates start of dictionary
+lit     fdb   *+2
+        ldd   ,y++           ; get literal
+        pshu  d              ; push to user stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $87
+        fcc   'execut'
+        fcb   $c5
+        fdb   lit-6
+exec    fdb   *+2
+        pulu  x              ; get cfa from parameter stack
+        jmp   [,x++]         ; execute next
+
+        fcb   $86
+        fcc   'branc'
+        fcb   $c8
+        fdb   exec-10
+bran    fdb   *+2
+bran1   ldd   ,y             ; get offset value
+        leay  d,y            ; add offset to instruction pointer
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $87
+        fcc   '0branc'
+        fcb   $c8
+        fdb   bran-9
+zbran   fdb   *+2
+        pulu  d
+        cmpd  #0             ; is top of stack zero?
+        beq   bran1          ; yes, must branch
+        leay  2,y            ; no, skip branch offset
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $86
+        fcc   '(loop'
+        fcb   $a9
+        fdb   zbran-10
+xloop   fdb   *+2
+        ldd   #$0001         ; assume an increment of 1
+xloo1   addd  0,s            ; add increment to loop index
+        std   0,s            ; put the new index on the stack
+        cmpd  2,s            ; compare index with limit
+        blt   bran1          ; branch if index < limit
+        leas  4,s            ; drop the index and the limit
+        leay  2,y            ; skip the branch offset
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $87
+        fcc   '(+loop'
+        fcb   $a9
+        fdb   xloop-9
+xploo   fdb   *+2
+        pulu  d              ; get the increment value
+        bra   xloo1          ; go do loop
+
+        fcb   $84
+        fcc   '(do'
+        fcb   $a9
+        fdb   xploo-10
+xdo     fdb   *+2
+        pulu  d,x            ; get initial index and limit values
+        pshs  x,d            ; push to system stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $c9
+        fdb   xdo-7
+ido     fdb   *+2
+        ldd   0,s            ; get the index
+        pshu  d              ; push it to the parameter stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $85
+        fcc   'digi'
+        fcb   $d4
+        fdb   ido-4
+digit   fdb   *+2
+        clra                 ; clear high byte
+        ldb   3,u            ; ascii digit is low byte of 2nd on the stack
+        subb  #$30           ; convert to binary
+        blo   digi2          ; not a number
+        cmpb  #$0a           ; ascii 0-9?
+        blo   digi1          ; yes, check against base
+        cmpb  #$11           ; ascii a-z?
+        blo   digi2          ; no, less than 'a'
+        cmpb  #$2a
+        bhi   digi2          ; no, greater than 'z'
+        subb  #7             ; legal letter - convert to binary
+digi1   cmpb  1,u            ; compare number to base (on top of stack)
+
+                bhs   digi2          ; error if greater than or equal
+        std   2,u            ; no error leave number on the stack
+        ldd   #1             ; true flag
+        std   0,u            ; put flag on top of stack
+        bra   digi3          ; next
+digi2   leau  2,u            ; adjust stack
+        ldd   #0             ; false flag
+        std   0,u            ; put it on the stack
+digi3   ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $86
+        fcc   '(find'
+        fcb   $a9
+        fdb   digit-8
+pfind   fdb   *+2
+        pshs  y              ; save ip
+        pulu  x              ; lfa of first word in the dictionary search
+pfin1   ldy   0,u            ; location of packed string (here)
+        ldb   0,x            ; get dictionary word length
+        tfr   b,a            ; save the length byte temporarily
+        andb  #$3f           ; mask off the two highest bits
+        cmpb  0,y            ; compare it with the packed string
+        bne   pfin5          ; lengths don't match - get another word
+pfin2   leax  1,x            ; ok so far - look at the text
+        leay  1,y            ;
+        ldb   0,x            ; get next character
+        cmpb  0,y            ; compare with packed string
+        beq   pfin2          ; ok so far - go on to next character
+        andb  #$7f           ; doesn't match - toggle high bit
+        cmpb  0,y            ; try again
+        bne   pfin6          ; doesn't match - go get next word
+pfin3   leax  5,x            ; we have an exact match - get pfa
+        tfr   a,b            ; retrieve length byte
+        clra                 ; d now contains the string length byte
+        stx   0,u            ; replace location of packed string with pfa
+        ldx   #1             ; boolean true flag
+        pshu  d              ; put string length on the stack
+        pshu  x              ; put boolean flag on the stack
+pfin4   puls  y              ; restore ip
+        ldx   ,y++           ; next
+        jmp   [,x++]
+pfin5   leax  1,x            ; skip character count
+pfin6   tst   0,x+           ; test sign bit
+        bpl   pfin6          ; keep looking - sign bit is not set
+pfin7   ldx   0,x            ; get lfa
+        cmpx  #0             ; if zero we're at the end of the dictionary
+        bne   pfin1          ; look at next word - lfa in x
+        stx   0,u            ; put a boolean false on the stack
+        bra   pfin4          ; next
+
+        fcb   $87
+        fcc   'enclos'
+        fcb   $c5
+        fdb   pfind-9
+encl    fdb   *+2
+        pshs  y              ; save the ip
+        pulu  d              ; terminator character is now in b
+        ldx   0,u            ; get starting address, but keep it on the stack
+        ldy   #-1            ; set counter
+        leax  -1,x           ; decrement starting address
+encl1   leay  1,y            ; increment counter
+        leax  1,x            ; increment address
+        cmpb  0,x            ; is character a terminator?
+        beq   encl1          ; yes, continue looking
+        pshu  y              ; character must be text, so push count offset
+        tst   0,x            ; is the character a null?
+        bne   encl2          ; no, continue
+        tfr   y,x            ; copy counter
+        leay  1,y            ; increment counter
+        bra   encl5          ; do the push, get ip and do next
+encl2   leay  1,y            ; increment counter
+        leax  1,x            ; increment address
+        cmpb  0,x            ; is the character a terminator?
+        beq   encl4          ; yes, finish up
+        tst   0,x            ; no, is it a null?
+        bne   encl2          ; no, continue looking
+encl3   tfr   y,x            ; counters are equal
+        bra   encl5          ; do the push
+encl4   tfr   y,x            ; copy counter
+        leax  1,x            ; increment the counter
+encl5   pshu  y,x            ; do the push
+        puls  y              ; restore ip
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   'emi'
+        fcb   $d4
+        fdb   encl-10
+emit    fdb   docol
+        fdb   pemit
+        fdb   one
+        fdb   outt
+        fdb   pstor
+        fdb   semis
+
+        fcb   $83
+        fcc   'ke'
+        fcb   $d9
+        fdb   emit-7
+key     fdb   docol
+        fdb   pkey
+        fdb   semis
+
+        fcb   $89
+        fcc   '?termina'
+        fcb   $cc
+        fdb   key-6
+qterm   fdb   docol
+        fdb   pqter
+        fdb   semis
+
+        fcb   $82
+        fcc   'c'
+        fcb   $d2
+        fdb   qterm-12
+cr      fdb   docol
+        fdb   lit
+        fdb   $0d
+        fdb   pemit
+        fdb   lit
+        fdb   $0a
+        fdb   pemit
+        fdb   semis
+
+        fcb   $85
+        fcc   'cmov'
+        fcb   $c5
+        fdb   cr-5
+cmove   fdb   *+2
+        pshs  y              ; save the instruction pointer
+        pulu  d              ; get the count
+        addd  0,u            ; add it to the destination address
+        pulu  x,y            ; destination in x, source in y
+        pshu  d              ; put final destination addr. on stack
+cmov1   lda   ,y+            ; do the move
+        sta   ,x+
+        cmpx  0,u            ; at the final destination?
+        blt   cmov1          ; if not, continue
+        leau  2,u            ; drop final destination from the stack
+        puls  y              ; restore the instruction pointer
+        ldx   ,y++           ; nex
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'u'
+        fcb   $aa
+        fdb   cmove-8
+ustar   fdb   *+2            ; unsigned multiplication subroutine
+        ldd   0,u            ; get op2
+        std   -2,s           ; save it just below the return stack
+        ldd   2,u            ; get op1
+        std   -4,s           ; save it also
+        clr   0,u            ; clear high order word
+        clr   1,u            ;
+        lda   -3,s           ; get op1 low byte
+        ldb   -1,s           ; get op2 low byte
+        mul                  ; multiply
+        std   2,u            ; save the first partial product on the stack
+        lda   -4,s           ; get op1 high byte
+        ldb   -1,s           ; get op2 low byte
+        mul                  ; multiply
+        addd  1,u            ; add to first partial product
+        std   1,u            ; and update
+        lda   -3,s           ; get op1 low byte
+        ldb   -2,s           ; get op2 high byte
+        mul                  ; multiply
+        addd  1,u            ; add to second partial product
+        std   1,u            ; and update
+        bcc   nocary         ; check for a carry into high byte
+        inc   0,u            ; add carry if neccesary
+nocary  lda   -4,s           ; get op1 high byte
+        ldb   -2,s           ; get op2 high byte
+        mul                  ; multply
+        addd  0,u            ; add to third partial product
+        std   0,u            ; and update - result is on stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'u'
+        fcb   $af
+        fdb   ustar-5
+uslas   fdb   *+2            ; 32 by 16 unsigned division routine
+        ldd   0,u            ; get divisor
+        cmpd  #0             ; check for a divide by zero
+        bne   usla1          ; ok - continue
+        ldd   #-1            ; trap a divide by zero
+        leau  6,u            ; drop all data from stack
+        pshu  d              ; set flags
+        pshu  d              ;
+        bra   usla4          ; next
+usla1   lda   #32            ; set counter for 32 bit division
+        pshu  a              ; 0,u is the counter - 1,u is the divisor
+        ldd   3,u            ; 3,u and 5,u are the high and low words of
+        clra                 ; the dividend
+        clrb                 ;
+usla2   asl   6,u            ; shift dividend and quotient
+        rol   5,u
+        rol   4,u
+        rol   3,u
+        rolb                 ; shift dividend into d register
+        rola
+        cmpd  1,u            ; is dividend greater than the divisor?
+        blo   usla3          ; no, skip subtraction
+        subd  1,u            ; yes, do subtraction
+        inc   6,u            ; increment low byte quotient
+usla3   dec   0,u            ; decrement counter
+        bne   usla2          ; loop for a non-zero count
+        ldx   5,u            ; now the remainder is in d, the quotient is at 5,u
+        leau  7,u            ; drop data on the stack
+        pshu  d              ; push remainder
+        pshu  x              ; push quotient
+usla4   ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'an'
+        fcb   $c4
+        fdb   uslas-5
+andd    fdb   *+2
+        pulu  d              ; get top of stack
+        anda  0,u            ; and high order byte
+        andb  1,u            ; and low order byte
+        std   0,u            ; leave result on stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'o'
+        fcb   $d2
+        fdb   andd-6
+orr     fdb   *+2
+        pulu  d              ; get top of stack
+        ora   0,u            ; or high order byte
+        orb   1,u            ; or low order byte
+        std   0,u            ; leave result on stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'xo'
+        fcb   $d2
+        fdb   orr-5
+xorr    fdb   *+2
+        pulu  d              ; get top stack
+        eora  0,u            ; xor high order byte
+        eorb  1,u            ; xor low order byte
+        std   0,u            ; leave result on stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'sp'
+        fcb   $c0
+        fdb   xorr-6
+spat    fdb   *+2
+        tfr   u,d            ; get current parameter stack pointer
+        pshu  d              ; put it on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'sp'
+        fcb   $a1
+        fdb   spat-6
+spsto   fdb   *+2
+        ldx   up             ; initial user pointer
+        leax  6,x            ; point to location in user table
+        ldu   0,x            ; get parameter stack pointer
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'rp'
+        fcb   $c0
+        fdb   spsto-6
+rpat    fdb   *+2
+        pshu  s              ; get current return stack pointer
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'rp'
+        fcb   $a1
+        fdb   rpat-6
+rpsto   fdb   *+2
+        ldx   up             ; initial user pointer
+        leax  8,x            ; point to location in user table
+        lds   0,x            ; get return stack pointer
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   ';'
+        fcb   $d3
+        fdb   rpsto-6
+semis   fdb   *+2
+        puls  y              ; fetch old ip
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $85
+        fcc   'leav'
+        fcb   $c5
+        fdb   semis-5
+leave   fdb   *+2
+        ldd   0,s            ; get index
+        std   2,s            ; store at limit
+        ldx   ,y++           ; next
+        jmp   [0,x]
+
+        fcb   $82
+        fcc   '>'
+        fcb   $d2
+        fdb   leave-8
+tor     fdb   *+2
+        pulu  d              ; get top of parameter stack
+        pshs  d              ; push it to the return stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'r'
+        fcb   $be
+        fdb   tor-5
+fromr   fdb   *+2
+        puls  d              ; get top of return stack
+        pshu  d              ; push it to the parameter stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $d2
+        fdb   fromr-5
+rr      fdb   ido+2          ; does the same as i
+
+        fcb   $82
+        fcc   '0'
+        fcb   $bd
+        fdb   rr-4
+zequ    fdb   *+2
+        pulu  d              ; get top of stack
+        ldx   #1             ; assume true
+        cmpd  #0             ; compare to zero
+        beq   zeq1           ; see if assumtion is correct
+        leax  -1,x           ; no, it is false
+zeq1    pshu  x              ; leave flag
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   '0'
+        fcb   $bc
+        fdb   zequ-5
+zless   fdb   *+2
+        pulu  d              ; get top of stack
+        ldx   #1             ; assume true
+        cmpd  #0             ; compare to zero
+        blt   zless1         ; check assumption
+        leax  -1,x           ; no, it is false
+zless1  pshu  x              ; leave flag
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $ab
+        fdb   zless-5
+plus    fdb   *+2
+        pulu  d              ; get top of stack
+        addd  0,u            ; add it to new top of stack
+        std   0,u            ; put sum on top of stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'd'
+        fcb   $ab
+        fdb   plus-4
+dplus   fdb   *+2
+        clra                 ; clear a and the carry bit
+        ldb   #4             ; do four bytes
+        tfr   u,x            ; get a reference to the top of the stack
+dplu1   lda   3,x            ; get a byte from d2
+        adca  7,x            ; add it to a byte from d1 with the carry
+        sta   7,x            ; update
+        leax  -1,x           ; adjust x
+        decb                 ; decrement counter
+        bne   dplu1          ; loop if not done
+        leau  4,u            ; adjust stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $85
+        fcc   'minu'
+        fcb   $d3
+        fdb   dplus-5
+minus   fdb   *+2
+        clra
+        clrb                 ; clear d
+        subd  0,u            ; get twos complement in d
+        std   0,u            ; update
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $86
+        fcc   'dminu'
+        fcb   $d3
+        fdb   minus-8
+dminu   fdb   *+2
+        com   0,u            ; complement the high order bytes of
+        com   1,u            ; the double number
+        com   2,u            ;
+        neg   3,u            ; twos complement the lowest byte
+        bne   dmin1          ; and add carrys as needed
+        inc   2,u            ;
+        bne   dmin1          ;
+        inc   1,u            ;
+        bne   dmin1          ;
+        inc   0,u            ;
+dmin1   ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   'ove'
+        fcb   $d2
+        fdb   dminu-9
+over    fdb   *+2
+        ldd   2,u            ; get 2nd item on stack
+        pshu  d              ; put it on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   'dro'
+        fcb   $d0
+        fdb   over-7
+drop    fdb   *+2
+        leau  2,u            ; adjust stack pointer
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   'swa'
+        fcb   $d0
+        fdb   drop-7
+swap    fdb   *+2
+        pulu  d              ; get top of stack
+        pulu  x              ; get 2nd on stack
+        pshu  d              ; top of stack is now 2nd
+        pshu  x              ; 2nd is now top of stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $83
+        fcc   'du'
+        fcb   $d0
+        fdb   swap-7
+dup     fdb   *+2
+        ldd   0,u            ; get top of stack
+        pshu  d              ; push it back on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   '2du'
+        fcb   $d0
+        fdb   dup-6
+tdup    fdb   *+2
+        ldd   0,u            ; get high order word
+        ldx   2,u            ; get low order word
+        pshu  x,d            ; do the dup
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   '+'
+        fcb   $a1
+        fdb   tdup-7
+pstor   fdb   *+2
+        pulu  x              ; get address
+        pulu  d              ; get increment
+        addd  0,x            ; do addition
+        std   0,x            ; store addition
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $86
+        fcc   'toggl'
+        fcb   $c5
+        fdb   pstor-5
+toggl   fdb   *+2
+        pulu  d,x            ; get bit pattern in b, address in x
+        eorb  0,x            ; do the toggle
+        stb   0,x            ; replace byte
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $c0
+        fdb   toggl-9
+at      fdb   *+2
+        ldd   [0,u]          ; fetch word pointed to by top of stack
+        std   0,u            ; put word on the top of stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'c'
+        fcb   $c0
+        fdb   at-4
+cat     fdb   *+2
+        ldb   [0,u]          ; fetch byte pointed to by top of stack
+        clra                 ; clear high order byte
+        std   0,u            ; put word on the top of the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+
+        fcb   $82
+        fcc   '2'
+        fcb   $c0
+        fdb   cat-5
+tat     fdb   *+2
+        pulu  x              ; get pointer
+        ldd   2,x            ; get least significant word
+        pshu  d              ; push it
+        ldd   0,x            ; get most significant word
+        pshu  d              ; push it
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $a1
+        fdb   tat-5
+store   fdb   *+2
+        pulu  x              ; get address
+        pulu  d              ; get word in d register
+        std   0,x            ; store word at address
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'c'
+        fcb   $a1
+        fdb   store-4
+cstor   fdb   *+2
+        pulu  x              ; get address
+        pulu  d              ; get byte in b register
+        stb   0,x            ; store byte at address
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   '2'
+        fcb   $a1
+        fdb   cstor-5
+tstor   fdb   *+2
+        pulu  x              ; get address
+        pulu  d              ; get most significant word
+        std   0,x            ; store it
+        pulu  d              ; get least significant word
+        std   2,x            ; store it
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $c1
+        fcb   $ba
+        fdb   tstor-5
+colon   fdb   docol
+        fdb   qexec
+        fdb   scsp
+        fdb   curr
+        fdb   at
+        fdb   cont
+        fdb   store
+        fdb   creat
+        fdb   rbrac
+        fdb   pscod
+docol   pshs  y              ; store ip
+        leay  0,x            ; new ip = wp
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $c1
+        fcb   $bb
+        fdb   colon-4
+semi    fdb   docol
+        fdb   qcsp
+        fdb   comp
+        fdb   semis
+        fdb   smudg
+        fdb   lbrac
+        fdb   semis
+
+        fcb   $84
+        fcc   'noo'
+        fcb   $d0
+        fdb   semi-4
+noop    fdb   docol
+        fdb   semis
+
+        fcb   $88
+        fcc   'constan'
+        fcb   $d4
+        fdb   noop-7
+con     fdb   docol
+        fdb   creat
+        fdb   smudg
+        fdb   comma
+        fdb   pscod
+docon   ldd   0,x            ; get data pointed to by wp
+        pshu  d              ; push it on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $88
+        fcc   'variabl'
+        fcb   $c5
+        fdb   con-11
+var     fdb   docol
+        fdb   con
+        fdb   pscod
+dovar   pshu  x              ; push the word pointer on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   'use'
+        fcb   $d2
+        fdb   var-11
+user    fdb   docol
+        fdb   con
+        fdb   pscod
+douse   ldd   up             ; get initial user pointer
+        addd  0,x            ; add the offset
+        pshu  d              ; put it on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $b0
+        fdb   user-7
+zero    fdb   docon
+        fdb   0
+
+        fcb   $81
+        fcb   $b1
+        fdb   zero-4
+one     fdb   docon
+        fdb   1
+
+        fcb   $81
+        fcb   $b2
+        fdb   one-4
+two     fdb   docon
+        fdb   2
+
+        fcb   $81
+        fcb   $b3
+        fdb   two-4
+three   fdb   docon
+        fdb   3
+
+        fcb   $82
+        fcc   'b'
+        fcb   $cc
+        fdb   three-4
+bls     fdb   docon
+        fdb   $20
+
+        fcb   $83
+        fcc   'c/'
+        fcb   $cc
+        fdb   bls-5
+csll    fdb   docon
+        fdb   64
+
+        fcb   $85
+        fcc   'firs'
+        fcb   $d4
+        fdb   csll-6
+first   fdb   docon
+        fdb   buf1
+
+        fcb   $85
+        fcc   'limi'
+        fcb   $d4
+        fdb   first-8
+limit   fdb   docon
+        fdb   em
+
+        fcb   $85
+        fcc   'b/bu'
+        fcb   $c6
+        fdb   limit-8
+bbuf    fdb   docon
+        fdb   kbbuf
+
+        fcb   $85
+        fcc   'b/sc'
+        fcb   $d2
+        fdb   bbuf-8
+bscr    fdb   docon
+        fdb   $08
+
+        fcb   $87
+        fcc   '+origi'
+        fcb   $ce
+        fdb   bscr-8
+porig   fdb   docol
+        fdb   lit
+        fdb   orig
+        fdb   plus
+        fdb   semis
 
 *************************************************
 *                                               *
-*                 USER VARIABLES                *
+*                 user variables                *
 *                                               *
 *************************************************
-        FCB   $82
-        FCC   'S'
-        FCB   $B0
-        FDB   PORIG-10
-SZERO   FDB   DOUSE
-        FDB   6
+        fcb   $82
+        fcc   's'
+        fcb   $b0
+        fdb   porig-10
+szero   fdb   douse
+        fdb   6
 
-        FCB   $82
-        FCC   'R'
-        FCB   $B0
-        FDB   SZERO-5
-RZERO   FDB   DOUSE
-        FDB   8
+        fcb   $82
+        fcc   'r'
+        fcb   $b0
+        fdb   szero-5
+rzero   fdb   douse
+        fdb   8
 
-        FCB   $83
-        FCC   'TI'
-        FCB   $C2
-        FDB   RZERO-5
-TIB     FDB   DOUSE
-        FDB   10
+        fcb   $83
+        fcc   'ti'
+        fcb   $c2
+        fdb   rzero-5
+tib     fdb   douse
+        fdb   10
 
-        FCB   $85
-        FCC   'WIDT'
-        FCB   $C8
-        FDB   TIB-6
-WIDTH   FDB   DOUSE
-        FDB   12
+        fcb   $85
+        fcc   'widt'
+        fcb   $c8
+        fdb   tib-6
+width   fdb   douse
+        fdb   12
 
-        FCB   $87
-        FCC   'WARNIN'
-        FCB   $C7
-        FDB   WIDTH-8
-WARN    FDB   DOUSE
-        FDB   14
+        fcb   $87
+        fcc   'warnin'
+        fcb   $c7
+        fdb   width-8
+warn    fdb   douse
+        fdb   14
 
-        FCB   $85
-        FCC   'FENC'
-        FCB   $C5
-        FDB   WARN-10
-FENCE   FDB   DOUSE
-        FDB   16
+        fcb   $85
+        fcc   'fenc'
+        fcb   $c5
+        fdb   warn-10
+fence   fdb   douse
+        fdb   16
 
-        FCB   $82
-        FCC   'D'
-        FCB   $D0
-        FDB   FENCE-8
-DP      FDB   DOUSE
-        FDB   18
+        fcb   $82
+        fcc   'd'
+        fcb   $d0
+        fdb   fence-8
+dp      fdb   douse
+        fdb   18
 
-        FCB   $88
-        FCC   'VOC-LIN'
-        FCB   $CB
-        FDB   DP-5
-VOCL    FDB   DOUSE
-        FDB   20
+        fcb   $88
+        fcc   'voc-lin'
+        fcb   $cb
+        fdb   dp-5
+vocl    fdb   douse
+        fdb   20
 
-        FCB   $83
-        FCC   'BL'
-        FCB   $CB
-        FDB   VOCL-11
-BLK     FDB   DOUSE
-        FDB   22
+        fcb   $83
+        fcc   'bl'
+        fcb   $cb
+        fdb   vocl-11
+blk     fdb   douse
+        fdb   22
 
-        FCB   $82
-        FCC   'I'
-        FCB   $CE
-        FDB   BLK-6
-INN     FDB   DOUSE
-        FDB   24
+        fcb   $82
+        fcc   'i'
+        fcb   $ce
+        fdb   blk-6
+inn     fdb   douse
+        fdb   24
 
-        FCB   $83
-        FCC   'OU'
-        FCB   $D4
-        FDB   INN-5
-OUTT    FDB   DOUSE
-        FDB   26
+        fcb   $83
+        fcc   'ou'
+        fcb   $d4
+        fdb   inn-5
+outt    fdb   douse
+        fdb   26
 
-        FCB   $83
-        FCC   'SC'
-        FCB   $D2
-        FDB   OUTT-6
-SCR     FDB   DOUSE
-        FDB   28
+        fcb   $83
+        fcc   'sc'
+        fcb   $d2
+        fdb   outt-6
+scr     fdb   douse
+        fdb   28
 
-        FCB   $86
-        FCC   'OFFSE'
-        FCB   $D4
-        FDB   SCR-6
-OFSET   FDB   DOUSE
-        FDB   30
+        fcb   $86
+        fcc   'offse'
+        fcb   $d4
+        fdb   scr-6
+ofset   fdb   douse
+        fdb   30
 
-        FCB   $87
-        FCC   'CONTEX'
-        FCB   $D4
-        FDB   OFSET-9
-CONT    FDB   DOUSE
-        FDB   32
+        fcb   $87
+        fcc   'contex'
+        fcb   $d4
+        fdb   ofset-9
+cont    fdb   douse
+        fdb   32
 
-        FCB   $87
-        FCC   'CURREN'
-        FCB   $D4
-        FDB   CONT-10
-CURR    FDB   DOUSE
-        FDB   34
+        fcb   $87
+        fcc   'curren'
+        fcb   $d4
+        fdb   cont-10
+curr    fdb   douse
+        fdb   34
 
-        FCB   $85
-        FCC   'STAT'
-        FCB   $C5
-        FDB   CURR-10
-STATE   FDB   DOUSE
-        FDB   36
+        fcb   $85
+        fcc   'stat'
+        fcb   $c5
+        fdb   curr-10
+state   fdb   douse
+        fdb   36
 
-        FCB   $84
-        FCC   'BAS'
-        FCB   $C5
-        FDB   STATE-8
-BASE    FDB   DOUSE
-        FDB   38
+        fcb   $84
+        fcc   'bas'
+        fcb   $c5
+        fdb   state-8
+base    fdb   douse
+        fdb   38
 
-        FCB   $83
-        FCC   'DP'
-        FCB   $CC
-        FDB   BASE-7
-DPL     FDB   DOUSE
-        FDB   40
+        fcb   $83
+        fcc   'dp'
+        fcb   $cc
+        fdb   base-7
+dpl     fdb   douse
+        fdb   40
 
-        FCB   $83
-        FCC   'FL'
-        FCB   $C4
-        FDB   DPL-6
-FLD     FDB   DOUSE
-        FDB   42
+        fcb   $83
+        fcc   'fl'
+        fcb   $c4
+        fdb   dpl-6
+fld     fdb   douse
+        fdb   42
 
-        FCB   $83
-        FCC   'CS'
-        FCB   $D0
-        FDB   FLD-6
-CSPP    FDB   DOUSE
-        FDB   44
+        fcb   $83
+        fcc   'cs'
+        fcb   $d0
+        fdb   fld-6
+cspp    fdb   douse
+        fdb   44
 
-        FCB   $82
-        FCC   'R'
-        FCB   $A3
-        FDB   CSPP-6
-RNUM    FDB   DOUSE
-        FDB   46
+        fcb   $82
+        fcc   'r'
+        fcb   $a3
+        fdb   cspp-6
+rnum    fdb   douse
+        fdb   46
 
-        FCB   $83
-        FCC   'HL'
-        FCB   $C4
-        FDB   RNUM-5
-HLD     FDB   DOUSE
-        FDB   48
+        fcb   $83
+        fcc   'hl'
+        fcb   $c4
+        fdb   rnum-5
+hld     fdb   douse
+        fdb   48
 
 *************************************************
 *                                               *
-*            END OF USER VARIABLES              *
+*            end of user variables              *
 *                                               *
 *************************************************
-        FCB   $82
-        FCC   '1'
-        FCB   $AB
-        FDB   HLD-6
-ONEP    FDB   *+2
-        LDD   0,U            ; Get top of parameter stack
-        ADDD  #1             ; Increment top of parameter stack
-        STD   0,U            ; Put word back on stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   '2'
-        FCB   $AB
-        FDB   ONEP-5
-TWOP    FDB   *+2
-        LDD   0,U            ; Get top of parameter stack
-        ADDD  #2             ; Add 2
-        STD   0,U            ; Put word back on stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $84
-        FCC   'HER'
-        FCB   $C5
-        FDB   TWOP-5
-HERE    FDB   DOCOL
-        FDB   DP
-        FDB   AT
-        FDB   SEMIS
-
-        FCB   $85
-        FCC   'ALLO'
-        FCB   $D4
-        FDB   HERE-7
-ALLOT   FDB   DOCOL
-        FDB   DP
-        FDB   PSTOR
-        FDB   SEMIS
-
-        FCB   $81
-        FCB   $AC
-        FDB   ALLOT-8
-COMMA   FDB   DOCOL
-        FDB   HERE
-        FDB   STORE
-        FDB   TWO
-        FDB   ALLOT
-        FDB   SEMIS
-
-        FCB   $82
-        FCC   'C'
-        FCB   $AC
-        FDB   COMMA-4
-CCOMM   FDB   DOCOL
-        FDB   HERE
-        FDB   CSTOR
-        FDB   ONE
-        FDB   ALLOT
-        FDB   SEMIS
-
-        FCB   $81
-        FCB   $AD
-        FDB   CCOMM-5
-SUBB    FDB   *+2
-        LDD   2,U            ; Get first value
-        SUBD  0,U            ; Do subtraction
-        LEAU  2,U            ; Adjust stack
-        STD   0,U            ; Put difference on top of stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $81
-        FCB   $BD
-        FDB   SUBB-4
-EQUAL   FDB   DOCOL
-        FDB   SUBB
-        FDB   ZEQU
-        FDB   SEMIS
-
-        FCB   $81
-        FCB   $BC
-        FDB   EQUAL-4
-LESS    FDB   *+2
-        PULU  D              ; Get top of stack
-        LDX   #0             ; Assume a FALSE
-        CMPD  0,U            ; Compare with new top of stack
-        BLE   LESS1          ; Yes it is FALSE
-        LEAX  1,X            ; No it is TRUE
-LESS1   STX   0,U            ; Leave flag on the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $82
-        FCC   'U'
-        FCB   $BC
-        FDB   LESS-4
-ULESS   FDB   DOCOL
-        FDB   TDUP
-        FDB   XORR
-        FDB   ZLESS
-        FDB   ZBRAN
-        FDB   ULES1-*
-        FDB   DROP
-        FDB   ZLESS
-        FDB   ZEQU
-        FDB   BRAN
-        FDB   ULES2-*
-ULES1   FDB   SUBB
-        FDB   ZLESS
-ULES2   FDB   SEMIS
-
-        FCB   $81
-        FCB   $BE
-        FDB   ULESS-5
-GREAT   FDB   DOCOL
-        FDB   SWAP
-        FDB   LESS
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'RO'
-        FCB   $D4
-        FDB   GREAT-4
-ROT     FDB   *+2
-        PSHS  Y              ; Save IP
-        PULU  D,X,Y          ; S1 in D, S2 in X, S3 in Y
-        PSHU  D,X            ; Put S1 and S2 back on stack
-        PSHU  Y              ; Put S3 on top of stack
-        PULS  Y              ; Restore IP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $85
-        FCC   'SPAC'
-        FCB   $C5
-        FDB   ROT-6
-SPACE   FDB   DOCOL
-        FDB   BLS
-        FDB   EMIT
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   '-DU'
-        FCB   $D0
-        FDB   SPACE-8
-DDUP    FDB   DOCOL
-        FDB   DUP
-        FDB   ZBRAN
-        FDB   DDUP1-*
-        FDB   DUP
-DDUP1   FDB   SEMIS
-
-        FCB   $88
-        FCC   'TRAVERS'
-        FCB   $C5
-        FDB   DDUP-7
-TRAV    FDB   DOCOL
-        FDB   SWAP
-TRAV1   FDB   OVER
-        FDB   PLUS
-        FDB   LIT
-        FDB   $7F
-        FDB   OVER
-        FDB   CAT
-        FDB   LESS
-        FDB   ZBRAN
-        FDB   TRAV1-*
-        FDB   SWAP
-        FDB   DROP
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   'LATES'
-        FCB   $D4
-        FDB   TRAV-11
-LATES   FDB   DOCOL
-        FDB   CURR
-        FDB   AT
-        FDB   AT
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'LF'
-        FCB   $C1
-        FDB   LATES-9
-LFA     FDB   DOCOL
-        FDB   LIT
-        FDB   4
-        FDB   SUBB
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'CF'
-        FCB   $C1
-        FDB   LFA-6
-CFA     FDB   DOCOL
-        FDB   TWO
-        FDB   SUBB
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'NF'
-        FCB   $C1
-        FDB   CFA-6
-NFA     FDB   DOCOL
-        FDB   LIT
-        FDB   5
-        FDB   SUBB
-        FDB   LIT
-        FDB   -1
-        FDB   TRAV
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'PF'
-        FCB   $C1
-        FDB   NFA-6
-PFA     FDB   DOCOL
-        FDB   ONE
-        FDB   TRAV
-        FDB   LIT
-        FDB   5
-        FDB   PLUS
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   '!CS'
-        FCB   $D0
-        FDB   PFA-6
-SCSP    FDB   DOCOL
-        FDB   SPAT
-        FDB   CSPP
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   '?ERRO'
-        FCB   $D2
-        FDB   SCSP-7
-QERR    FDB   DOCOL
-        FDB   SWAP
-        FDB   ZBRAN
-        FDB   QERR1-*
-        FDB   ERROR
-        FDB   BRAN
-        FDB   QERR2-*
-QERR1   FDB   DROP
-QERR2   FDB   SEMIS
-
-        FCB   $85
-        FCC   '?COM'
-        FCB   $D0
-        FDB   QERR-9
-QCOMP   FDB   DOCOL
-        FDB   STATE
-        FDB   AT
-        FDB   ZEQU
-        FDB   LIT
-        FDB   $11
-        FDB   QERR
-        FDB   SEMIS
-
-        FCB   $85
-        FCC   'QEXE'
-        FCB   $C3
-        FDB   QCOMP-8
-QEXEC   FDB   DOCOL
-        FDB   STATE
-        FDB   AT
-        FDB   LIT
-        FDB   $12
-        FDB   QERR
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   '?PAIR'
-        FCB   $D3
-        FDB   QEXEC-8
-QPAIR   FDB   DOCOL
-        FDB   SUBB
-        FDB   LIT
-        FDB   $13
-        FDB   QERR
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   '?CS'
-        FCB   $D0
-        FDB   QPAIR-9
-QCSP    FDB   DOCOL
-        FDB   SPAT
-        FDB   CSPP
-        FDB   AT
-        FDB   SUBB
-        FDB   LIT
-        FDB   $14
-        FDB   QERR
-        FDB   SEMIS
-
-        FCB   $88
-        FCC   '?LOADIN'
-        FCB   $C7
-        FDB   QCSP-7
-QLOAD   FDB   DOCOL
-        FDB   BLK
-        FDB   AT
-        FDB   ZEQU
-        FDB   LIT
-        FDB   $16
-        FDB   QERR
-        FDB   SEMIS
-
-        FCB   $87
-        FCC   'COMPIL'
-        FCB   $C5
-        FDB   QLOAD-11
-COMP    FDB   DOCOL
-        FDB   QCOMP
-        FDB   FROMR
-        FDB   DUP
-        FDB   TWOP
-        FDB   TOR
-        FDB   AT
-        FDB   COMMA
-        FDB   SEMIS
-
-        FCB   $C1
-        FCB   $DB
-        FDB   COMP-10
-LBRAC   FDB   DOCOL
-        FDB   ZERO
-        FDB   STATE
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB   $81
-        FCB   $DD
-        FDB   LBRAC-4
-RBRAC   FDB   DOCOL
-        FDB   LIT
-        FDB   $00C0
-        FDB   STATE
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   'SMUDG'
-        FCB   $C5
-        FDB   RBRAC-4
-SMUDG   FDB   DOCOL
-        FDB   LATES
-        FDB   LIT
-        FDB   $20
-        FDB   TOGGL
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'HE'
-        FCB   $D8
-        FDB   SMUDG-9
-HEX     FDB   DOCOL
-        FDB   LIT
-        FDB   16
-        FDB   BASE
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB   $87
-        FCC   'DECIMA'
-        FCB   $CC
-        FDB   HEX-6
-DECA    FDB   DOCOL
-        FDB   LIT
-        FDB   10
-        FDB   BASE
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB   $87
-        FCC   '(;CODE'
-        FCB   $A9
-        FDB   DECA-10
-PSCOD   FDB   DOCOL
-        FDB   FROMR
-        FDB   LATES
-        FDB   PFA
-        FDB   CFA
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB   $C5
-        FCC   ';COD'
-        FCB   $C5
-        FDB   PSCOD-10
-SEMIC   FDB   DOCOL
-        FDB   QCSP
-        FDB   COMP
-        FDB   PSCOD
-        FDB   LBRAC
-        FDB   SEMIS
-
-        FCB   $87
-        FCC   '<BUILD'
-        FCB   $D3
-        FDB   SEMIC-8
-BUILD   FDB   DOCOL
-        FDB   ZERO
-        FDB   CON
-        FDB   SEMIS
-
-        FCB   $85
-        FCC   'DOES'
-        FCB   $BE
-        FDB   BUILD-10
-DOES    FDB   DOCOL
-        FDB   FROMR
-        FDB   LATES
-        FDB   PFA
-        FDB   STORE
-        FDB   PSCOD
-DODOE   PSHS  Y              ; Save instruction pointer
-        LDY   ,X++           ; IP=[WP] , WP=WP+2
-        PSHU  X              ; Put WP on parameter stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $85
-        FCC   'COUN'
-        FCB   $D4
-        FDB   DOES-8
-COUNT   FDB   DOCOL
-        FDB   DUP
-        FDB   ONEP
-        FDB   SWAP
-        FDB   CAT
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   'TYP'
-        FCB   $C5
-        FDB   COUNT-8
-TYPES   FDB   DOCOL
-        FDB   DDUP
-        FDB   ZBRAN
-        FDB   TYPE1-*
-        FDB   OVER
-        FDB   PLUS
-        FDB   SWAP
-        FDB   XDO
-TYPE2   FDB   IDO
-        FDB   CAT
-        FDB   EMIT
-        FDB   XLOOP
-        FDB   TYPE2-*
-        FDB   BRAN
-        FDB   TYPE3-*
-TYPE1   FDB   DROP
-TYPE3   FDB   SEMIS
-
-        FCB   $89
-        FCC   '-TRAILIN'
-        FCB   $C7
-        FDB   TYPES-7
-DTRAI   FDB   DOCOL
-        FDB   DUP
-        FDB   ZERO
-        FDB   XDO
-DTRA1   FDB   OVER
-        FDB   OVER
-        FDB   PLUS
-        FDB   ONE
-        FDB   SUBB
-        FDB   CAT
-        FDB   BLS
-        FDB   SUBB
-        FDB   ZBRAN
-        FDB   DTRA2-*
-        FDB   LEAVE
-        FDB   BRAN
-        FDB   DTRA3-*
-DTRA2   FDB   ONE
-        FDB   SUBB
-DTRA3   FDB   XLOOP
-        FDB   DTRA1-*
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   '(."'
-        FCB   $A9
-        FDB   DTRAI-12
-PDOTQ   FDB   DOCOL
-        FDB   RR
-        FDB   COUNT
-        FDB   DUP
-        FDB   ONEP
-        FDB   FROMR
-        FDB   PLUS
-        FDB   TOR
-        FDB   TYPES
-        FDB   SEMIS
-
-        FCB   $C2
-        FCC   '.'
-        FCB   $A2
-        FDB   PDOTQ-7
-DOTQ    FDB   DOCOL
-        FDB   LIT
-        FDB   $22
-        FDB   STATE
-        FDB   AT
-        FDB   ZBRAN
-        FDB   DOTQ1-*
-        FDB   COMP
-        FDB   PDOTQ
-        FDB   WORDS
-        FDB   HERE
-        FDB   CAT
-        FDB   ONEP
-        FDB   ALLOT
-        FDB   BRAN
-        FDB   DOTQ2-*
-DOTQ1   FDB   WORDS
-        FDB   HERE
-        FDB   COUNT
-        FDB   TYPES
-DOTQ2   FDB   SEMIS
-
-        FCB   $86
-        FCC   'EXPEC'
-        FCB   $D4
-        FDB   DOTQ-5
-EXPEC   FDB   DOCOL
-        FDB   OVER
-        FDB   PLUS
-        FDB   OVER
-        FDB   XDO
-EXPE1   FDB   KEY
-        FDB   DUP
-        FDB   LIT
-        FDB   BSOUT
-        FDB   EQUAL
-        FDB   ZBRAN
-        FDB   EXPE2-*
-        FDB   DROP
-        FDB   DUP
-        FDB   IDO
-        FDB   EQUAL
-        FDB   DUP
-        FDB   FROMR
-        FDB   TWO
-        FDB   SUBB
-        FDB   PLUS
-        FDB   TOR
-        FDB   ZBRAN
-        FDB   EXPE6-*
-        FDB   LIT
-        FDB   BELL
-        FDB   BRAN
-        FDB   EXPE7-*
-EXPE6   FDB   LIT
-        FDB   BSOUT
-EXPE7   FDB   BRAN
-        FDB   EXPE3-*
-EXPE2   FDB   DUP
-        FDB   LIT
-        FDB   $0D
-        FDB   EQUAL
-        FDB   ZBRAN
-        FDB   EXPE4-*
-        FDB   LEAVE
-        FDB   DROP
-        FDB   BLS
-        FDB   ZERO
-        FDB   BRAN
-        FDB   EXPE5-*
-EXPE4   FDB   DUP
-EXPE5   FDB   IDO
-        FDB   CSTOR
-        FDB   ZERO
-        FDB   IDO
-        FDB   ONEP
-        FDB   STORE
-EXPE3   FDB   EMIT
-        FDB   XLOOP
-        FDB   EXPE1-*
-        FDB   DROP
-        FDB   SEMIS
-
-        FCB   $85
-        FCC   'QUER'
-        FCB   $D9
-        FDB   EXPEC-9
-QUERY   FDB   DOCOL
-        FDB   TIB
-        FDB   AT
-        FDB   LIT
-        FDB   $50
-        FDB   EXPEC
-        FDB   ZERO
-        FDB   INN
-        FDB   STORE
-        FDB   SEMIS
-
-        FCB     $C1
-        FCB     $80
-        FDB     QUERY-8
-NULL    FDB     DOCOL
-        FDB     BLK
-        FDB     AT
-        FDB     ZBRAN
-        FDB     NULL1-*
-        FDB     ONE
-        FDB     BLK
-        FDB     PSTOR
-        FDB     ZERO
-        FDB     INN
-        FDB     STORE
-        FDB     BLK
-        FDB     AT
-        FDB     BSCR
-        FDB     ONE
-        FDB     SUBB
-        FDB     ANDD
-        FDB     ZEQU
-        FDB     ZBRAN
-        FDB     NULL2-*
-        FDB     QEXEC
-        FDB     FROMR
-        FDB     DROP
-NULL2   FDB     BRAN
-        FDB     NULL3-*
-NULL1   FDB     FROMR
-        FDB     DROP
-NULL3   FDB     SEMIS
-
-
-        FCB   $84
-        FCC   'FIL'
-        FCB   $CC
-        FDB   NULL-4
-FILL    FDB   *+2
-        PSHS  Y              ; Save IP
-        PULU  D,X,Y          ; Character in B, count in X, address in Y
-FILL1   STB   ,Y+            ; Store character
-        LEAX  -1,X           ; Decrement counter
-        BNE   FILL1          ; Loop until done
-        PULS  Y              ; Get IP
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-        FCB   $85
-        FCC   'ERAS'
-        FCB   $C5
-        FDB   FILL-7
-ERASEE  FDB   DOCOL
-        FDB   ZERO
-        FDB   FILL
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   'BLANK'
-        FCB   $D3
-        FDB   ERASEE-8
-BLANK   FDB   DOCOL
-        FDB   BLS
-        FDB   FILL
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   'HOL'
-        FCB   $C4
-        FDB   BLANK-9
-HOLD    FDB   DOCOL
-        FDB   LIT
-        FDB   -1
-        FDB   HLD
-        FDB   PSTOR
-        FDB   HLD
-        FDB   AT
-        FDB   CSTOR
-        FDB   SEMIS
-
-        FCB   $83
-        FCC   'PA'
-        FCB   $C4
-        FDB   HOLD-7
-PAD     FDB   DOCOL
-        FDB   HERE
-        FDB   LIT
-        FDB   $44
-        FDB   PLUS
-        FDB   SEMIS
-
-        FCB   $84
-        FCC   'WOR'
-        FCB   $C4
-        FDB   PAD-6
-WORDS   FDB   DOCOL
-        FDB   TIB
-        FDB   AT
-        FDB   INN
-        FDB   AT
-        FDB   PLUS
-        FDB   SWAP
-        FDB   ENCL
-        FDB   HERE
-        FDB   LIT
-        FDB   $0022
-        FDB   BLANK
-        FDB   INN
-        FDB   PSTOR
-        FDB   OVER
-        FDB   SUBB
-        FDB   TOR
-        FDB   RR
-        FDB   HERE
-        FDB   CSTOR
-        FDB   PLUS
-        FDB   HERE
-        FDB   ONEP
-        FDB   FROMR
-        FDB   CMOVE
-        FDB   SEMIS
-
-        FCB   $88
-        FCC   '(NUMBER'
-        FCB   $A9
-        FDB   WORDS-7
-PNUMB   FDB   DOCOL
-PNUM1   FDB   ONEP
-        FDB   DUP
-        FDB   TOR
-        FDB   CAT
-        FDB   BASE
-        FDB   AT
-        FDB   DIGIT
-        FDB   ZBRAN
-        FDB   PNUM2-*
-        FDB   SWAP
-        FDB   BASE
-        FDB   AT
-        FDB   USTAR
-        FDB   DROP
-        FDB   ROT
-        FDB   BASE
-        FDB   AT
-        FDB   USTAR
-        FDB   DPLUS
-        FDB   DPL
-        FDB   AT
-        FDB   ONEP
-        FDB   ZBRAN
-        FDB   PNUM3-*
-        FDB   ONE
-        FDB   DPL
-        FDB   PSTOR
-PNUM3   FDB   FROMR
-        FDB   BRAN
-        FDB   PNUM1-*
-PNUM2   FDB   FROMR
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   'NUMBE'
-        FCB   $D2
-        FDB   PNUMB-11
-NUMB    FDB   DOCOL
-        FDB   ZERO
-        FDB   ZERO
-        FDB   ROT
-        FDB   DUP
-        FDB   ONEP
-        FDB   CAT
-        FDB   LIT
-        FDB   $2D
-        FDB   EQUAL
-        FDB   DUP
-        FDB   TOR
-        FDB   PLUS
-        FDB   LIT
-        FDB   -1
-NUMB1   FDB   DPL
-        FDB   STORE
-        FDB   PNUMB
-        FDB   DUP
-        FDB   CAT
-        FDB   BLS
-        FDB   SUBB
-        FDB   ZBRAN
-        FDB   NUMB2-*
-        FDB   DUP
-        FDB   CAT
-        FDB   LIT
-        FDB   $2E
-        FDB   SUBB
-        FDB   ZERO
-        FDB   QERR
-        FDB   ZERO
-        FDB   BRAN
-        FDB   NUMB1-*
-NUMB2   FDB   DROP
-        FDB   FROMR
-        FDB   ZBRAN
-        FDB   NUMB3-*
-        FDB   DMINU
-NUMB3   FDB   SEMIS
-
-        FCB   $85
-        FCC   '-FIN'
-        FCB   $C4
-        FDB   NUMB-9
-DFIND   FDB   DOCOL
-        FDB   BLS
-        FDB   WORDS
-        FDB   HERE
-        FDB   CONT
-        FDB   AT
-        FDB   AT
-        FDB   PFIND
-        FDB   DUP
-        FDB   ZEQU
-        FDB   ZBRAN
-        FDB   DFIN1-*
-        FDB   DROP
-        FDB   HERE
-        FDB   LATES
-        FDB   PFIND
-DFIN1   FDB   SEMIS
-
-        FCB   $87
-        FCC   '(ABORT'
-        FCB   $A9
-        FDB   DFIND-8
-PABOR   FDB   DOCOL
-        FDB   ABORT
-        FDB   SEMIS
-
-        FCB   $85
-        FCC   'ERRO'
-        FCB   $D2
-        FDB   PABOR-10
-ERROR   FDB   DOCOL
-        FDB   WARN
-        FDB   AT
-        FDB   ZLESS
-        FDB   ZBRAN
-        FDB   ERRO1-*
-        FDB   PABOR
-ERRO1   FDB   HERE
-        FDB   COUNT
-        FDB   TYPES
-        FDB   PDOTQ
-        FCB   2
-        FCC   '? '
-        FDB   MESS
-        FDB   SPSTO
-        FDB   BLK
-        FDB   AT
-        FDB   DDUP
-        FDB   ZBRAN
-        FDB   ERR02-*
-        FDB   INN
-        FDB   AT
-        FDB   SWAP
-ERR02   FDB   QUIT
-        FDB   SEMIS          ; Never executed
-
-        FCB   $83
-        FCC   'ID'
-        FCB   $AE
-        FDB   ERROR-8
-IDDOT   FDB   DOCOL
-        FDB   PAD
-        FDB   LIT
-        FDB   $20
-        FDB   LIT
-        FDB   $5F
-        FDB   FILL
-        FDB   DUP
-        FDB   PFA
-        FDB   LFA
-        FDB   OVER
-        FDB   SUBB
-        FDB   PAD
-        FDB   SWAP
-        FDB   CMOVE
-        FDB   PAD
-        FDB   COUNT
-        FDB   LIT
-        FDB   $1F
-        FDB   ANDD
-        FDB   TYPES
-        FDB   SPACE
-        FDB   SEMIS
-
-        FCB   $86
-        FCC   'CREAT'
-        FCB   $C5
-        FDB   IDDOT-6
-CREAT   FDB   DOCOL
-        FDB   DFIND
-        FDB   ZBRAN
-        FDB   CREAT1-*
-        FDB   DROP
-        FDB   NFA
-        FDB   IDDOT
-        FDB   LIT
-        FDB   4
-        FDB   MESS
-        FDB   SPACE
-CREAT1  FDB   HERE
-        FDB   DUP
-        FDB   CAT
-        FDB   WIDTH
-        FDB   AT
-        FDB   MIN
-        FDB   ONEP
-        FDB   ALLOT
-        FDB   DUP
-        FDB   LIT
-        FDB   $A0
-        FDB   TOGGL
-        FDB   HERE
-        FDB   ONE
-        FDB   SUBB
-        FDB   LIT
-        FDB   $80
-        FDB   TOGGL
-        FDB   LATES
-        FDB   COMMA
-        FDB   CURR
-        FDB   AT
-        FDB   STORE
-        FDB   HERE
-        FDB   TWOP
-        FDB   COMMA
-        FDB   SEMIS
-
-        FCB   $C9
-        FCC   '[COMPILE'
-        FCB   $DD
-        FDB   CREAT-9
-BCOMP   FDB   DOCOL
-        FDB   DFIND
-        FDB   ZEQU
-        FDB   ZERO
-        FDB   QERR
-        FDB   DROP
-        FDB   CFA
-        FDB   COMMA
-        FDB   SEMIS
-
-        FCB   $C7
-        FCC   'LITERA'
-        FCB   $CC
-        FDB   BCOMP-12
-LITER   FDB   DOCOL
-        FDB   STATE
-        FDB   AT
-        FDB   ZBRAN
-        FDB   LITE1-*
-        FDB   COMP
-        FDB   LIT
-        FDB   COMMA
-LITE1   FDB   SEMIS
-
-        FCB   $C8
-        FCC   'DLITERA'
-        FCB   $CC
-        FDB   LITER-10
-DLITE   FDB   DOCOL
-        FDB   STATE
-        FDB   AT
-        FDB   ZBRAN
-        FDB   DLIT1-*
-        FDB   SWAP
-        FDB   LITER
-        FDB   LITER
-DLIT1   FDB   SEMIS
-
-        FCB   $86
-        FCC   '?STAC'
-        FCB   $CB
-        FDB   DLITE-11
-QSTAC   FDB   DOCOL
-        FDB   SPAT
-        FDB   SZERO
-        FDB   AT
-        FDB   SWAP
-        FDB   ULESS
-        FDB   ONE
-        FDB   QERR
-        FDB   SPAT
-        FDB   HERE
-        FDB   LIT
-        FDB   $80
-        FDB   PLUS
-        FDB   ULESS
-        FDB   LIT
-        FDB   7
-        FDB   QERR
-        FDB   SEMIS
-
-        FCB   $89
-        FCC   'INTERPRE'
-        FCB   $D4
-        FDB   QSTAC-9
-INTER   FDB   DOCOL
-INTE1   FDB   DFIND
-        FDB   ZBRAN
-        FDB   INTE2-*
-        FDB   STATE
-        FDB   AT
-        FDB   LESS
-        FDB   ZBRAN
-        FDB   INTE3-*
-        FDB   CFA
-        FDB   COMMA
-        FDB   BRAN
-        FDB   INTE4-*
-INTE3   FDB   CFA
-        FDB   EXEC
-INTE4   FDB   QSTAC
-        FDB   BRAN
-        FDB   INTE5-*
-INTE2   FDB   HERE
-        FDB   NUMB
-        FDB   DPL
-        FDB   AT
-        FDB   ONEP
-        FDB   ZBRAN
-        FDB   INTE6-*
-        FDB   DLITE
-        FDB   BRAN
-        FDB   INTE7-*
-INTE6   FDB   DROP
-        FDB   LITER
-INTE7   FDB   QSTAC
-INTE5   FDB   BRAN
-        FDB   INTE1-*
-        FDB   SEMIS          ; Never executed
-
-        FCB   $89
-        FCC   'IMMEDIAT'
-        FCB   $C5
-        FDB   INTER-12
-IMMED   FDB   DOCOL
-        FDB   LATES
-        FDB   LIT
-        FDB   $40
-        FDB   TOGGL
-        FDB   SEMIS
-
-        FCB   $8A
-        FCC   'VOCABULAR'
-        FCB   $D9
-        FDB   IMMED-12
-VOCAB   FDB   DOCOL
-        FDB   BUILD
-        FDB   LIT
-        FDB   $81A0
-        FDB   COMMA
-        FDB   CURR
-        FDB   AT
-        FDB   CFA
-        FDB   COMMA
-        FDB   HERE
-        FDB   VOCL
-        FDB   AT
-        FDB   COMMA
-        FDB   VOCL
-        FDB   STORE
-        FDB   DOES
-DOVOC   FDB   TWOP
-        FDB   CONT
-        FDB   STORE
-        FDB   SEMIS
+        fcb   $82
+        fcc   '1'
+        fcb   $ab
+        fdb   hld-6
+onep    fdb   *+2
+        ldd   0,u            ; get top of parameter stack
+        addd  #1             ; increment top of parameter stack
+        std   0,u            ; put word back on stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   '2'
+        fcb   $ab
+        fdb   onep-5
+twop    fdb   *+2
+        ldd   0,u            ; get top of parameter stack
+        addd  #2             ; add 2
+        std   0,u            ; put word back on stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $84
+        fcc   'her'
+        fcb   $c5
+        fdb   twop-5
+here    fdb   docol
+        fdb   dp
+        fdb   at
+        fdb   semis
+
+        fcb   $85
+        fcc   'allo'
+        fcb   $d4
+        fdb   here-7
+allot   fdb   docol
+        fdb   dp
+        fdb   pstor
+        fdb   semis
+
+        fcb   $81
+        fcb   $ac
+        fdb   allot-8
+comma   fdb   docol
+        fdb   here
+        fdb   store
+        fdb   two
+        fdb   allot
+        fdb   semis
+
+        fcb   $82
+        fcc   'c'
+        fcb   $ac
+        fdb   comma-4
+ccomm   fdb   docol
+        fdb   here
+        fdb   cstor
+        fdb   one
+        fdb   allot
+        fdb   semis
+
+        fcb   $81
+        fcb   $ad
+        fdb   ccomm-5
+subb    fdb   *+2
+        ldd   2,u            ; get first value
+        subd  0,u            ; do subtraction
+        leau  2,u            ; adjust stack
+        std   0,u            ; put difference on top of stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $81
+        fcb   $bd
+        fdb   subb-4
+equal   fdb   docol
+        fdb   subb
+        fdb   zequ
+        fdb   semis
+
+        fcb   $81
+        fcb   $bc
+        fdb   equal-4
+less    fdb   *+2
+        pulu  d              ; get top of stack
+        ldx   #0             ; assume a false
+        cmpd  0,u            ; compare with new top of stack
+        ble   less1          ; yes it is false
+        leax  1,x            ; no it is true
+less1   stx   0,u            ; leave flag on the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $82
+        fcc   'u'
+        fcb   $bc
+        fdb   less-4
+uless   fdb   docol
+        fdb   tdup
+        fdb   xorr
+        fdb   zless
+        fdb   zbran
+        fdb   ules1-*
+        fdb   drop
+        fdb   zless
+        fdb   zequ
+        fdb   bran
+        fdb   ules2-*
+ules1   fdb   subb
+        fdb   zless
+ules2   fdb   semis
+
+        fcb   $81
+        fcb   $be
+        fdb   uless-5
+great   fdb   docol
+        fdb   swap
+        fdb   less
+        fdb   semis
+
+        fcb   $83
+        fcc   'ro'
+        fcb   $d4
+        fdb   great-4
+rot     fdb   *+2
+        pshs  y              ; save ip
+        pulu  d,x,y          ; s1 in d, s2 in x, s3 in y
+        pshu  d,x            ; put s1 and s2 back on stack
+        pshu  y              ; put s3 on top of stack
+        puls  y              ; restore ip
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $85
+        fcc   'spac'
+        fcb   $c5
+        fdb   rot-6
+space   fdb   docol
+        fdb   bls
+        fdb   emit
+        fdb   semis
+
+        fcb   $84
+        fcc   '-du'
+        fcb   $d0
+        fdb   space-8
+ddup    fdb   docol
+        fdb   dup
+        fdb   zbran
+        fdb   ddup1-*
+        fdb   dup
+ddup1   fdb   semis
+
+        fcb   $88
+        fcc   'travers'
+        fcb   $c5
+        fdb   ddup-7
+trav    fdb   docol
+        fdb   swap
+trav1   fdb   over
+        fdb   plus
+        fdb   lit
+        fdb   $7f
+        fdb   over
+        fdb   cat
+        fdb   less
+        fdb   zbran
+        fdb   trav1-*
+        fdb   swap
+        fdb   drop
+        fdb   semis
+
+        fcb   $86
+        fcc   'lates'
+        fcb   $d4
+        fdb   trav-11
+lates   fdb   docol
+        fdb   curr
+        fdb   at
+        fdb   at
+        fdb   semis
+
+        fcb   $83
+        fcc   'lf'
+        fcb   $c1
+        fdb   lates-9
+lfa     fdb   docol
+        fdb   lit
+        fdb   4
+        fdb   subb
+        fdb   semis
+
+        fcb   $83
+        fcc   'cf'
+        fcb   $c1
+        fdb   lfa-6
+cfa     fdb   docol
+        fdb   two
+        fdb   subb
+        fdb   semis
+
+        fcb   $83
+        fcc   'nf'
+        fcb   $c1
+        fdb   cfa-6
+nfa     fdb   docol
+        fdb   lit
+        fdb   5
+        fdb   subb
+        fdb   lit
+        fdb   -1
+        fdb   trav
+        fdb   semis
+
+        fcb   $83
+        fcc   'pf'
+        fcb   $c1
+        fdb   nfa-6
+pfa     fdb   docol
+        fdb   one
+        fdb   trav
+        fdb   lit
+        fdb   5
+        fdb   plus
+        fdb   semis
+
+        fcb   $84
+        fcc   '!cs'
+        fcb   $d0
+        fdb   pfa-6
+scsp    fdb   docol
+        fdb   spat
+        fdb   cspp
+        fdb   store
+        fdb   semis
+
+        fcb   $86
+        fcc   '?erro'
+        fcb   $d2
+        fdb   scsp-7
+qerr    fdb   docol
+        fdb   swap
+        fdb   zbran
+        fdb   qerr1-*
+        fdb   error
+        fdb   bran
+        fdb   qerr2-*
+qerr1   fdb   drop
+qerr2   fdb   semis
+
+        fcb   $85
+        fcc   '?com'
+        fcb   $d0
+        fdb   qerr-9
+qcomp   fdb   docol
+        fdb   state
+        fdb   at
+        fdb   zequ
+        fdb   lit
+        fdb   $11
+        fdb   qerr
+        fdb   semis
+
+        fcb   $85
+        fcc   'qexe'
+        fcb   $c3
+        fdb   qcomp-8
+qexec   fdb   docol
+        fdb   state
+        fdb   at
+        fdb   lit
+        fdb   $12
+        fdb   qerr
+        fdb   semis
+
+        fcb   $86
+        fcc   '?pair'
+        fcb   $d3
+        fdb   qexec-8
+qpair   fdb   docol
+        fdb   subb
+        fdb   lit
+        fdb   $13
+        fdb   qerr
+        fdb   semis
+
+        fcb   $84
+        fcc   '?cs'
+        fcb   $d0
+        fdb   qpair-9
+qcsp    fdb   docol
+        fdb   spat
+        fdb   cspp
+        fdb   at
+        fdb   subb
+        fdb   lit
+        fdb   $14
+        fdb   qerr
+        fdb   semis
+
+        fcb   $88
+        fcc   '?loadin'
+        fcb   $c7
+        fdb   qcsp-7
+qload   fdb   docol
+        fdb   blk
+        fdb   at
+        fdb   zequ
+        fdb   lit
+        fdb   $16
+        fdb   qerr
+        fdb   semis
+
+        fcb   $87
+        fcc   'compil'
+        fcb   $c5
+        fdb   qload-11
+comp    fdb   docol
+        fdb   qcomp
+        fdb   fromr
+        fdb   dup
+        fdb   twop
+        fdb   tor
+        fdb   at
+        fdb   comma
+        fdb   semis
+
+        fcb   $c1
+        fcb   $db
+        fdb   comp-10
+lbrac   fdb   docol
+        fdb   zero
+        fdb   state
+        fdb   store
+        fdb   semis
+
+        fcb   $81
+        fcb   $dd
+        fdb   lbrac-4
+rbrac   fdb   docol
+        fdb   lit
+        fdb   $00c0
+        fdb   state
+        fdb   store
+        fdb   semis
+
+        fcb   $86
+        fcc   'smudg'
+        fcb   $c5
+        fdb   rbrac-4
+smudg   fdb   docol
+        fdb   lates
+        fdb   lit
+        fdb   $20
+        fdb   toggl
+        fdb   semis
+
+        fcb   $83
+        fcc   'he'
+        fcb   $d8
+        fdb   smudg-9
+hex     fdb   docol
+        fdb   lit
+        fdb   16
+        fdb   base
+        fdb   store
+        fdb   semis
+
+        fcb   $87
+        fcc   'decima'
+        fcb   $cc
+        fdb   hex-6
+deca    fdb   docol
+        fdb   lit
+        fdb   10
+        fdb   base
+        fdb   store
+        fdb   semis
+
+        fcb   $87
+        fcc   '(;code'
+        fcb   $a9
+        fdb   deca-10
+pscod   fdb   docol
+        fdb   fromr
+        fdb   lates
+        fdb   pfa
+        fdb   cfa
+        fdb   store
+        fdb   semis
+
+        fcb   $c5
+        fcc   ';cod'
+        fcb   $c5
+        fdb   pscod-10
+semic   fdb   docol
+        fdb   qcsp
+        fdb   comp
+        fdb   pscod
+        fdb   lbrac
+        fdb   semis
+
+        fcb   $87
+        fcc   '<build'
+        fcb   $d3
+        fdb   semic-8
+build   fdb   docol
+        fdb   zero
+        fdb   con
+        fdb   semis
+
+        fcb   $85
+        fcc   'does'
+        fcb   $be
+        fdb   build-10
+does    fdb   docol
+        fdb   fromr
+        fdb   lates
+        fdb   pfa
+        fdb   store
+        fdb   pscod
+dodoe   pshs  y              ; save instruction pointer
+        ldy   ,x++           ; ip=[wp] , wp=wp+2
+        pshu  x              ; put wp on parameter stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $85
+        fcc   'coun'
+        fcb   $d4
+        fdb   does-8
+count   fdb   docol
+        fdb   dup
+        fdb   onep
+        fdb   swap
+        fdb   cat
+        fdb   semis
+
+        fcb   $84
+        fcc   'typ'
+        fcb   $c5
+        fdb   count-8
+types   fdb   docol
+        fdb   ddup
+        fdb   zbran
+        fdb   type1-*
+        fdb   over
+        fdb   plus
+        fdb   swap
+        fdb   xdo
+type2   fdb   ido
+        fdb   cat
+        fdb   emit
+        fdb   xloop
+        fdb   type2-*
+        fdb   bran
+        fdb   type3-*
+type1   fdb   drop
+type3   fdb   semis
+
+        fcb   $89
+        fcc   '-trailin'
+        fcb   $c7
+        fdb   types-7
+dtrai   fdb   docol
+        fdb   dup
+        fdb   zero
+        fdb   xdo
+dtra1   fdb   over
+        fdb   over
+        fdb   plus
+        fdb   one
+        fdb   subb
+        fdb   cat
+        fdb   bls
+        fdb   subb
+        fdb   zbran
+        fdb   dtra2-*
+        fdb   leave
+        fdb   bran
+        fdb   dtra3-*
+dtra2   fdb   one
+        fdb   subb
+dtra3   fdb   xloop
+        fdb   dtra1-*
+        fdb   semis
+
+        fcb   $84
+        fcc   '(."'
+        fcb   $a9
+        fdb   dtrai-12
+pdotq   fdb   docol
+        fdb   rr
+        fdb   count
+        fdb   dup
+        fdb   onep
+        fdb   fromr
+        fdb   plus
+        fdb   tor
+        fdb   types
+        fdb   semis
+
+        fcb   $c2
+        fcc   '.'
+        fcb   $a2
+        fdb   pdotq-7
+dotq    fdb   docol
+        fdb   lit
+        fdb   $22
+        fdb   state
+        fdb   at
+        fdb   zbran
+        fdb   dotq1-*
+        fdb   comp
+        fdb   pdotq
+        fdb   words
+        fdb   here
+        fdb   cat
+        fdb   onep
+        fdb   allot
+        fdb   bran
+        fdb   dotq2-*
+dotq1   fdb   words
+        fdb   here
+        fdb   count
+        fdb   types
+dotq2   fdb   semis
+
+        fcb   $86
+        fcc   'expec'
+        fcb   $d4
+        fdb   dotq-5
+expec   fdb   docol
+        fdb   over
+        fdb   plus
+        fdb   over
+        fdb   xdo
+expe1   fdb   key
+        fdb   dup
+        fdb   lit
+        fdb   bsout
+        fdb   equal
+        fdb   zbran
+        fdb   expe2-*
+        fdb   drop
+        fdb   dup
+        fdb   ido
+        fdb   equal
+        fdb   dup
+        fdb   fromr
+        fdb   two
+        fdb   subb
+        fdb   plus
+        fdb   tor
+        fdb   zbran
+        fdb   expe6-*
+        fdb   lit
+        fdb   bell
+        fdb   bran
+        fdb   expe7-*
+expe6   fdb   lit
+        fdb   bsout
+expe7   fdb   bran
+        fdb   expe3-*
+expe2   fdb   dup
+        fdb   lit
+        fdb   $0d
+        fdb   equal
+        fdb   zbran
+        fdb   expe4-*
+        fdb   leave
+        fdb   drop
+        fdb   bls
+        fdb   zero
+        fdb   bran
+        fdb   expe5-*
+expe4   fdb   dup
+expe5   fdb   ido
+        fdb   cstor
+        fdb   zero
+        fdb   ido
+        fdb   onep
+        fdb   store
+expe3   fdb   emit
+        fdb   xloop
+        fdb   expe1-*
+        fdb   drop
+        fdb   semis
+
+        fcb   $85
+        fcc   'quer'
+        fcb   $d9
+        fdb   expec-9
+query   fdb   docol
+        fdb   tib
+        fdb   at
+        fdb   lit
+        fdb   $50
+        fdb   expec
+        fdb   zero
+        fdb   inn
+        fdb   store
+        fdb   semis
+
+        fcb     $c1
+        fcb     $80
+        fdb     query-8
+null    fdb     docol
+        fdb     blk
+        fdb     at
+        fdb     zbran
+        fdb     null1-*
+        fdb     one
+        fdb     blk
+        fdb     pstor
+        fdb     zero
+        fdb     inn
+        fdb     store
+        fdb     blk
+        fdb     at
+        fdb     bscr
+        fdb     one
+        fdb     subb
+        fdb     andd
+        fdb     zequ
+        fdb     zbran
+        fdb     null2-*
+        fdb     qexec
+        fdb     fromr
+        fdb     drop
+null2   fdb     bran
+        fdb     null3-*
+null1   fdb     fromr
+        fdb     drop
+null3   fdb     semis
+
+
+        fcb   $84
+        fcc   'fil'
+        fcb   $cc
+        fdb   null-4
+fill    fdb   *+2
+        pshs  y              ; save ip
+        pulu  d,x,y          ; character in b, count in x, address in y
+fill1   stb   ,y+            ; store character
+        leax  -1,x           ; decrement counter
+        bne   fill1          ; loop until done
+        puls  y              ; get ip
+        ldx   ,y++           ; next
+        jmp   [,x++]
+
+        fcb   $85
+        fcc   'eras'
+        fcb   $c5
+        fdb   fill-7
+erasee  fdb   docol
+        fdb   zero
+        fdb   fill
+        fdb   semis
+
+        fcb   $86
+        fcc   'blank'
+        fcb   $d3
+        fdb   erasee-8
+blank   fdb   docol
+        fdb   bls
+        fdb   fill
+        fdb   semis
+
+        fcb   $84
+        fcc   'hol'
+        fcb   $c4
+        fdb   blank-9
+hold    fdb   docol
+        fdb   lit
+        fdb   -1
+        fdb   hld
+        fdb   pstor
+        fdb   hld
+        fdb   at
+        fdb   cstor
+        fdb   semis
+
+        fcb   $83
+        fcc   'pa'
+        fcb   $c4
+        fdb   hold-7
+pad     fdb   docol
+        fdb   here
+        fdb   lit
+        fdb   $44
+        fdb   plus
+        fdb   semis
+
+        fcb   $84
+        fcc   'wor'
+        fcb   $c4
+        fdb   pad-6
+words   fdb   docol
+        fdb   tib
+        fdb   at
+        fdb   inn
+        fdb   at
+        fdb   plus
+        fdb   swap
+        fdb   encl
+        fdb   here
+        fdb   lit
+        fdb   $0022
+        fdb   blank
+        fdb   inn
+        fdb   pstor
+        fdb   over
+        fdb   subb
+        fdb   tor
+        fdb   rr
+        fdb   here
+        fdb   cstor
+        fdb   plus
+        fdb   here
+        fdb   onep
+        fdb   fromr
+        fdb   cmove
+        fdb   semis
+
+        fcb   $88
+        fcc   '(number'
+        fcb   $a9
+        fdb   words-7
+pnumb   fdb   docol
+pnum1   fdb   onep
+        fdb   dup
+        fdb   tor
+        fdb   cat
+        fdb   base
+        fdb   at
+        fdb   digit
+        fdb   zbran
+        fdb   pnum2-*
+        fdb   swap
+        fdb   base
+        fdb   at
+        fdb   ustar
+        fdb   drop
+        fdb   rot
+        fdb   base
+        fdb   at
+        fdb   ustar
+        fdb   dplus
+        fdb   dpl
+        fdb   at
+        fdb   onep
+        fdb   zbran
+        fdb   pnum3-*
+        fdb   one
+        fdb   dpl
+        fdb   pstor
+pnum3   fdb   fromr
+        fdb   bran
+        fdb   pnum1-*
+pnum2   fdb   fromr
+        fdb   semis
+
+        fcb   $86
+        fcc   'numbe'
+        fcb   $d2
+        fdb   pnumb-11
+numb    fdb   docol
+        fdb   zero
+        fdb   zero
+        fdb   rot
+        fdb   dup
+        fdb   onep
+        fdb   cat
+        fdb   lit
+        fdb   $2d
+        fdb   equal
+        fdb   dup
+        fdb   tor
+        fdb   plus
+        fdb   lit
+        fdb   -1
+numb1   fdb   dpl
+        fdb   store
+        fdb   pnumb
+        fdb   dup
+        fdb   cat
+        fdb   bls
+        fdb   subb
+        fdb   zbran
+        fdb   numb2-*
+        fdb   dup
+        fdb   cat
+        fdb   lit
+        fdb   $2e
+        fdb   subb
+        fdb   zero
+        fdb   qerr
+        fdb   zero
+        fdb   bran
+        fdb   numb1-*
+numb2   fdb   drop
+        fdb   fromr
+        fdb   zbran
+        fdb   numb3-*
+        fdb   dminu
+numb3   fdb   semis
+
+        fcb   $85
+        fcc   '-fin'
+        fcb   $c4
+        fdb   numb-9
+dfind   fdb   docol
+        fdb   bls
+        fdb   words
+        fdb   here
+        fdb   cont
+        fdb   at
+        fdb   at
+        fdb   pfind
+        fdb   dup
+        fdb   zequ
+        fdb   zbran
+        fdb   dfin1-*
+        fdb   drop
+        fdb   here
+        fdb   lates
+        fdb   pfind
+dfin1   fdb   semis
+
+        fcb   $87
+        fcc   '(abort'
+        fcb   $a9
+        fdb   dfind-8
+pabor   fdb   docol
+        fdb   abort
+        fdb   semis
+
+        fcb   $85
+        fcc   'erro'
+        fcb   $d2
+        fdb   pabor-10
+error   fdb   docol
+        fdb   warn
+        fdb   at
+        fdb   zless
+        fdb   zbran
+        fdb   erro1-*
+        fdb   pabor
+erro1   fdb   here
+        fdb   count
+        fdb   types
+        fdb   pdotq
+        fcb   2
+        fcc   '? '
+        fdb   mess
+        fdb   spsto
+        fdb   blk
+        fdb   at
+        fdb   ddup
+        fdb   zbran
+        fdb   err02-*
+        fdb   inn
+        fdb   at
+        fdb   swap
+err02   fdb   quit
+        fdb   semis          ; never executed
+
+        fcb   $83
+        fcc   'id'
+        fcb   $ae
+        fdb   error-8
+iddot   fdb   docol
+        fdb   pad
+        fdb   lit
+        fdb   $20
+        fdb   lit
+        fdb   $5f
+        fdb   fill
+        fdb   dup
+        fdb   pfa
+        fdb   lfa
+        fdb   over
+        fdb   subb
+        fdb   pad
+        fdb   swap
+        fdb   cmove
+        fdb   pad
+        fdb   count
+        fdb   lit
+        fdb   $1f
+        fdb   andd
+        fdb   types
+        fdb   space
+        fdb   semis
+
+        fcb   $86
+        fcc   'creat'
+        fcb   $c5
+        fdb   iddot-6
+creat   fdb   docol
+        fdb   dfind
+        fdb   zbran
+        fdb   creat1-*
+        fdb   drop
+        fdb   nfa
+        fdb   iddot
+        fdb   lit
+        fdb   4
+        fdb   mess
+        fdb   space
+creat1  fdb   here
+        fdb   dup
+        fdb   cat
+        fdb   width
+        fdb   at
+        fdb   min
+        fdb   onep
+        fdb   allot
+        fdb   dup
+        fdb   lit
+        fdb   $a0
+        fdb   toggl
+        fdb   here
+        fdb   one
+        fdb   subb
+        fdb   lit
+        fdb   $80
+        fdb   toggl
+        fdb   lates
+        fdb   comma
+        fdb   curr
+        fdb   at
+        fdb   store
+        fdb   here
+        fdb   twop
+        fdb   comma
+        fdb   semis
+
+        fcb   $c9
+        fcc   '[compile'
+        fcb   $dd
+        fdb   creat-9
+bcomp   fdb   docol
+        fdb   dfind
+        fdb   zequ
+        fdb   zero
+        fdb   qerr
+        fdb   drop
+        fdb   cfa
+        fdb   comma
+        fdb   semis
+
+        fcb   $c7
+        fcc   'litera'
+        fcb   $cc
+        fdb   bcomp-12
+liter   fdb   docol
+        fdb   state
+        fdb   at
+        fdb   zbran
+        fdb   lite1-*
+        fdb   comp
+        fdb   lit
+        fdb   comma
+lite1   fdb   semis
+
+        fcb   $c8
+        fcc   'dlitera'
+        fcb   $cc
+        fdb   liter-10
+dlite   fdb   docol
+        fdb   state
+        fdb   at
+        fdb   zbran
+        fdb   dlit1-*
+        fdb   swap
+        fdb   liter
+        fdb   liter
+dlit1   fdb   semis
+
+        fcb   $86
+        fcc   '?stac'
+        fcb   $cb
+        fdb   dlite-11
+qstac   fdb   docol
+        fdb   spat
+        fdb   szero
+        fdb   at
+        fdb   swap
+        fdb   uless
+        fdb   one
+        fdb   qerr
+        fdb   spat
+        fdb   here
+        fdb   lit
+        fdb   $80
+        fdb   plus
+        fdb   uless
+        fdb   lit
+        fdb   7
+        fdb   qerr
+        fdb   semis
+
+        fcb   $89
+        fcc   'interpre'
+        fcb   $d4
+        fdb   qstac-9
+inter   fdb   docol
+inte1   fdb   dfind
+        fdb   zbran
+        fdb   inte2-*
+        fdb   state
+        fdb   at
+        fdb   less
+        fdb   zbran
+        fdb   inte3-*
+        fdb   cfa
+        fdb   comma
+        fdb   bran
+        fdb   inte4-*
+inte3   fdb   cfa
+        fdb   exec
+inte4   fdb   qstac
+        fdb   bran
+        fdb   inte5-*
+inte2   fdb   here
+        fdb   numb
+        fdb   dpl
+        fdb   at
+        fdb   onep
+        fdb   zbran
+        fdb   inte6-*
+        fdb   dlite
+        fdb   bran
+        fdb   inte7-*
+inte6   fdb   drop
+        fdb   liter
+inte7   fdb   qstac
+inte5   fdb   bran
+        fdb   inte1-*
+        fdb   semis          ; never executed
+
+        fcb   $89
+        fcc   'immediat'
+        fcb   $c5
+        fdb   inter-12
+immed   fdb   docol
+        fdb   lates
+        fdb   lit
+        fdb   $40
+        fdb   toggl
+        fdb   semis
+
+        fcb   $8a
+        fcc   'vocabular'
+        fcb   $d9
+        fdb   immed-12
+vocab   fdb   docol
+        fdb   build
+        fdb   lit
+        fdb   $81a0
+        fdb   comma
+        fdb   curr
+        fdb   at
+        fdb   cfa
+        fdb   comma
+        fdb   here
+        fdb   vocl
+        fdb   at
+        fdb   comma
+        fdb   vocl
+        fdb   store
+        fdb   does
+dovoc   fdb   twop
+        fdb   cont
+        fdb   store
+        fdb   semis
 
 **************************************************
 *                                                *
-*       FORTH is not included here for the       *
-*       ROMable version because FORTH is a       *
-*       variable and must lie in RAM             *
+*       forth is not included here for the       *
+*       romable version because forth is a       *
+*       variable and must lie in ram             *
 *                                                *
 **************************************************
 
-        FCB   $8B
-        FCC   'DEFINITION'
-        FCB   $D3
-        FDB   VOCAB-13
-DEFIN   FDB   DOCOL
-        FDB   CONT
-        FDB   AT
-        FDB   CURR
-        FDB   STORE
-        FDB   SEMIS
+        fcb   $8b
+        fcc   'definition'
+        fcb   $d3
+        fdb   vocab-13
+defin   fdb   docol
+        fdb   cont
+        fdb   at
+        fdb   curr
+        fdb   store
+        fdb   semis
 
-        FCB   $C1
-        FCB   $A8
-        FDB   DEFIN-14
-PAREN   FDB   DOCOL
-        FDB   LIT
-        FDB   $29
-        FDB   WORDS
-        FDB   SEMIS
+        fcb   $c1
+        fcb   $a8
+        fdb   defin-14
+paren   fdb   docol
+        fdb   lit
+        fdb   $29
+        fdb   words
+        fdb   semis
 
-        FCB   $84
-        FCC   'QUI'
-        FCB   $D4
-        FDB   PAREN-4
-QUIT    FDB   DOCOL
-        FDB   ZERO
-        FDB   BLK
-        FDB   STORE
-        FDB   LBRAC
-QUIT1   FDB   RPSTO
-        FDB   CR
-        FDB   QUERY
-        FDB   INTER
-        FDB   STATE
-        FDB   AT
-        FDB   ZEQU
-        FDB   ZBRAN
-        FDB   QUIT2-*
-        FDB   PDOTQ
-        FCB   2
-        FCC   'ok'
-QUIT2   FDB   BRAN
-        FDB   QUIT1-*
-        FDB   SEMIS          ; Never executed
+        fcb   $84
+        fcc   'qui'
+        fcb   $d4
+        fdb   paren-4
+quit    fdb   docol
+        fdb   zero
+        fdb   blk
+        fdb   store
+        fdb   lbrac
+quit1   fdb   rpsto
+        fdb   cr
+        fdb   query
+        fdb   inter
+        fdb   state
+        fdb   at
+        fdb   zequ
+        fdb   zbran
+        fdb   quit2-*
+        fdb   pdotq
+        fcb   2
+        fcc   'ok'
+quit2   fdb   bran
+        fdb   quit1-*
+        fdb   semis          ; never executed
 
-        FCB   $85
-        FCC   'ABOR'
-        FCB   $D4
-        FDB   QUIT-7
-ABORT   FDB   DOCOL
-        FDB   SPSTO
-        FDB   DECA
-        FDB   QSTAC
-        FDB   CR
-        FDB   RFORTH
-        FDB   DEFIN
-        FDB   QUIT
-        FDB   SEMIS          ; Never executed
+        fcb   $85
+        fcc   'abor'
+        fcb   $d4
+        fdb   quit-7
+abort   fdb   docol
+        fdb   spsto
+        fdb   deca
+        fdb   qstac
+        fdb   cr
+        fdb   rforth
+        fdb   defin
+        fdb   quit
+        fdb   semis          ; never executed
 
-        FCB   $84
-        FCC   'WAR'
-        FCB   $CD
-        FDB   ABORT-8
-WARM    FDB   DOCOL
-        FDB   ABORT
-        FDB   SEMIS          ; Never executed
+        fcb   $84
+        fcc   'war'
+        fcb   $cd
+        fdb   abort-8
+warm    fdb   docol
+        fdb   abort
+        fdb   semis          ; never executed
 
-        FCB   $84
-        FCC   'COL'
-        FCB   $C4
-        FDB   WARM-7
-COLD    FDB   DOCOL
-        FDB   LIT
-        FDB   UTABLE
-        FDB   LIT
-        FDB   UP
-        FDB   AT
-        FDB   LIT
-        FDB   6
-        FDB   PLUS
-        FDB   LIT
-        FDB   16
-        FDB   CMOVE
-        FDB   SPSTO
-        FDB   LIT
-        FDB   FORTHS
-        FDB   LIT
-        FDB   RAMS
-        FDB   LIT
-        FDB   TASKE-FORTHS
-        FDB   CMOVE
-        FDB   LIT
-        FDB   TOP
-        FDB   AT
-        FDB   LIT
-        FDB   RFORTH+6
-        FDB   STORE
-        FDB   CR
-        FDB   DOTCPU
-        FDB   PDOTQ
-        FCB   14
-        FCC   'microFORTH '
-        FCB   FIGREL+$30
-        FCB   ADOT
-        FCB   FIGREV+$30
-        FDB   CR
-        FDB   PDOTQ
-        FCB   44
-        FCC   'Southern Illinois University at Edwardsville'
-        FDB   CR
-        FDB   PDOTQ
-        FCB   20
-        FCC   'Micro-controller Lab'
-        FDB   CR
-        FDB   PDOTQ
-        FCB   28
-        FCC   'Dictionary space available: '
-        FDB   SPAT
-        FDB   DP
-        FDB   AT
-        FDB   SUBB
-        FDB   UDOT
-        FDB   PDOTQ
-        FCB   5
-        FCC   'bytes'
-        FDB   CR
-        FDB   ABORT
-        FDB   SEMIS          ; Never executed
+        fcb   $84
+        fcc   'col'
+        fcb   $c4
+        fdb   warm-7
+cold    fdb   docol
+        fdb   lit
+        fdb   utable
+        fdb   lit
+        fdb   up
+        fdb   at
+        fdb   lit
+        fdb   6
+        fdb   plus
+        fdb   lit
+        fdb   16
+        fdb   cmove
+        fdb   spsto
+        fdb   lit
+        fdb   forths
+        fdb   lit
+        fdb   rams
+        fdb   lit
+        fdb   taske-forths
+        fdb   cmove
+        fdb   lit
+        fdb   top
+        fdb   at
+        fdb   lit
+        fdb   rforth+6
+        fdb   store
+        fdb   cr
+        fdb   dotcpu
+        fdb   pdotq
+        fcb   14
+        fcc   'microforth '
+        fcb   figrel+$30
+        fcb   adot
+        fcb   figrev+$30
+        fdb   cr
+        fdb   pdotq
+        fcb   44
+        fcc   'southern illinois university at edwardsville'
+        fdb   cr
+        fdb   pdotq
+        fcb   20
+        fcc   'micro-controller lab'
+        fdb   cr
+        fdb   pdotq
+        fcb   28
+        fcc   'dictionary space available: '
+        fdb   spat
+        fdb   dp
+        fdb   at
+        fdb   subb
+        fdb   udot
+        fdb   pdotq
+        fcb   5
+        fcc   'bytes'
+        fdb   cr
+        fdb   abort
+        fdb   semis          ; never executed
 
-        FCB   $84
-        FCC   'S->'
-        FCB   $C4
-        FDB   COLD-7
-STOD    FDB   DOCOL
-        FDB   DUP
-        FDB   ZLESS
-        FDB   MINUS
-        FDB   SEMIS
+        fcb   $84
+        fcc   's->'
+        fcb   $c4
+        fdb   cold-7
+stod    fdb   docol
+        fdb   dup
+        fdb   zless
+        fdb   minus
+        fdb   semis
 
-        FCB   $82
-        FCC   '+'
-        FCB   $AD
-        FDB   STOD-7
-PM      FDB   DOCOL
-        FDB   ZLESS
-        FDB   ZBRAN
-        FDB   PM1-*
-        FDB   MINUS
-PM1     FDB   SEMIS
+        fcb   $82
+        fcc   '+'
+        fcb   $ad
+        fdb   stod-7
+pm      fdb   docol
+        fdb   zless
+        fdb   zbran
+        fdb   pm1-*
+        fdb   minus
+pm1     fdb   semis
 
-        FCB   $83
-        FCC   'D+'
-        FCB   $AD
-        FDB   PM-5
-DPM     FDB   DOCOL
-        FDB   ZLESS
-        FDB   ZBRAN
-        FDB   DPM1-*
-        FDB   DMINU
-DPM1    FDB   SEMIS
+        fcb   $83
+        fcc   'd+'
+        fcb   $ad
+        fdb   pm-5
+dpm     fdb   docol
+        fdb   zless
+        fdb   zbran
+        fdb   dpm1-*
+        fdb   dminu
+dpm1    fdb   semis
 
-        FCB   $83
-        FCC   'AB'
-        FCB   $D3
-        FDB   DPM-6
-ABS     FDB   DOCOL
-        FDB   DUP
-        FDB   PM
-        FDB   SEMIS
+        fcb   $83
+        fcc   'ab'
+        fcb   $d3
+        fdb   dpm-6
+abs     fdb   docol
+        fdb   dup
+        fdb   pm
+        fdb   semis
 
-        FCB   $84
-        FCC   'DAB'
-        FCB   $D3
-        FDB   ABS-6
-DABS    FDB   DOCOL
-        FDB   DUP
-        FDB   DPM
-        FDB   SEMIS
+        fcb   $84
+        fcc   'dab'
+        fcb   $d3
+        fdb   abs-6
+dabs    fdb   docol
+        fdb   dup
+        fdb   dpm
+        fdb   semis
 
-        FCB   $83
-        FCC   'MI'
-        FCB   $CE
-        FDB   DABS-7
-MIN     FDB   DOCOL
-        FDB   TDUP
-        FDB   GREAT
-        FDB   ZBRAN
-        FDB   MIN1-*
-        FDB   SWAP
-MIN1    FDB   DROP
-        FDB   SEMIS
+        fcb   $83
+        fcc   'mi'
+        fcb   $ce
+        fdb   dabs-7
+min     fdb   docol
+        fdb   tdup
+        fdb   great
+        fdb   zbran
+        fdb   min1-*
+        fdb   swap
+min1    fdb   drop
+        fdb   semis
 
-        FCB   $83
-        FCC   'MA'
-        FCB   $D8
-        FDB   MIN-6
-MAX     FDB   DOCOL
-        FDB   TDUP
-        FDB   LESS
-        FDB   ZBRAN
-        FDB   MAX1-*
-        FDB   SWAP
-MAX1    FDB   DROP
-        FDB   SEMIS
+        fcb   $83
+        fcc   'ma'
+        fcb   $d8
+        fdb   min-6
+max     fdb   docol
+        fdb   tdup
+        fdb   less
+        fdb   zbran
+        fdb   max1-*
+        fdb   swap
+max1    fdb   drop
+        fdb   semis
 
-        FCB   $82
-        FCC   'M'
-        FCB   $AA
-        FDB   MAX-6
-MSTAR   FDB   DOCOL
-        FDB   TDUP
-        FDB   XORR
-        FDB   TOR
-        FDB   ABS
-        FDB   SWAP
-        FDB   ABS
-        FDB   USTAR
-        FDB   FROMR
-        FDB   DPM
-        FDB   SEMIS
+        fcb   $82
+        fcc   'm'
+        fcb   $aa
+        fdb   max-6
+mstar   fdb   docol
+        fdb   tdup
+        fdb   xorr
+        fdb   tor
+        fdb   abs
+        fdb   swap
+        fdb   abs
+        fdb   ustar
+        fdb   fromr
+        fdb   dpm
+        fdb   semis
 
-        FCB   $82
-        FCC   'M'
-        FCB   $AF
-        FDB   MSTAR-5
-MSLAS   FDB   DOCOL
-        FDB   OVER
-        FDB   TOR
-        FDB   TOR
-        FDB   DABS
-        FDB   RR
-        FDB   ABS
-        FDB   USLAS
-        FDB   FROMR
-        FDB   RR
-        FDB   XORR
-        FDB   PM
-        FDB   SWAP
-        FDB   FROMR
-        FDB   PM
-        FDB   SWAP
-        FDB   SEMIS
+        fcb   $82
+        fcc   'm'
+        fcb   $af
+        fdb   mstar-5
+mslas   fdb   docol
+        fdb   over
+        fdb   tor
+        fdb   tor
+        fdb   dabs
+        fdb   rr
+        fdb   abs
+        fdb   uslas
+        fdb   fromr
+        fdb   rr
+        fdb   xorr
+        fdb   pm
+        fdb   swap
+        fdb   fromr
+        fdb   pm
+        fdb   swap
+        fdb   semis
 
-        FCB   $81
-        FCB   $AA
-        FDB   MSLAS-5
-STAR    FDB   DOCOL
-        FDB   MSTAR
-        FDB   DROP
-        FDB   SEMIS
+        fcb   $81
+        fcb   $aa
+        fdb   mslas-5
+star    fdb   docol
+        fdb   mstar
+        fdb   drop
+        fdb   semis
 
-        FCB   $84
-        FCC   '/MO'
-        FCB   $C4
-        FDB   STAR-4
-SLMOD   FDB   DOCOL
-        FDB   TOR
-        FDB   STOD
-        FDB   FROMR
-        FDB   MSLAS
-        FDB   SEMIS
+        fcb   $84
+        fcc   '/mo'
+        fcb   $c4
+        fdb   star-4
+slmod   fdb   docol
+        fdb   tor
+        fdb   stod
+        fdb   fromr
+        fdb   mslas
+        fdb   semis
 
-        FCB   $81
-        FCB   $AF
-        FDB   SLMOD-7
-SLASH   FDB   DOCOL
-        FDB   SLMOD
-        FDB   SWAP
-        FDB   DROP
-        FDB   SEMIS
+        fcb   $81
+        fcb   $af
+        fdb   slmod-7
+slash   fdb   docol
+        fdb   slmod
+        fdb   swap
+        fdb   drop
+        fdb   semis
 
-        FCB   $83
-        FCC   'MO'
-        FCB   $C4
-        FDB   SLASH-4
-MOD     FDB   DOCOL
-        FDB   SLMOD
-        FDB   DROP
-        FDB   SEMIS
+        fcb   $83
+        fcc   'mo'
+        fcb   $c4
+        fdb   slash-4
+mod     fdb   docol
+        fdb   slmod
+        fdb   drop
+        fdb   semis
 
-        FCB   $85
-        FCC   '*/MO'
-        FCB   $C4
-        FDB   MOD-6
-SSMOD   FDB   DOCOL
-        FDB   TOR
-        FDB   MSTAR
-        FDB   FROMR
-        FDB   MSLAS
-        FDB   SEMIS
+        fcb   $85
+        fcc   '*/mo'
+        fcb   $c4
+        fdb   mod-6
+ssmod   fdb   docol
+        fdb   tor
+        fdb   mstar
+        fdb   fromr
+        fdb   mslas
+        fdb   semis
 
-        FCB   $82
-        FCC   '*'
-        FCB   $AF
-        FDB   SSMOD-8
-SSLASH  FDB   DOCOL
-        FDB   SSMOD
-        FDB   SWAP
-        FDB   DROP
-        FDB   SEMIS
+        fcb   $82
+        fcc   '*'
+        fcb   $af
+        fdb   ssmod-8
+sslash  fdb   docol
+        fdb   ssmod
+        fdb   swap
+        fdb   drop
+        fdb   semis
 
-        FCB   $85
-        FCC   'M/MO'
-        FCB   $C4
-        FDB   SSLASH-5
-MSMOD   FDB   DOCOL
-        FDB   TOR
-        FDB   ZERO
-        FDB   RR
-        FDB   USLAS
-        FDB   FROMR
-        FDB   SWAP
-        FDB   TOR
-        FDB   USLAS
-        FDB   FROMR
-        FDB   SEMIS
+        fcb   $85
+        fcc   'm/mo'
+        fcb   $c4
+        fdb   sslash-5
+msmod   fdb   docol
+        fdb   tor
+        fdb   zero
+        fdb   rr
+        fdb   uslas
+        fdb   fromr
+        fdb   swap
+        fdb   tor
+        fdb   uslas
+        fdb   fromr
+        fdb   semis
 
-        FCB   $87
-        FCC   'MESSAG'
-        FCB   $C5
-        FDB   MSMOD-8
-MESS    FDB   DOCOL
-        FDB   WARN
-        FDB   AT
-        FDB   ZBRAN
-        FDB   MESS1-*
-        FDB   DDUP
-        FDB   ZBRAN
-        FDB   MESS2-*
-        FDB   LIT
-        FDB   4
-        FDB   OFSET
-        FDB   AT
-        FDB   BSCR
-        FDB   SLASH
-        FDB   SUBB
-        FDB   PDOTQ
-        FCB   6
-        FCC   ' DLINE'
-        FDB   SPACE
-MESS2   FDB   BRAN
-        FDB   MESS3-*
-MESS1   FDB   PDOTQ
-        FCB   6
-        FCC   'MSG # '
-        FDB   DOT
-MESS3   FDB   SEMIS
+        fcb   $87
+        fcc   'messag'
+        fcb   $c5
+        fdb   msmod-8
+mess    fdb   docol
+        fdb   warn
+        fdb   at
+        fdb   zbran
+        fdb   mess1-*
+        fdb   ddup
+        fdb   zbran
+        fdb   mess2-*
+        fdb   lit
+        fdb   4
+        fdb   ofset
+        fdb   at
+        fdb   bscr
+        fdb   slash
+        fdb   subb
+        fdb   pdotq
+        fcb   6
+        fcc   ' dline'
+        fdb   space
+mess2   fdb   bran
+        fdb   mess3-*
+mess1   fdb   pdotq
+        fcb   6
+        fcc   'msg # '
+        fdb   dot
+mess3   fdb   semis
 
-PKEY    FDB   *+2
-PKEY1   LDA   ACIAC          ; Get control status of the ACIA
-        ASRA                 ; Check if buffer is empty
-        BCC   PKEY1          ; If so, wait
-        LDB   ACIAD          ; Get data
-        CLRA
-        PSHU  D              ; Push character to the stack
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
+pkey    fdb   *+2
+pkey1   lda   aciac          ; get control status of the acia
+        asra                 ; check if buffer is empty
+        bcc   pkey1          ; if so, wait
+        ldb   aciad          ; get data
+        clra
+        pshu  d              ; push character to the stack
+        ldx   ,y++           ; next
+        jmp   [,x++]
 
-PQTER   FDB   *+2
-        LDA   ACIAC          ; Get control status of the ACIA
-        ASRA                 ; Check if buffer is empty
-        BCC   PQTER1         ; If so push ZERO flag
-        LDB   ACIAD          ; If not, get key
-        CLRA
-        PSHU  D
-        BRA   PQTER2         ; Go do NEXT
-PQTER1  LDD   #0
-        PSHU  D              ; Push flag
-PQTER2  LDX   ,Y++           ; NEXT
-        JMP   [,X++]
+pqter   fdb   *+2
+        lda   aciac          ; get control status of the acia
+        asra                 ; check if buffer is empty
+        bcc   pqter1         ; if so push zero flag
+        ldb   aciad          ; if not, get key
+        clra
+        pshu  d
+        bra   pqter2         ; go do next
+pqter1  ldd   #0
+        pshu  d              ; push flag
+pqter2  ldx   ,y++           ; next
+        jmp   [,x++]
 
-* gjcp - EMIT seems to embed the ACIA driver right here
-PEMIT   FDB   *+2
-	ldb #$f1	; MIDI Quarterframe
-pemit0	lda ACIAC
+* gjcp - emit seems to embed the acia driver right here
+pemit   fdb   *+2
+	ldb #$f1	; midi quarterframe
+pemit0	lda aciac
 	asra
 	asra
-	bcc pemit0	; loop waiting for ACIA to go ready
-	stb ACIAD	; write the character
+	bcc pemit0	; loop waiting for acia to go ready
+	stb aciad	; write the character
 	
-        PULU  D              ; Character in B register
-        ANDB  #$7F           ; Mask off the highest bit
-PEMIT1  LDA   ACIAC          ; Get ACIA status
-        ASRA                 ; Check if ready to transmit
-        ASRA
-        BCC   PEMIT1         ; Loop if not ready
-        STB   ACIAD          ; Transmit character
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
+        pulu  d              ; character in b register
+        andb  #$7f           ; mask off the highest bit
+pemit1  lda   aciac          ; get acia status
+        asra                 ; check if ready to transmit
+        asra
+        bcc   pemit1         ; loop if not ready
+        stb   aciad          ; transmit character
+        ldx   ,y++           ; next
+        jmp   [,x++]
 
-        FCB   $C1
-        FCB   $A7
-        FDB   MESS-10
-TICK    FDB   DOCOL
-        FDB   DFIND
-        FDB   ZEQU
-        FDB   ZERO
-        FDB   QERR
-        FDB   DROP
-        FDB   LITER
-        FDB   SEMIS
+        fcb   $c1
+        fcb   $a7
+        fdb   mess-10
+tick    fdb   docol
+        fdb   dfind
+        fdb   zequ
+        fdb   zero
+        fdb   qerr
+        fdb   drop
+        fdb   liter
+        fdb   semis
 
-        FCB   $86
-        FCC   'FORGE'
-        FCB   $D4
-        FDB   TICK-4
-FORGET  FDB   DOCOL
-        FDB   CURR
-        FDB   AT
-        FDB   CONT
-        FDB   AT
-        FDB   SUBB
-        FDB   LIT
-        FDB   $18
-        FDB   QERR
-        FDB   TICK
-        FDB   DUP
-        FDB   FENCE
-        FDB   AT
-        FDB   LESS
-        FDB   LIT
-        FDB   $15
-        FDB   QERR
-        FDB   DUP
-        FDB   NFA
-        FDB   DP
-        FDB   STORE
-        FDB   LFA
-        FDB   AT
-        FDB   CONT
-        FDB   AT
-        FDB   STORE
-        FDB   SEMIS
+        fcb   $86
+        fcc   'forge'
+        fcb   $d4
+        fdb   tick-4
+forget  fdb   docol
+        fdb   curr
+        fdb   at
+        fdb   cont
+        fdb   at
+        fdb   subb
+        fdb   lit
+        fdb   $18
+        fdb   qerr
+        fdb   tick
+        fdb   dup
+        fdb   fence
+        fdb   at
+        fdb   less
+        fdb   lit
+        fdb   $15
+        fdb   qerr
+        fdb   dup
+        fdb   nfa
+        fdb   dp
+        fdb   store
+        fdb   lfa
+        fdb   at
+        fdb   cont
+        fdb   at
+        fdb   store
+        fdb   semis
 
-        FCB   $84
-        FCC   'BAC'
-        FCB   $CB
-        FDB   FORGET-9
-BACK    FDB   DOCOL
-        FDB   HERE
-        FDB   SUBB
-        FDB   COMMA
-        FDB   SEMIS
+        fcb   $84
+        fcc   'bac'
+        fcb   $cb
+        fdb   forget-9
+back    fdb   docol
+        fdb   here
+        fdb   subb
+        fdb   comma
+        fdb   semis
 
-        FCB   $C5
-        FCC   'BEGI'
-        FCB   $CE
-        FDB   BACK-7
-BEGIN   FDB   DOCOL
-        FDB   QCOMP
-        FDB   HERE
-        FDB   ONE
-        FDB   SEMIS
+        fcb   $c5
+        fcc   'begi'
+        fcb   $ce
+        fdb   back-7
+begin   fdb   docol
+        fdb   qcomp
+        fdb   here
+        fdb   one
+        fdb   semis
 
-        FCB   $C5
-        FCC   'ENDI'
-        FCB   $C6
-        FDB   BEGIN-8
-ENDIFF  FDB   DOCOL
-        FDB   QCOMP
-        FDB   TWO
-        FDB   QPAIR
-        FDB   HERE
-        FDB   OVER
-        FDB   SUBB
-        FDB   SWAP
-        FDB   STORE
-        FDB   SEMIS
+        fcb   $c5
+        fcc   'endi'
+        fcb   $c6
+        fdb   begin-8
+endiff  fdb   docol
+        fdb   qcomp
+        fdb   two
+        fdb   qpair
+        fdb   here
+        fdb   over
+        fdb   subb
+        fdb   swap
+        fdb   store
+        fdb   semis
 
-        FCB   $C4
-        FCC   'THE'
-        FCB   $CE
-        FDB   ENDIFF-8
-THEN    FDB   DOCOL
-        FDB   ENDIFF
-        FDB   SEMIS
+        fcb   $c4
+        fcc   'the'
+        fcb   $ce
+        fdb   endiff-8
+then    fdb   docol
+        fdb   endiff
+        fdb   semis
 
-        FCB   $C2
-        FCC   'D'
-        FCB   $CF
-        FDB   THEN-7
-DO      FDB   DOCOL
-        FDB   COMP
-        FDB   XDO
-        FDB   HERE
-        FDB   THREE
-        FDB   SEMIS
+        fcb   $c2
+        fcc   'd'
+        fcb   $cf
+        fdb   then-7
+do      fdb   docol
+        fdb   comp
+        fdb   xdo
+        fdb   here
+        fdb   three
+        fdb   semis
 
-        FCB   $C4
-        FCC   'LOO'
-        FCB   $D0
-        FDB   DO-5
-LOOPC   FDB   DOCOL
-        FDB   THREE
-        FDB   QPAIR
-        FDB   COMP
-        FDB   XLOOP
-        FDB   BACK
-        FDB   SEMIS
+        fcb   $c4
+        fcc   'loo'
+        fcb   $d0
+        fdb   do-5
+loopc   fdb   docol
+        fdb   three
+        fdb   qpair
+        fdb   comp
+        fdb   xloop
+        fdb   back
+        fdb   semis
 
-        FCB   $C5
-        FCC   '+LOO'
-        FCB   $D0
-        FDB   LOOPC-7
-PLOOP   FDB   DOCOL
-        FDB   THREE
-        FDB   QPAIR
-        FDB   COMP
-        FDB   XPLOO
-        FDB   BACK
-        FDB   SEMIS
+        fcb   $c5
+        fcc   '+loo'
+        fcb   $d0
+        fdb   loopc-7
+ploop   fdb   docol
+        fdb   three
+        fdb   qpair
+        fdb   comp
+        fdb   xploo
+        fdb   back
+        fdb   semis
 
-        FCB   $C5
-        FCC   'UNTI'
-        FCB   $CC
-        FDB   PLOOP-8
-UNTIL   FDB   DOCOL
-        FDB   ONE
-        FDB   QPAIR
-        FDB   COMP
-        FDB   ZBRAN
-        FDB   BACK
-        FDB   SEMIS
+        fcb   $c5
+        fcc   'unti'
+        fcb   $cc
+        fdb   ploop-8
+until   fdb   docol
+        fdb   one
+        fdb   qpair
+        fdb   comp
+        fdb   zbran
+        fdb   back
+        fdb   semis
 
-        FCB   $C3
-        FCC   'EN'
-        FCB   $C4
-        FDB   UNTIL-8
-END     FDB   DOCOL
-        FDB   UNTIL
-        FDB   SEMIS
+        fcb   $c3
+        fcc   'en'
+        fcb   $c4
+        fdb   until-8
+end     fdb   docol
+        fdb   until
+        fdb   semis
 
-        FCB   $C5
-        FCC   'AGAI'
-        FCB   $CE
-        FDB   END-6
-AGAIN   FDB   DOCOL
-        FDB   ONE
-        FDB   QPAIR
-        FDB   COMP
-        FDB   BRAN
-        FDB   BACK
-        FDB   SEMIS
+        fcb   $c5
+        fcc   'agai'
+        fcb   $ce
+        fdb   end-6
+again   fdb   docol
+        fdb   one
+        fdb   qpair
+        fdb   comp
+        fdb   bran
+        fdb   back
+        fdb   semis
 
-        FCB   $C6
-        FCC   'REPEA'
-        FCB   $D4
-        FDB   AGAIN-8
-REPEAT  FDB   DOCOL
-        FDB   TOR
-        FDB   TOR
-        FDB   AGAIN
-        FDB   FROMR
-        FDB   FROMR
-        FDB   TWO
-        FDB   SUBB
-        FDB   ENDIFF
-        FDB   SEMIS
+        fcb   $c6
+        fcc   'repea'
+        fcb   $d4
+        fdb   again-8
+repeat  fdb   docol
+        fdb   tor
+        fdb   tor
+        fdb   again
+        fdb   fromr
+        fdb   fromr
+        fdb   two
+        fdb   subb
+        fdb   endiff
+        fdb   semis
 
-        FCB   $C2
-        FCC   'I'
-        FCB   $C6
-        FDB   REPEAT-9
-IF      FDB   DOCOL
-        FDB   COMP
-        FDB   ZBRAN
-        FDB   HERE
-        FDB   ZERO
-        FDB   COMMA
-        FDB   TWO
-        FDB   SEMIS
+        fcb   $c2
+        fcc   'i'
+        fcb   $c6
+        fdb   repeat-9
+if      fdb   docol
+        fdb   comp
+        fdb   zbran
+        fdb   here
+        fdb   zero
+        fdb   comma
+        fdb   two
+        fdb   semis
 
-        FCB   $C4
-        FCC   'ELS'
-        FCB   $C5
-        FDB   IF-5
-ELSE    FDB   DOCOL
-        FDB   TWO
-        FDB   QPAIR
-        FDB   COMP
-        FDB   BRAN
-        FDB   HERE
-        FDB   ZERO
-        FDB   COMMA
-        FDB   SWAP
-        FDB   TWO
-        FDB   ENDIFF
-        FDB   TWO
-        FDB   SEMIS
+        fcb   $c4
+        fcc   'els'
+        fcb   $c5
+        fdb   if-5
+else    fdb   docol
+        fdb   two
+        fdb   qpair
+        fdb   comp
+        fdb   bran
+        fdb   here
+        fdb   zero
+        fdb   comma
+        fdb   swap
+        fdb   two
+        fdb   endiff
+        fdb   two
+        fdb   semis
 
-        FCB   $C5
-        FCC   'WHIL'
-        FCB   $C5
-        FDB   ELSE-7
-WHILE   FDB   DOCOL
-        FDB   IF
-        FDB   TWOP
-        FDB   SEMIS
+        fcb   $c5
+        fcc   'whil'
+        fcb   $c5
+        fdb   else-7
+while   fdb   docol
+        fdb   if
+        fdb   twop
+        fdb   semis
 
-        FCB   $86
-        FCC   'SPACE'
-        FCB   $D3
-        FDB   WHILE-8
-SPACS   FDB   DOCOL
-        FDB   ZERO
-        FDB   MAX
-        FDB   DDUP
-        FDB   ZBRAN
-        FDB   SPAC2-*
-        FDB   ZERO
-        FDB   XDO
-SPAC1   FDB   SPACE
-        FDB   XLOOP
-        FDB   SPAC1-*
-SPAC2   FDB   SEMIS
+        fcb   $86
+        fcc   'space'
+        fcb   $d3
+        fdb   while-8
+spacs   fdb   docol
+        fdb   zero
+        fdb   max
+        fdb   ddup
+        fdb   zbran
+        fdb   spac2-*
+        fdb   zero
+        fdb   xdo
+spac1   fdb   space
+        fdb   xloop
+        fdb   spac1-*
+spac2   fdb   semis
 
-        FCB   $82
-        FCC   '<'
-        FCB   $A3
-        FDB   SPACS-9
-BDIGS   FDB   DOCOL
-        FDB   PAD
-        FDB   HLD
-        FDB   STORE
-        FDB   SEMIS
+        fcb   $82
+        fcc   '<'
+        fcb   $a3
+        fdb   spacs-9
+bdigs   fdb   docol
+        fdb   pad
+        fdb   hld
+        fdb   store
+        fdb   semis
 
-        FCB   $82
-        FCC   '#'
-        FCB   $BE
-        FDB   BDIGS-5
-EDIGS   FDB   DOCOL
-        FDB   DROP
-        FDB   DROP
-        FDB   HLD
-        FDB   AT
-        FDB   PAD
-        FDB   OVER
-        FDB   SUBB
-        FDB   SEMIS
+        fcb   $82
+        fcc   '#'
+        fcb   $be
+        fdb   bdigs-5
+edigs   fdb   docol
+        fdb   drop
+        fdb   drop
+        fdb   hld
+        fdb   at
+        fdb   pad
+        fdb   over
+        fdb   subb
+        fdb   semis
 
-        FCB   $84
-        FCC   'SIG'
-        FCB   $CE
-        FDB   EDIGS-5
-SIGN    FDB   DOCOL
-        FDB   ROT
-        FDB   ZLESS
-        FDB   ZBRAN
-        FDB   SIGN1-*
-        FDB   LIT
-        FDB   $2D
-        FDB   HOLD
-SIGN1   FDB   SEMIS
+        fcb   $84
+        fcc   'sig'
+        fcb   $ce
+        fdb   edigs-5
+sign    fdb   docol
+        fdb   rot
+        fdb   zless
+        fdb   zbran
+        fdb   sign1-*
+        fdb   lit
+        fdb   $2d
+        fdb   hold
+sign1   fdb   semis
 
-        FCB   $81
-        FCB   $A3
-        FDB   SIGN-7
-DIG     FDB   DOCOL
-        FDB   BASE
-        FDB   AT
-        FDB   MSMOD
-        FDB   ROT
-        FDB   LIT
-        FDB   9
-        FDB   OVER
-        FDB   LESS
-        FDB   ZBRAN
-        FDB   DIG1-*
-        FDB   LIT
-        FDB   7
-        FDB   PLUS
-DIG1    FDB   LIT
-        FDB   $30
-        FDB   PLUS
-        FDB   HOLD
-        FDB   SEMIS
+        fcb   $81
+        fcb   $a3
+        fdb   sign-7
+dig     fdb   docol
+        fdb   base
+        fdb   at
+        fdb   msmod
+        fdb   rot
+        fdb   lit
+        fdb   9
+        fdb   over
+        fdb   less
+        fdb   zbran
+        fdb   dig1-*
+        fdb   lit
+        fdb   7
+        fdb   plus
+dig1    fdb   lit
+        fdb   $30
+        fdb   plus
+        fdb   hold
+        fdb   semis
 
-        FCB   $82
-        FCC   '#'
-        FCB   $D3
-        FDB   DIG-4
-DIGS    FDB   DOCOL
-DIGS1   FDB   DIG
-        FDB   OVER
-        FDB   OVER
-        FDB   ORR
-        FDB   ZEQU
-        FDB   ZBRAN
-        FDB   DIGS1-*
-        FDB   SEMIS
+        fcb   $82
+        fcc   '#'
+        fcb   $d3
+        fdb   dig-4
+digs    fdb   docol
+digs1   fdb   dig
+        fdb   over
+        fdb   over
+        fdb   orr
+        fdb   zequ
+        fdb   zbran
+        fdb   digs1-*
+        fdb   semis
 
-        FCB   $83
-        FCC   'D.'
-        FCB   $D2
-        FDB   DIGS-5
-DDOTR   FDB   DOCOL
-        FDB   TOR
-        FDB   SWAP
-        FDB   OVER
-        FDB   DABS
-        FDB   BDIGS
-        FDB   DIGS
-        FDB   SIGN
-        FDB   EDIGS
-        FDB   FROMR
-        FDB   OVER
-        FDB   SUBB
-        FDB   SPACS
-        FDB   TYPES
-        FDB   SEMIS
+        fcb   $83
+        fcc   'd.'
+        fcb   $d2
+        fdb   digs-5
+ddotr   fdb   docol
+        fdb   tor
+        fdb   swap
+        fdb   over
+        fdb   dabs
+        fdb   bdigs
+        fdb   digs
+        fdb   sign
+        fdb   edigs
+        fdb   fromr
+        fdb   over
+        fdb   subb
+        fdb   spacs
+        fdb   types
+        fdb   semis
 
-        FCB   $82
-        FCC   '.'
-        FCB   $D2
-        FDB   DDOTR-6
-DOTR    FDB   DOCOL
-        FDB   TOR
-        FDB   STOD
-        FDB   FROMR
-        FDB   DDOTR
-        FDB   SEMIS
+        fcb   $82
+        fcc   '.'
+        fcb   $d2
+        fdb   ddotr-6
+dotr    fdb   docol
+        fdb   tor
+        fdb   stod
+        fdb   fromr
+        fdb   ddotr
+        fdb   semis
 
-        FCB   $82
-        FCC   'D'
-        FCB   $AE
-        FDB   DOTR-5
-DDOT    FDB   DOCOL
-        FDB   ZERO
-        FDB   DDOTR
-        FDB   SPACE
-        FDB   SEMIS
+        fcb   $82
+        fcc   'd'
+        fcb   $ae
+        fdb   dotr-5
+ddot    fdb   docol
+        fdb   zero
+        fdb   ddotr
+        fdb   space
+        fdb   semis
 
-        FCB   $81
-        FCB   $AE
-        FDB   DDOT-5
-DOT     FDB   DOCOL
-        FDB   STOD
-        FDB   DDOT
-        FDB   SEMIS
+        fcb   $81
+        fcb   $ae
+        fdb   ddot-5
+dot     fdb   docol
+        fdb   stod
+        fdb   ddot
+        fdb   semis
 
-        FCB   $81
-        FCB   $BF
-        FDB   DOT-4
-QUES    FDB   DOCOL
-        FDB   AT
-        FDB   DOT
-        FDB   SEMIS
+        fcb   $81
+        fcb   $bf
+        fdb   dot-4
+ques    fdb   docol
+        fdb   at
+        fdb   dot
+        fdb   semis
 
-        FCB   $82
-        FCC   'U'
-        FCB   $AE
-        FDB   QUES-4
-UDOT    FDB   DOCOL
-        FDB   ZERO
-        FDB   DDOT
-        FDB   SEMIS
+        fcb   $82
+        fcc   'u'
+        fcb   $ae
+        fdb   ques-4
+udot    fdb   docol
+        fdb   zero
+        fdb   ddot
+        fdb   semis
 
-        FCB   $85
-        FCC   'VLIS'
-        FCB   $D4
-        FDB   UDOT-5
-VLIST   FDB   DOCOL
-        FDB   BASE
-        FDB   AT
-        FDB   TOR
-        FDB   HEX
-        FDB   CR
-        FDB   CR
-        FDB   LIT
-        FDB   0
-        FDB   OUTT
-        FDB   STORE
-        FDB   CONT
-        FDB   AT
-        FDB   AT
-VLIST1  FDB   DUP
-        FDB   DUP
-        FDB   LIT
-        FDB   0
-        FDB   BDIGS
-        FDB   DIG
-        FDB   DIG
-        FDB   DIG
-        FDB   DIG
-        FDB   EDIGS
-        FDB   TYPES
-        FDB   DUP
-        FDB   ONEP
-        FDB   CAT
-        FDB   LIT
-        FDB   $007F
-        FDB   ANDD
-        FDB   ZBRAN
-        FDB   VLIST2-*
-        FDB   SPACE
-        FDB   IDDOT
-        FDB   BRAN
-        FDB   VLIST3-*
-VLIST2  FDB   PDOTQ
-        FCB   5
-        FCC   ' null'
-        FDB   DROP
-VLIST3  FDB   OUTT
-        FDB   AT
-        FDB   LIT
-        FDB   60
-        FDB   GREAT
-        FDB   ZBRAN
-        FDB   VLIST4-*
-        FDB   CR
-        FDB   LIT
-        FDB   0
-        FDB   OUTT
-        FDB   STORE
-        FDB   BRAN
-        FDB   VLIST5-*
-VLIST4  FDB   LIT
-        FDB   20
-        FDB   OUTT
-        FDB   AT
-        FDB   OVER
-        FDB   MOD
-        FDB   SUBB
-        FDB   SPACS
-VLIST5  FDB   PFA
-        FDB   LFA
-        FDB   AT
-        FDB   DUP
-        FDB   ZEQU
-        FDB   QTERM
-        FDB   DUP
-        FDB   ZBRAN
-        FDB   VLIST6-*
-        FDB   KEY
-        FDB   DROP
-VLIST6  FDB   ORR
-        FDB   ZBRAN
-        FDB   VLIST1-*
-        FDB   DROP
-        FDB   CR
-        FDB   CR
-        FDB   FROMR
-        FDB   BASE
-        FDB   STORE
-        FDB   SEMIS
+        fcb   $85
+        fcc   'vlis'
+        fcb   $d4
+        fdb   udot-5
+vlist   fdb   docol
+        fdb   base
+        fdb   at
+        fdb   tor
+        fdb   hex
+        fdb   cr
+        fdb   cr
+        fdb   lit
+        fdb   0
+        fdb   outt
+        fdb   store
+        fdb   cont
+        fdb   at
+        fdb   at
+vlist1  fdb   dup
+        fdb   dup
+        fdb   lit
+        fdb   0
+        fdb   bdigs
+        fdb   dig
+        fdb   dig
+        fdb   dig
+        fdb   dig
+        fdb   edigs
+        fdb   types
+        fdb   dup
+        fdb   onep
+        fdb   cat
+        fdb   lit
+        fdb   $007f
+        fdb   andd
+        fdb   zbran
+        fdb   vlist2-*
+        fdb   space
+        fdb   iddot
+        fdb   bran
+        fdb   vlist3-*
+vlist2  fdb   pdotq
+        fcb   5
+        fcc   ' null'
+        fdb   drop
+vlist3  fdb   outt
+        fdb   at
+        fdb   lit
+        fdb   60
+        fdb   great
+        fdb   zbran
+        fdb   vlist4-*
+        fdb   cr
+        fdb   lit
+        fdb   0
+        fdb   outt
+        fdb   store
+        fdb   bran
+        fdb   vlist5-*
+vlist4  fdb   lit
+        fdb   20
+        fdb   outt
+        fdb   at
+        fdb   over
+        fdb   mod
+        fdb   subb
+        fdb   spacs
+vlist5  fdb   pfa
+        fdb   lfa
+        fdb   at
+        fdb   dup
+        fdb   zequ
+        fdb   qterm
+        fdb   dup
+        fdb   zbran
+        fdb   vlist6-*
+        fdb   key
+        fdb   drop
+vlist6  fdb   orr
+        fdb   zbran
+        fdb   vlist1-*
+        fdb   drop
+        fdb   cr
+        fdb   cr
+        fdb   fromr
+        fdb   base
+        fdb   store
+        fdb   semis
 
-        FCB   $84
-        FCC   '.CP'
-        FCB   $D5
-        FDB   VLIST-8
-DOTCPU  FDB   DOCOL
-        FDB   PDOTQ
-        FCB   5
-        FCC   '6809 '
-        FDB   SEMIS
+        fcb   $84
+        fcc   '.cp'
+        fcb   $d5
+        fdb   vlist-8
+dotcpu  fdb   docol
+        fdb   pdotq
+        fcb   5
+        fcc   '6809 '
+        fdb   semis
 
-        FCB   $84
-        FCC   'DUM'
-        FCB   $D0
-        FDB   DOTCPU-7
-DUMP    FDB   DOCOL
-        FDB   BASE
-        FDB   AT
-        FDB   TOR
-        FDB   HEX
-        FDB   CR
-        FDB   CR
-        FDB   LIT
-        FDB   5
-        FDB   SPACS
-        FDB   LIT
-        FDB   16
-        FDB   LIT
-        FDB   0
-        FDB   XDO
-DUMP1   FDB   IDO
-        FDB   LIT
-        FDB   3
-        FDB   DOTR
-        FDB   XLOOP
-        FDB   DUMP1-*
-        FDB   LIT
-        FDB   2
-        FDB   SPACS
-        FDB   LIT
-        FDB   16
-        FDB   LIT
-        FDB   0
-        FDB   XDO
-DUMP2   FDB   IDO
-        FDB   LIT
-        FDB   0
-        FDB   BDIGS
-        FDB   DIG
-        FDB   EDIGS
-        FDB   TYPES
-        FDB   XLOOP
-        FDB   DUMP2-*
-        FDB   CR
-        FDB   OVER
-        FDB   PLUS
-        FDB   SWAP
-        FDB   DUP
-        FDB   LIT
-        FDB   15
-        FDB   ANDD
-        FDB   XORR
-        FDB   XDO
-DUMP3   FDB   CR
-        FDB   IDO
-        FDB   LIT
-        FDB   0
-        FDB   LIT
-        FDB   4
-        FDB   DDOTR
-        FDB   SPACE
-        FDB   IDO
-        FDB   LIT
-        FDB   16
-        FDB   PLUS
-        FDB   IDO
-        FDB   TDUP
-        FDB   XDO
-DUMP4   FDB   IDO
-        FDB   CAT
-        FDB   SPACE
-        FDB   LIT
-        FDB   0
-        FDB   BDIGS
-        FDB   DIG
-        FDB   DIG
-        FDB   EDIGS
-        FDB   TYPES
-        FDB   XLOOP
-        FDB   DUMP4-*
-        FDB   LIT
-        FDB   2
-        FDB   SPACS
-        FDB   XDO
-DUMP5   FDB   IDO
-        FDB   CAT
-        FDB   DUP
-        FDB   LIT
-        FDB   32
-        FDB   LESS
-        FDB   OVER
-        FDB   LIT
-        FDB   126
-        FDB   GREAT
-        FDB   ORR
-        FDB   ZBRAN
-        FDB   DUMP6-*
-        FDB   DROP
-        FDB   LIT
-        FDB   46
-DUMP6   FDB   EMIT
-        FDB   XLOOP
-        FDB   DUMP5-*
-        FDB   LIT
-        FDB   16
-        FDB   XPLOO
-        FDB   DUMP3-*
-        FDB   CR
-        FDB   FROMR
-        FDB   BASE
-        FDB   STORE
-        FDB   SEMIS
-
-**************************************************
-*                                                *
-*   The following 2 words are used to burn the   *
-*   2k EEPROM located at address 0000 on the     *
-*   development system. They may be removed as   *
-*   long as the LFA's are re-adjusted.           *
-*                                                *
-**************************************************
-        FCB   $84
-        FCC   'EEC'
-        FCB   $A1
-        FDB   DUMP-7
-EECSTO  FDB   *+2            ; On entry Address is top of stack, Data is second
-        LDD   2,U            ; Get byte in B, address is top of stack
-        LDA   #$FF           ; Erase byte
-        STA   [0,U]
-        BSR   DELAY          ; Wait for delay
-        LDA   [0,U]          ; Read data
-        STB   [0,U]          ; Store data
-        BSR   DELAY          ; Wait for delay
-        LDB   [0,U]          ; Read data
-        LEAU  4,U            ; Drop address and data
-        LDX   ,Y++           ; NEXT
-        JMP   [,X++]
-
-DELAY   LDX   #$0470
-DELAY1  LEAX  -1,X
-        BNE   DELAY1
-        RTS
-
-        FCB   $86
-        FCC   'EEMOV'
-        FCB   $C5
-        FDB   EECSTO-7
-EEMOV   FDB   DOCOL
-        FDB   LIT
-        FDB   0
-        FDB   XDO
-EEMO1   FDB   DUP
-        FDB   ONEP
-        FDB   ROT
-        FDB   DUP
-        FDB   ONEP
-        FDB   TOR
-        FDB   CAT
-        FDB   ROT
-        FDB   EECSTO
-        FDB   FROMR
-        FDB   SWAP
-        FDB   XLOOP
-        FDB   EEMO1-*
-        FDB   DROP
-        FDB   DROP
-        FDB   SEMIS
+        fcb   $84
+        fcc   'dum'
+        fcb   $d0
+        fdb   dotcpu-7
+dump    fdb   docol
+        fdb   base
+        fdb   at
+        fdb   tor
+        fdb   hex
+        fdb   cr
+        fdb   cr
+        fdb   lit
+        fdb   5
+        fdb   spacs
+        fdb   lit
+        fdb   16
+        fdb   lit
+        fdb   0
+        fdb   xdo
+dump1   fdb   ido
+        fdb   lit
+        fdb   3
+        fdb   dotr
+        fdb   xloop
+        fdb   dump1-*
+        fdb   lit
+        fdb   2
+        fdb   spacs
+        fdb   lit
+        fdb   16
+        fdb   lit
+        fdb   0
+        fdb   xdo
+dump2   fdb   ido
+        fdb   lit
+        fdb   0
+        fdb   bdigs
+        fdb   dig
+        fdb   edigs
+        fdb   types
+        fdb   xloop
+        fdb   dump2-*
+        fdb   cr
+        fdb   over
+        fdb   plus
+        fdb   swap
+        fdb   dup
+        fdb   lit
+        fdb   15
+        fdb   andd
+        fdb   xorr
+        fdb   xdo
+dump3   fdb   cr
+        fdb   ido
+        fdb   lit
+        fdb   0
+        fdb   lit
+        fdb   4
+        fdb   ddotr
+        fdb   space
+        fdb   ido
+        fdb   lit
+        fdb   16
+        fdb   plus
+        fdb   ido
+        fdb   tdup
+        fdb   xdo
+dump4   fdb   ido
+        fdb   cat
+        fdb   space
+        fdb   lit
+        fdb   0
+        fdb   bdigs
+        fdb   dig
+        fdb   dig
+        fdb   edigs
+        fdb   types
+        fdb   xloop
+        fdb   dump4-*
+        fdb   lit
+        fdb   2
+        fdb   spacs
+        fdb   xdo
+dump5   fdb   ido
+        fdb   cat
+        fdb   dup
+        fdb   lit
+        fdb   32
+        fdb   less
+        fdb   over
+        fdb   lit
+        fdb   126
+        fdb   great
+        fdb   orr
+        fdb   zbran
+        fdb   dump6-*
+        fdb   drop
+        fdb   lit
+        fdb   46
+dump6   fdb   emit
+        fdb   xloop
+        fdb   dump5-*
+        fdb   lit
+        fdb   16
+        fdb   xploo
+        fdb   dump3-*
+        fdb   cr
+        fdb   fromr
+        fdb   base
+        fdb   store
+        fdb   semis
 
 **************************************************
 *                                                *
-*    The following is copied to RAM by COLD      *
+*   the following 2 words are used to burn the   *
+*   2k eeprom located at address 0000 on the     *
+*   development system. they may be removed as   *
+*   long as the lfa's are re-adjusted.           *
 *                                                *
 **************************************************
-FORTHS  FCB   $C5            ; The start of the FORTH vocabulary
-        FCC   'FORT'
-        FCB   $C8
-        FDB   EEMOV-9
-FORTH   FDB   DODOE
-        FDB   DOVOC
-        FDB   $81A0
-        FDB   RTASK-7
-        FDB   0
+        fcb   $84
+        fcc   'eec'
+        fcb   $a1
+        fdb   dump-7
+eecsto  fdb   *+2            ; on entry address is top of stack, data is second
+        ldd   2,u            ; get byte in b, address is top of stack
+        lda   #$ff           ; erase byte
+        sta   [0,u]
+        bsr   delay          ; wait for delay
+        lda   [0,u]          ; read data
+        stb   [0,u]          ; store data
+        bsr   delay          ; wait for delay
+        ldb   [0,u]          ; read data
+        leau  4,u            ; drop address and data
+        ldx   ,y++           ; next
+        jmp   [,x++]
 
-        FCB   $84
-        FCC   'TAS'
-        FCB   $CB
-        FDB   RFORTH-8
-TASK    FDB   DOCOL          ; Last word in vocabulary
-        FDB   SEMIS
-TASKE   EQU   *              ; The end of the ROMable dictionary
+delay   ldx   #$0470
+delay1  leax  -1,x
+        bne   delay1
+        rts
 
-RFORTH  EQU   RAMS+FORTH-FORTHS        ; Location of FORTH in RAM
-RTASK   EQU   RAMS+TASK-FORTHS         ; Location of TASK in RAM
-INITDP  EQU   RAMS+TASKE-FORTHS        ; Initial DP in RAM
+        fcb   $86
+        fcc   'eemov'
+        fcb   $c5
+        fdb   eecsto-7
+eemov   fdb   docol
+        fdb   lit
+        fdb   0
+        fdb   xdo
+eemo1   fdb   dup
+        fdb   onep
+        fdb   rot
+        fdb   dup
+        fdb   onep
+        fdb   tor
+        fdb   cat
+        fdb   rot
+        fdb   eecsto
+        fdb   fromr
+        fdb   swap
+        fdb   xloop
+        fdb   eemo1-*
+        fdb   drop
+        fdb   drop
+        fdb   semis
+
+**************************************************
+*                                                *
+*    the following is copied to ram by cold      *
+*                                                *
+**************************************************
+forths  fcb   $c5            ; the start of the forth vocabulary
+        fcc   'fort'
+        fcb   $c8
+        fdb   eemov-9
+forth   fdb   dodoe
+        fdb   dovoc
+        fdb   $81a0
+        fdb   rtask-7
+        fdb   0
+
+        fcb   $84
+        fcc   'tas'
+        fcb   $cb
+        fdb   rforth-8
+task    fdb   docol          ; last word in vocabulary
+        fdb   semis
+taske   equ   *              ; the end of the romable dictionary
+
+rforth  equ   rams+forth-forths        ; location of forth in ram
+rtask   equ   rams+task-forths         ; location of task in ram
+initdp  equ   rams+taske-forths        ; initial dp in ram
