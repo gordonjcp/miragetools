@@ -1123,7 +1123,7 @@ twop    fdb   *+2
 
         fcb   $84
         fcc   'her'
-        fcb   $c5
+        fcb   $e5
         fdb   twop-5
 here    fdb   docol
         fdb   dp
@@ -1132,7 +1132,7 @@ here    fdb   docol
 
         fcb   $85
         fcc   'allo'
-        fcb   $d4
+        fcb   $f4
         fdb   here-7
 allot   fdb   docol
         fdb   dp
@@ -1221,7 +1221,7 @@ great   fdb   docol
 
         fcb   $83
         fcc   'ro'
-        fcb   $d4
+        fcb   $f4
         fdb   great-4
 rot     fdb   *+2
         pshs  y              ; save ip
@@ -1234,7 +1234,7 @@ rot     fdb   *+2
 
         fcb   $85
         fcc   'spac'
-        fcb   $c5
+        fcb   $e5
         fdb   rot-6
 space   fdb   docol
         fdb   bls
@@ -1243,7 +1243,7 @@ space   fdb   docol
 
         fcb   $84
         fcc   '-du'
-        fcb   $d0
+        fcb   $f0
         fdb   space-8
 ddup    fdb   docol
         fdb   dup
@@ -1254,7 +1254,7 @@ ddup1   fdb   semis
 
         fcb   $88
         fcc   'travers'
-        fcb   $c5
+        fcb   $e5
         fdb   ddup-7
 trav    fdb   docol
         fdb   swap
@@ -1273,7 +1273,7 @@ trav1   fdb   over
 
         fcb   $86
         fcc   'lates'
-        fcb   $d4
+        fcb   $f4
         fdb   trav-11
 lates   fdb   docol
         fdb   curr
@@ -1283,7 +1283,7 @@ lates   fdb   docol
 
         fcb   $83
         fcc   'lf'
-        fcb   $c1
+        fcb   $e1
         fdb   lates-9
 lfa     fdb   docol
         fdb   lit
@@ -1293,7 +1293,7 @@ lfa     fdb   docol
 
         fcb   $83
         fcc   'cf'
-        fcb   $c1
+        fcb   $e1
         fdb   lfa-6
 cfa     fdb   docol
         fdb   two
@@ -1302,7 +1302,7 @@ cfa     fdb   docol
 
         fcb   $83
         fcc   'nf'
-        fcb   $c1
+        fcb   $e1
         fdb   cfa-6
 nfa     fdb   docol
         fdb   lit
@@ -1315,7 +1315,7 @@ nfa     fdb   docol
 
         fcb   $83
         fcc   'pf'
-        fcb   $c1
+        fcb   $e1
         fdb   nfa-6
 pfa     fdb   docol
         fdb   one
@@ -1327,7 +1327,7 @@ pfa     fdb   docol
 
         fcb   $84
         fcc   '!cs'
-        fcb   $d0
+        fcb   $f0
         fdb   pfa-6
 scsp    fdb   docol
         fdb   spat
@@ -1337,7 +1337,7 @@ scsp    fdb   docol
 
         fcb   $86
         fcc   '?erro'
-        fcb   $d2
+        fcb   $f2
         fdb   scsp-7
 qerr    fdb   docol
         fdb   swap
@@ -1351,7 +1351,7 @@ qerr2   fdb   semis
 
         fcb   $85
         fcc   '?com'
-        fcb   $d0
+        fcb   $f0
         fdb   qerr-9
 qcomp   fdb   docol
         fdb   state
@@ -1364,7 +1364,7 @@ qcomp   fdb   docol
 
         fcb   $85
         fcc   'qexe'
-        fcb   $c3
+        fcb   $e3
         fdb   qcomp-8
 qexec   fdb   docol
         fdb   state
@@ -1376,7 +1376,7 @@ qexec   fdb   docol
 
         fcb   $86
         fcc   '?pair'
-        fcb   $d3
+        fcb   $f3
         fdb   qexec-8
 qpair   fdb   docol
         fdb   subb
@@ -1387,7 +1387,7 @@ qpair   fdb   docol
 
         fcb   $84
         fcc   '?cs'
-        fcb   $d0
+        fcb   $f0
         fdb   qpair-9
 qcsp    fdb   docol
         fdb   spat
@@ -1401,7 +1401,7 @@ qcsp    fdb   docol
 
         fcb   $88
         fcc   '?loadin'
-        fcb   $c7
+        fcb   $f7
         fdb   qcsp-7
 qload   fdb   docol
         fdb   blk
@@ -1414,7 +1414,7 @@ qload   fdb   docol
 
         fcb   $87
         fcc   'compil'
-        fcb   $c5
+        fcb   $e5
         fdb   qload-11
 comp    fdb   docol
         fdb   qcomp
@@ -1427,7 +1427,7 @@ comp    fdb   docol
         fdb   semis
 
         fcb   $c1
-        fcb   $db
+        fcb   $fb
         fdb   comp-10
 lbrac   fdb   docol
         fdb   zero
@@ -1436,7 +1436,7 @@ lbrac   fdb   docol
         fdb   semis
 
         fcb   $81
-        fcb   $dd
+        fcb   $fd
         fdb   lbrac-4
 rbrac   fdb   docol
         fdb   lit
@@ -1447,7 +1447,7 @@ rbrac   fdb   docol
 
         fcb   $86
         fcc   'smudg'
-        fcb   $c5
+        fcb   $e5
         fdb   rbrac-4
 smudg   fdb   docol
         fdb   lates
@@ -1458,7 +1458,7 @@ smudg   fdb   docol
 
         fcb   $83
         fcc   'he'
-        fcb   $d8
+        fcb   $f8
         fdb   smudg-9
 hex     fdb   docol
         fdb   lit
@@ -1469,7 +1469,7 @@ hex     fdb   docol
 
         fcb   $87
         fcc   'decima'
-        fcb   $cc
+        fcb   $ec
         fdb   hex-6
 deca    fdb   docol
         fdb   lit
@@ -1492,7 +1492,7 @@ pscod   fdb   docol
 
         fcb   $c5
         fcc   ';cod'
-        fcb   $c5
+        fcb   $e5
         fdb   pscod-10
 semic   fdb   docol
         fdb   qcsp
@@ -1503,7 +1503,7 @@ semic   fdb   docol
 
         fcb   $87
         fcc   '<build'
-        fcb   $d3
+        fcb   $f3
         fdb   semic-8
 build   fdb   docol
         fdb   zero
@@ -1528,7 +1528,7 @@ dodoe   pshs  y              ; save instruction pointer
 
         fcb   $85
         fcc   'coun'
-        fcb   $d4
+        fcb   $f4
         fdb   does-8
 count   fdb   docol
         fdb   dup
@@ -1539,7 +1539,7 @@ count   fdb   docol
 
         fcb   $84
         fcc   'typ'
-        fcb   $c5
+        fcb   $e5
         fdb   count-8
 types   fdb   docol
         fdb   ddup
@@ -1561,7 +1561,7 @@ type3   fdb   semis
 
         fcb   $89
         fcc   '-trailin'
-        fcb   $c7
+        fcb   $e7
         fdb   types-7
 dtrai   fdb   docol
         fdb   dup
@@ -1629,7 +1629,7 @@ dotq2   fdb   semis
 
         fcb   $86
         fcc   'expec'
-        fcb   $d4
+        fcb   $f4
         fdb   dotq-5
 expec   fdb   docol
         fdb   over
@@ -1690,7 +1690,7 @@ expe3   fdb   emit
 
         fcb   $85
         fcc   'quer'
-        fcb   $d9
+        fcb   $f9
         fdb   expec-9
 query   fdb   docol
         fdb   tib
@@ -1738,7 +1738,7 @@ null3   fdb     semis
 
         fcb   $84
         fcc   'fil'
-        fcb   $cc
+        fcb   $ec
         fdb   null-4
 fill    fdb   *+2
         pshs  y              ; save ip
@@ -1752,7 +1752,7 @@ fill1   stb   ,y+            ; store character
 
         fcb   $85
         fcc   'eras'
-        fcb   $c5
+        fcb   $e5
         fdb   fill-7
 erasee  fdb   docol
         fdb   zero
@@ -1761,7 +1761,7 @@ erasee  fdb   docol
 
         fcb   $86
         fcc   'blank'
-        fcb   $d3
+        fcb   $f3
         fdb   erasee-8
 blank   fdb   docol
         fdb   bls
@@ -1770,7 +1770,7 @@ blank   fdb   docol
 
         fcb   $84
         fcc   'hol'
-        fcb   $c4
+        fcb   $e4
         fdb   blank-9
 hold    fdb   docol
         fdb   lit
@@ -1784,7 +1784,7 @@ hold    fdb   docol
 
         fcb   $83
         fcc   'pa'
-        fcb   $c4
+        fcb   $e4
         fdb   hold-7
 pad     fdb   docol
         fdb   here
@@ -1795,7 +1795,7 @@ pad     fdb   docol
 
         fcb   $84
         fcc   'wor'
-        fcb   $c4
+        fcb   $e4
         fdb   pad-6
 words   fdb   docol
         fdb   tib
@@ -1864,7 +1864,7 @@ pnum2   fdb   fromr
 
         fcb   $86
         fcc   'numbe'
-        fcb   $d2
+        fcb   $f2
         fdb   pnumb-11
 numb    fdb   docol
         fdb   zero
@@ -1909,7 +1909,7 @@ numb3   fdb   semis
 
         fcb   $85
         fcc   '-fin'
-        fcb   $c4
+        fcb   $e4
         fdb   numb-9
 dfind   fdb   docol
         fdb   bls
@@ -1939,7 +1939,7 @@ pabor   fdb   docol
 
         fcb   $85
         fcc   'erro'
-        fcb   $d2
+        fcb   $f2
         fdb   pabor-10
 error   fdb   docol
         fdb   warn
@@ -1997,7 +1997,7 @@ iddot   fdb   docol
 
         fcb   $86
         fcc   'creat'
-        fcb   $c5
+        fcb   $e5
         fdb   iddot-6
 creat   fdb   docol
         fdb   dfind
@@ -2040,7 +2040,7 @@ creat1  fdb   here
 
         fcb   $c9
         fcc   '[compile'
-        fcb   $dd
+        fcb   $fd
         fdb   creat-9
 bcomp   fdb   docol
         fdb   dfind
@@ -2054,7 +2054,7 @@ bcomp   fdb   docol
 
         fcb   $c7
         fcc   'litera'
-        fcb   $cc
+        fcb   $ec
         fdb   bcomp-12
 liter   fdb   docol
         fdb   state
@@ -2068,7 +2068,7 @@ lite1   fdb   semis
 
         fcb   $c8
         fcc   'dlitera'
-        fcb   $cc
+        fcb   $ec
         fdb   liter-10
 dlite   fdb   docol
         fdb   state
@@ -2082,7 +2082,7 @@ dlit1   fdb   semis
 
         fcb   $86
         fcc   '?stac'
-        fcb   $cb
+        fcb   $eb
         fdb   dlite-11
 qstac   fdb   docol
         fdb   spat
@@ -2105,7 +2105,7 @@ qstac   fdb   docol
 
         fcb   $89
         fcc   'interpre'
-        fcb   $d4
+        fcb   $f4
         fdb   qstac-9
 inter   fdb   docol
 inte1   fdb   dfind
@@ -2144,7 +2144,7 @@ inte5   fdb   bran
 
         fcb   $89
         fcc   'immediat'
-        fcb   $c5
+        fcb   $e5
         fdb   inter-12
 immed   fdb   docol
         fdb   lates
@@ -2155,7 +2155,7 @@ immed   fdb   docol
 
         fcb   $8a
         fcc   'vocabular'
-        fcb   $d9
+        fcb   $f9
         fdb   immed-12
 vocab   fdb   docol
         fdb   build
@@ -2188,7 +2188,7 @@ dovoc   fdb   twop
 
         fcb   $8b
         fcc   'definition'
-        fcb   $d3
+        fcb   $f3
         fdb   vocab-13
 defin   fdb   docol
         fdb   cont
@@ -2208,7 +2208,7 @@ paren   fdb   docol
 
         fcb   $84
         fcc   'qui'
-        fcb   $d4
+        fcb   $f4
         fdb   paren-4
 quit    fdb   docol
         fdb   zero
@@ -2233,7 +2233,7 @@ quit2   fdb   bran
 
         fcb   $85
         fcc   'abor'
-        fcb   $d4
+        fcb   $f4
         fdb   quit-7
 abort   fdb   docol
         fdb   spsto
@@ -2247,7 +2247,7 @@ abort   fdb   docol
 
         fcb   $84
         fcc   'war'
-        fcb   $cd
+        fcb   $fd
         fdb   abort-8
 warm    fdb   docol
         fdb   abort
@@ -2255,7 +2255,7 @@ warm    fdb   docol
 
         fcb   $84
         fcc   'col'
-        fcb   $c4
+        fcb   $e4
         fdb   warm-7
 cold    fdb   docol
         fdb   lit	
@@ -2317,7 +2317,7 @@ cold    fdb   docol
 
         fcb   $84
         fcc   's->'
-        fcb   $c4
+        fcb   $e4
         fdb   cold-7
 stod    fdb   docol
         fdb   dup
@@ -2349,7 +2349,7 @@ dpm1    fdb   semis
 
         fcb   $83
         fcc   'ab'
-        fcb   $d3
+        fcb   $f3
         fdb   dpm-6
 abs     fdb   docol
         fdb   dup
@@ -2358,7 +2358,7 @@ abs     fdb   docol
 
         fcb   $84
         fcc   'dab'
-        fcb   $d3
+        fcb   $f3
         fdb   abs-6
 dabs    fdb   docol
         fdb   dup
@@ -2367,7 +2367,7 @@ dabs    fdb   docol
 
         fcb   $83
         fcc   'mi'
-        fcb   $ce
+        fcb   $ee
         fdb   dabs-7
 min     fdb   docol
         fdb   tdup
@@ -2380,7 +2380,7 @@ min1    fdb   drop
 
         fcb   $83
         fcc   'ma'
-        fcb   $d8
+        fcb   $f8
         fdb   min-6
 max     fdb   docol
         fdb   tdup
@@ -2439,7 +2439,7 @@ star    fdb   docol
 
         fcb   $84
         fcc   '/mo'
-        fcb   $c4
+        fcb   $e4
         fdb   star-4
 slmod   fdb   docol
         fdb   tor
@@ -2468,7 +2468,7 @@ mod     fdb   docol
 
         fcb   $85
         fcc   '*/mo'
-        fcb   $c4
+        fcb   $e4
         fdb   mod-6
 ssmod   fdb   docol
         fdb   tor
@@ -2489,7 +2489,7 @@ sslash  fdb   docol
 
         fcb   $85
         fcc   'm/mo'
-        fcb   $c4
+        fcb   $e4
         fdb   sslash-5
 msmod   fdb   docol
         fdb   tor
@@ -2505,7 +2505,7 @@ msmod   fdb   docol
 
         fcb   $87
         fcc   'messag'
-        fcb   $c5
+        fcb   $e5
         fdb   msmod-8
 mess    fdb   docol
         fdb   warn
@@ -2597,7 +2597,7 @@ tick    fdb   docol
 
         fcb   $86
         fcc   'forge'
-        fcb   $d4
+        fcb   $f4
         fdb   tick-4
 forget  fdb   docol
         fdb   curr
@@ -2629,7 +2629,7 @@ forget  fdb   docol
 
         fcb   $84
         fcc   'bac'
-        fcb   $cb
+        fcb   $eb
         fdb   forget-9
 back    fdb   docol
         fdb   here
@@ -2639,7 +2639,7 @@ back    fdb   docol
 
         fcb   $c5
         fcc   'begi'
-        fcb   $ce
+        fcb   $ee
         fdb   back-7
 begin   fdb   docol
         fdb   qcomp
@@ -2649,7 +2649,7 @@ begin   fdb   docol
 
         fcb   $c5
         fcc   'endi'
-        fcb   $c6
+        fcb   $e6
         fdb   begin-8
 endiff  fdb   docol
         fdb   qcomp
@@ -2664,7 +2664,7 @@ endiff  fdb   docol
 
         fcb   $c4
         fcc   'the'
-        fcb   $ce
+        fcb   $ee
         fdb   endiff-8
 then    fdb   docol
         fdb   endiff
@@ -2672,7 +2672,7 @@ then    fdb   docol
 
         fcb   $c2
         fcc   'd'
-        fcb   $cf
+        fcb   $ef
         fdb   then-7
 do      fdb   docol
         fdb   comp
@@ -2683,7 +2683,7 @@ do      fdb   docol
 
         fcb   $c4
         fcc   'loo'
-        fcb   $d0
+        fcb   $f0
         fdb   do-5
 loopc   fdb   docol
         fdb   three
@@ -2695,7 +2695,7 @@ loopc   fdb   docol
 
         fcb   $c5
         fcc   '+loo'
-        fcb   $d0
+        fcb   $f0
         fdb   loopc-7
 ploop   fdb   docol
         fdb   three
@@ -2707,7 +2707,7 @@ ploop   fdb   docol
 
         fcb   $c5
         fcc   'unti'
-        fcb   $cc
+        fcb   $ec
         fdb   ploop-8
 until   fdb   docol
         fdb   one
@@ -2719,7 +2719,7 @@ until   fdb   docol
 
         fcb   $c3
         fcc   'en'
-        fcb   $c4
+        fcb   $e4
         fdb   until-8
 end     fdb   docol
         fdb   until
@@ -2727,7 +2727,7 @@ end     fdb   docol
 
         fcb   $c5
         fcc   'agai'
-        fcb   $ce
+        fcb   $ee
         fdb   end-6
 again   fdb   docol
         fdb   one
@@ -2739,7 +2739,7 @@ again   fdb   docol
 
         fcb   $c6
         fcc   'repea'
-        fcb   $d4
+        fcb   $f4
         fdb   again-8
 repeat  fdb   docol
         fdb   tor
@@ -2754,7 +2754,7 @@ repeat  fdb   docol
 
         fcb   $c2
         fcc   'i'
-        fcb   $c6
+        fcb   $e6
         fdb   repeat-9
 if      fdb   docol
         fdb   comp
@@ -2767,7 +2767,7 @@ if      fdb   docol
 
         fcb   $c4
         fcc   'els'
-        fcb   $c5
+        fcb   $e5
         fdb   if-5
 else    fdb   docol
         fdb   two
@@ -2785,7 +2785,7 @@ else    fdb   docol
 
         fcb   $c5
         fcc   'whil'
-        fcb   $c5
+        fcb   $e5
         fdb   else-7
 while   fdb   docol
         fdb   if
@@ -2794,7 +2794,7 @@ while   fdb   docol
 
         fcb   $86
         fcc   'space'
-        fcb   $d3
+        fcb   $f3
         fdb   while-8
 spacs   fdb   docol
         fdb   zero
@@ -2835,7 +2835,7 @@ edigs   fdb   docol
 
         fcb   $84
         fcc   'sig'
-        fcb   $ce
+        fcb   $ee
         fdb   edigs-5
 sign    fdb   docol
         fdb   rot
@@ -2886,7 +2886,7 @@ digs1   fdb   dig
 
         fcb   $83
         fcc   'd.'
-        fcb   $d2
+        fcb   $f2
         fdb   digs-5
 ddotr   fdb   docol
         fdb   tor
@@ -2906,7 +2906,7 @@ ddotr   fdb   docol
 
         fcb   $82
         fcc   '.'
-        fcb   $d2
+        fcb   $f2
         fdb   ddotr-6
 dotr    fdb   docol
         fdb   tor
@@ -2952,7 +2952,7 @@ udot    fdb   docol
 
         fcb   $85
         fcc   'vlis'
-        fcb   $d4
+        fcb   $f4
         fdb   udot-5
 vlist   fdb   docol
         fdb   base
@@ -3041,7 +3041,7 @@ vlist6  fdb   orr
 
         fcb   $84
         fcc   '.cp'
-        fcb   $d5
+        fcb   $f5
         fdb   vlist-8
 dotcpu  fdb   docol
         fdb   pdotq
@@ -3051,7 +3051,7 @@ dotcpu  fdb   docol
 
         fcb   $84
         fcc   'dum'
-        fcb   $d0
+        fcb   $f0
         fdb   dotcpu-7
 dump    fdb   docol
         fdb   base
@@ -3223,7 +3223,7 @@ eemo1   fdb   dup
 **************************************************
 forths  fcb   $c5            ; the start of the forth vocabulary
         fcc   'fort'
-        fcb   $c8
+        fcb   $e8
         fdb   eemov-9
 forth   fdb   dodoe
         fdb   dovoc
@@ -3233,7 +3233,7 @@ forth   fdb   dodoe
 
         fcb   $84
         fcc   'tas'
-        fcb   $cb
+        fcb   $eb
         fdb   rforth-8
 task    fdb   docol          ; last word in vocabulary
         fdb   semis
