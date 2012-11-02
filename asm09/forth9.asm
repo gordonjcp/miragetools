@@ -2587,13 +2587,20 @@ mess1   fdb   pdotq
         fdb   dot
 mess3   fdb   semis
 
+getkey	lda aciac
+	asra 
+	bcc getkey	; loop for keypress
+	ldb aciad	; discard MIDI
+getkey1	lda aciac
+	asra
+	bcc getkey1	; loop for keypress
+	ldb aciad
+	clra
+	rts
+
 pkey    fdb   *+2
-pkey1   lda   aciac          ; get control status of the acia
-        asra                 ; check if buffer is empty
-        bcc   pkey1          ; if so, wait
-        ldb   aciad          ; get data
-        clra
-        pshu  d              ; push character to the stack
+	jsr getkey
+pkey1   pshu  d              ; push character to the stack
         ldx   ,y++           ; next
         jmp   [,x++]
 
