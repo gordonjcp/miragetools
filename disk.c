@@ -78,14 +78,15 @@ void fd_seekin(int fd) {
 	if(tmp) perror(__func__);
 }
 
-void fd_readsect(int fd, int trk, int sect, char *buffer) {
+void fd_readtrack(int fd, int trk, char *buffer) {
+	// fetch (most of) a track from disk
+	// doesn't read the last 512-byte sector
 
 	struct floppy_raw_cmd raw_cmd;
 	int tmp, i, j;
 	raw_cmd.rate = 2;
 	raw_cmd.track = trk;
 	raw_cmd.flags = FD_RAW_READ | FD_RAW_INTR | FD_RAW_NEED_SEEK;
-
 
 	// read first part
 	raw_cmd.cmd_count = 0;
@@ -97,7 +98,36 @@ void fd_readsect(int fd, int trk, int sect, char *buffer) {
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = trk;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
-	raw_cmd.cmd[raw_cmd.cmd_count++] = sect;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 3;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 6;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0x1b;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0xff;
+	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
+	if(tmp) perror(__func__);
+
+}
+
+void fd_writetrack(int fd, int trk, char *buffer) {
+
+	struct floppy_raw_cmd raw_cmd;
+	int tmp, i, j;
+	raw_cmd.rate = 2;
+	raw_cmd.track = trk;
+	raw_cmd.flags = FD_RAW_WRITE | FD_RAW_INTR | FD_RAW_NEED_SEEK;
+
+
+	// read first part
+	raw_cmd.cmd_count = 0;
+	raw_cmd.data = buffer;
+	raw_cmd.length = 5120;
+	
+	// set up the command
+	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_WRITE;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = trk;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 3;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 6;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0x1b;
@@ -112,9 +142,9 @@ void fd_readsect(int fd, int trk, int sect, char *buffer) {
 	*/
 	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
 	if(tmp) perror(__func__);
-	/*
-	for( i=0; i< raw_cmd.reply_count; i++ )
-			printf("%d: %x\n", i, raw_cmd.reply[i] );
-*/	
+	
+	//for( i=0; i< raw_cmd.reply_count; i++ )
+	//		printf("%d: %x\n", i, raw_cmd.reply[i] );
+
 }
 

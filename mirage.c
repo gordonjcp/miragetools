@@ -65,6 +65,93 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 	return 0;
 }
 
+void getsample(int fd, int area, char *filename) {
+
+	SNDFILE *snd;
+	SF_INFO info;
+	
+	int i, j, track;
+	
+	char buffer[5632];
+	short sf_buffer[5120];
+
+	info.samplerate = 22050;
+	info.channels = 1;
+	info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_U8;
+	
+	snd = sf_open(filename, SFM_WRITE, &info);
+	if (!snd) {
+		printf("Couldn't open %s", filename);
+		sf_perror(NULL);
+		exit(1);
+	}
+	// now we pull the sample
+	
+	track = 2+(area*13);
+	fd_readtrack(fd, track, buffer);
+
+	// first block is special, because it has the params at the start
+	for (i=0; i<4096; i++) {
+		sf_buffer[i] = (buffer[i+1024]-128)<<8;
+	}
+	sf_write_short(snd, sf_buffer, 4096);
+	
+	for(j = ++track; j<track+12; j++) {
+		fd_readtrack(fd, j, buffer);
+		for (i=0; i<5120; i++) {
+			sf_buffer[i] = (buffer[i]-128)<<8;
+		}		
+		sf_write_short(snd, sf_buffer, 5120);
+	}
+		
+	sf_close(snd);
+}
+
+void putsample(int fd, int area, char *filename) {
+
+	SNDFILE *snd;
+	SF_INFO info;
+	
+	int i, j, track;
+	
+	char buffer[5632];
+	short sf_buffer[5120];
+	
+	snd = sf_open(filename, SFM_READ, &info);
+	if (!snd) {
+		printf("Couldn't open %s", filename);
+		sf_perror(NULL);
+		exit(1);
+	}
+	
+	// write the sample
+	track = 2+(area*13);
+	
+	
+	// first block is special, because it has the params at the start
+	// making the first track hold 1k of params and 4k of sample
+	// need to get the original track into the buffer first
+	fd_readtrack(fd, track, buffer);
+	sf_read_short(snd, sf_buffer, 4096);
+	for (i=0; i<4096; i++) {
+		buffer[i+1024] = (sf_buffer[i]>>8)+128;
+	}
+	fd_writetrack(fd, track, buffer);
+
+	track++;
+	for(j = track; j<track+12; j++) {
+		sf_read_short(snd, sf_buffer, 5120);
+		for (i=0; i<5120; i++) {
+			buffer[i] = (sf_buffer[i]>>8)+128;
+		}
+
+		fd_writetrack(fd, j, buffer);
+	}
+		
+	sf_close(snd);
+}
+
+
 static struct argp argp = { options, parse_opt, "SAMPLE", "mirage disk tool" };
 
 int main (int argc, char **argv) {
@@ -92,44 +179,13 @@ int main (int argc, char **argv) {
 		perror("couldn't open /dev/fd0");
 		exit(1);
 	}
-		
-	if (arguments.mode == GET) {
-		info.samplerate = 19000;
-		info.channels = 1;
-		info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_U8;
-		
-		snd = sf_open(arguments.sample, SFM_WRITE, &info);
-		if (!snd) {
-			printf("Couldn't open %s", arguments.sample);
-			sf_perror(NULL);
-			exit(1);
-		}
-		// now we pull the sample
-		if (arguments.area<0) arguments.area=0;
-		//if (arguments.area>5) arguments.area=5;
-		
-		track = 2+(arguments.area*13);
-		
-		//fd_seek(fd, track);
-		fd_readsect(fd, track, 0, buffer);
-		
-		// first block is special, because it has the params at the start
-		for (i=0; i<4096; i++) {
-			sf_buffer[i] = (buffer[i+1024]-128)<<8;
-		}
-		sf_write_short(snd, sf_buffer, 4096);
-		
-		for(j = ++track; j<track+12; j++) {
-			fd_readsect(fd, j, 0, buffer);
-			for (i=0; i<5120; i++) {
-				sf_buffer[i] = (buffer[i]-128)<<8;
-			}		
-			sf_write_short(snd, sf_buffer, 5120);
-		}
 
-		
-		sf_close(snd);
-		
+	if (arguments.area<0) arguments.area=0;
+	if (arguments.area>5) arguments.area=5;
+
+	switch(arguments.mode) {
+		case GET: getsample(fd, arguments.area, arguments.sample); break;
+		case PUT: putsample(fd, arguments.area, arguments.sample); break;		
 	}
 	
 	close(fd);
