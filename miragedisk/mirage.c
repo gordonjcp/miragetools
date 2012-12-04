@@ -27,6 +27,8 @@
 #include <errno.h>
 #include <sndfile.h>
 
+const char *argp_program_version = "miragedisk 0.0";
+const char *argp_program_bug_address = "gordon@gjcp.net";
 
 static struct argp_option options[] = {
 	{"get", 'g', "AREA", 0, "Get sample from disk" },
@@ -34,7 +36,7 @@ static struct argp_option options[] = {
 	{ 0 }
 };
 
-enum { NONE, GET, PUT} mode;
+enum { NONE, GET, PUT } mode;
 
 struct arguments {
 	char *sample;
@@ -56,7 +58,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 			break;
 		case ARGP_KEY_END:
 			if (state->arg_num<1) {
-				printf("not enough arguments\n");
+				argp_usage(state);
 				exit(1);
 			}
  		default:
@@ -135,6 +137,7 @@ void putsample(int fd, int area, char *filename) {
 	sf_read_short(snd, sf_buffer, 4096);
 	for (i=0; i<4096; i++) {
 		buffer[i+1024] = (sf_buffer[i]>>8)+128;
+		if (buffer[i+1024] ==0 ) buffer[i+1024] = 1;
 	}
 	fd_writetrack(fd, track, buffer);
 
@@ -143,6 +146,7 @@ void putsample(int fd, int area, char *filename) {
 		sf_read_short(snd, sf_buffer, 5120);
 		for (i=0; i<5120; i++) {
 			buffer[i] = (sf_buffer[i]>>8)+128;
+			if (buffer[i] ==0 ) buffer[i] = 1;
 		}
 
 		fd_writetrack(fd, j, buffer);
@@ -166,6 +170,7 @@ int main (int argc, char **argv) {
 	
 	struct arguments arguments;
 	arguments.mode=NONE;
+	
 	argp_parse(&argp, argc, argv, 0, 0, &arguments);
 	
 	if (!arguments.mode) {
