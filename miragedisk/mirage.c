@@ -30,13 +30,15 @@
 const char *argp_program_version = "miragedisk 0.0";
 const char *argp_program_bug_address = "gordon@gjcp.net";
 
+enum { NONE, GET, PUT, GET_OS, PUT_OS } mode;
+
 static struct argp_option options[] = {
 	{"get", 'g', "AREA", 0, "Get sample from disk" },
 	{"put", 'p', "AREA", 0, "Write sample to disk" },
+	{"get-os", GET_OS, NULL, 0, "Get OS from disk" },
+	{"put-os", PUT_OS, NULL, 0, "Write OS to disk" },
 	{ 0 }
 };
-
-enum { NONE, GET, PUT } mode;
 
 struct arguments {
 	char *sample;
@@ -52,6 +54,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 	switch (key) {
 		case 'g': arguments->mode = GET; arguments->area = atoi(arg); break;
 		case 'p': arguments->mode = PUT; arguments->area = atoi(arg); break;
+		case GET_OS: arguments->mode = GET_OS; break;
+		case PUT_OS: arguments->mode = PUT_OS; break;		
 		case ARGP_KEY_ARG:
 			if (state->arg_num >= 1) printf("too many args\n");
 			arguments->sample = arg;
@@ -156,7 +160,7 @@ void putsample(int fd, int area, char *filename) {
 }
 
 
-static struct argp argp = { options, parse_opt, "SAMPLE", "mirage disk tool" };
+static struct argp argp = { options, parse_opt, "FILE", "mirage disk tool" };
 
 int main (int argc, char **argv) {
 
@@ -190,7 +194,8 @@ int main (int argc, char **argv) {
 
 	switch(arguments.mode) {
 		case GET: getsample(fd, arguments.area, arguments.sample); break;
-		case PUT: putsample(fd, arguments.area, arguments.sample); break;		
+		case PUT: putsample(fd, arguments.area, arguments.sample); break;
+			
 	}
 	
 	close(fd);
