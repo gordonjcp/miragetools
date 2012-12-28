@@ -20,15 +20,57 @@
 	along with miragedisk.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include <linux/fd.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
 #include <linux/fdreg.h>
 
+#include "disk.h"
+
 static char buffer[5632];
 static struct floppy_raw_cmd raw_cmd;
+
+void fd_readwrite(int fd, int rdwr, int trk, int sect, int len, char *buffer) {
+	// read or write either a 5120-byte "track" or 512-byte sector
+
+	struct floppy_raw_cmd raw_cmd;
+	int tmp;
+
+	raw_cmd.rate = 2;	   // set rate for 3.5" DD floppy
+	raw_cmd.track = trk;
+
+	raw_cmd.cmd_count = 0;
+	raw_cmd.data = buffer;
+	
+	// note that reading more than the number of sectors available (ie.
+	// reading 5120 bytes starting from sector 1) will cause an error
+	if (len>5120) len=5120;		// cap len at 5120 bytes for normal track
+	if (sect == 5) len = 512;   // sector 5 is always 512 bytes
+	
+	raw_cmd.length = len;
+	raw_cmd.flags = FD_RAW_INTR | FD_RAW_NEED_SEEK;
+
+	raw_cmd.flags |= rdwr ? FD_RAW_WRITE : FD_RAW_READ;
+
+	// set up the command
+	raw_cmd.cmd[raw_cmd.cmd_count++] = rdwr ? FD_WRITE : FD_READ;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;    // head, drive (always 0)
+	raw_cmd.cmd[raw_cmd.cmd_count++] = trk;  // track
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;    // head (always 0)
+	raw_cmd.cmd[raw_cmd.cmd_count++] = sect; // sector number
+	// sector size is next, 128 * (2^n) bytes
+	raw_cmd.cmd[raw_cmd.cmd_count++] = (sect == 5) ? 2 : 3;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 6;    // max sectors per track (sets gap size)
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0x1b; // GAP3 length (magic, no idea)
+	raw_cmd.cmd[raw_cmd.cmd_count++] = 0xff; // read all sectors
+
+	// now do the actual reading or writing
+	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
+	if(tmp) perror(__func__);
+}
+
+
 
 void fd_recalibrate(int fd) {
 	// reset the floppy controller
@@ -109,6 +151,7 @@ void fd_readtrack(int fd, int trk, char *buffer) {
 }
 
 void fd_writetrack(int fd, int trk, char *buffer) {
+	// writes five 1024-byte sectors, not a whole track
 
 	struct floppy_raw_cmd raw_cmd;
 	int tmp, i, j;

@@ -18,8 +18,18 @@
 	along with miragedisk.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef __DISK_H
+#define __DISK_H
+
+#define MFD_RD 0;
+#define MFD_WR 1;
+
 void fd_recalibrate(int fd);
 void fd_seek(int fd, int track);
 void fd_seekin(int fd);
 void fd_readtrack(int fd, int trk, char *buffer);
 void fd_writetrack(int fd, int trk, char *buffer);
+void fd_readwrite(int fd, int rdwr, int trk, int sect, int len, char *buffer);
+
+
+#endif
