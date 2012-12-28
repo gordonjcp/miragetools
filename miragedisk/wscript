@@ -21,7 +21,7 @@ def build(bld):
 
     bld(
         features = 'c cprogram',
-        source = ['mirage.c', 'disk.c'],
+        source = ['mirage.c', 'disk.c', 'os.c', ],
         target = 'miragetool',
         uselib = "SNDFILE",
 	linkflags = "",

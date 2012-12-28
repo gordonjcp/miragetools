@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <sndfile.h>
 #include "disk.h"
+#include "os.h"
 
 const char *argp_program_version = "miragedisk 0.0";
 const char *argp_program_bug_address = "gordon@gjcp.net";
@@ -116,6 +117,8 @@ void getsample(int fd, int area, char *filename) {
 }
 
 void putsample(int fd, int area, char *filename) {
+	// write a sample to the given area on a Mirage disk
+	// FIXME - if the sample is already 8-bit unsigned, write it verbatim
 
 	SNDFILE *snd;
 	SF_INFO info;
@@ -135,16 +138,12 @@ void putsample(int fd, int area, char *filename) {
 	// write the sample
 	track = 2+(area*13);
 	
-	
 	// first block is special, because it has the params at the start
 	// making the first track hold 1k of params and 4k of sample
-
 	sf_read_short(snd, sf_buffer, 4096);
 	for (i=0; i<4096; i++) {
-
 		buffer[i] = (sf_buffer[i]>>8)+128;  // convert to unsigned int
 		if (buffer[i] ==0 ) buffer[i+1024] = 1; // smash any zero values which will stop the oscillator
-
 	}
 	fd_readwrite(fd, MFD_WRITE, track, 1, 4096, buffer);
 	track++;
@@ -197,9 +196,8 @@ int main (int argc, char **argv) {
 	switch(arguments.mode) {
 		case GET: getsample(fd, arguments.area, arguments.sample); break;
 		case PUT: putsample(fd, arguments.area, arguments.sample); break;
-			
+		case GET_OS: get_os(fd, arguments.sample); break;
+		case PUT_OS: put_os(fd, arguments.sample); break;
 	}
-	
 	close(fd);
-
 }

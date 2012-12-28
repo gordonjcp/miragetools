@@ -39,7 +39,6 @@ void fd_readwrite(int fd, int rdwr, int trk, int sect, int len, char *buffer) {
 
 	raw_cmd.rate = 2;	   // set rate for 3.5" DD floppy
 	raw_cmd.track = trk;
-
 	raw_cmd.cmd_count = 0;
 	raw_cmd.data = buffer;
 	
