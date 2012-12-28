@@ -1,6 +1,6 @@
-// vim: set noexpandtab ai ts=4 sw=4 tw=4:
+/*  vim: set noexpandtab ai ts=4 sw=4 tw=4:
 
-/*  miragedisk, part of a set of disk tools for the Ensoniq Mirage
+    miragedisk, part of a set of disk tools for the Ensoniq Mirage
 	(C) 2012 Gordon JC Pearce MM0YEQ <gordon@gjcp.net>
 	
 	disk.c

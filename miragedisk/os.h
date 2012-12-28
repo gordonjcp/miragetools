@@ -3,8 +3,8 @@
     miragedisk, part of a set of disk tools for the Ensoniq Mirage
 	(C) 2012 Gordon JC Pearce MM0YEQ <gordon@gjcp.net>
 	
-	disk.h
-	Floppy disk ioctl routine headers
+	os.h
+	Read and write Mirage OS blocks
 
 	miragedisk is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
