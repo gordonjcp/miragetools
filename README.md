@@ -23,15 +23,20 @@ Use something like qjackctl to hook the ports up to your physical MIDI interface
 
 Make sure the Mirage is hooked up to the appropriate MIDI connectors on your interface.
 
-Switch to the asm09 directory.  Build the assembler and disk writer, then build the Forth image:
+Switch to the asm09 directory.  Build the assembler, then build the Forth image:
 
     $ gcc as9.c -o as9
-    $ gcc writeos.c -o writeos
     $ ./as9 forth.asm
 
+Build the Mirage disk utility next.  Change to the miragedisk directory, then build and install:
+
+    $ ./waf configure
+    $ ./waf
+    $ sudo ./waf install
+   
 Get a blank formatted diskette (or format one, with the instructions in miragetools/asm09/README.md) and write the Forth image:
 
-    $ ./writeos forth.s19
+    $ miragetool --put-os forth.s19
 
 Boot from the disk and you should see the right hand digit of the LED showing a rotating pattern.
 

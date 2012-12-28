@@ -13,10 +13,9 @@ Nothing special.
 Building and installing
 ---------------------
 
-Build the assembler and disk writer with:
+Build the assembler with:
 
     $ gcc as9.c -o as9
-    $ gcc writeos.c -o writeos
     
 These need to be adapted to use waf.
 
@@ -30,8 +29,8 @@ There aren't many options.  This version of asm09 has different command-line swi
     
 There are a couple of enhancements to as9 in this version.  Most notably, the line parser has been modified to accept both \r and \n as signifying the end of a line.  The fcc pseudo-op has now got a counterpart fccz which constructs a zero-terminated string.
     
-Using writeos
-------------
+Writing to disk
+-------------
 
 Ensure that your user has permission to write to the floppy drive.  On Ubuntu, by default the drive is owned by root, group owned by floppy and set to be writable by owner and group.  You can either change the permissions on /dev/fd0 or add yourself to the floppy group then log out and log back in.
 
@@ -39,14 +38,14 @@ To write the assembled OS to a disk, you'll need a blank formatted diskette.  Yo
 
     $ superformat /dev/fd0 tracksize=11b mss ss ssize=1024 dd --zero-based
     
-Although this lays down a low-level format, the sectors are invalid until they have been written to.  So, let's use writeos to put an OS on the disk:
+Although this lays down a low-level format, the sectors are invalid until they have been written to.  So, let's use miragetool to put an OS on the disk:
 
-    $ ./writeos forth.s19
+    $ miragetool --put-os forth.s19
     
-Note that writeos only writes the first two tracks and not the "sector 5" blocks further up the disk.  This does give us 11kB to play with, which ought to be enough for anyone.
+Note that miragetool will treat files ending in ".s19" as Motorola S-Record files, but otherwise deals with raw binary images.
 
 TODO list
 --------
 
-* waf-ify asm09 and writeos
+* waf-ify asm09 
 * bugfixes for asm09
