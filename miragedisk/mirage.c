@@ -177,11 +177,6 @@ int main (int argc, char **argv) {
 	arguments.mode=NONE;
 	
 	argp_parse(&argp, argc, argv, 0, 0, &arguments);
-	
-	if (!arguments.mode) {
-		printf("must use --get <area> or --put <area>\n");
-		exit(1);
-	}
 
 	// looks like we have a mode, an area and a sample name
 	fd = open("/dev/fd0", O_ACCMODE | O_NDELAY);
