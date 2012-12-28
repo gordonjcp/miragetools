@@ -52,6 +52,15 @@ int memory_init(void) {
 	} else {
 		fprintf(stderr, "warning: Could not open ROM image\n");
 	}
+	
+	// if we run off the end of "normal" RAM, die
+	ramdata[0xc000] = 0x86;
+	ramdata[0xc001] = 0x00;
+	ramdata[0xc002] = 0x3f;
+	ramdata[0x0000] = 0x86;
+	ramdata[0x0001] = 0x00;
+	ramdata[0x0002] = 0x3f;
+	
 	return 1;
 }
 

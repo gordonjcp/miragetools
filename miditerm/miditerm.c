@@ -39,6 +39,7 @@ int main (int argc, char *argv[]) {
     gtk_container_add (GTK_CONTAINER (window), hbox);
     gtk_widget_show_all (window);
     alsa_init();
+    
     gtk_main ();
     alsa_destroy();
 }
