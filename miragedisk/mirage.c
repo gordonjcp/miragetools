@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sndfile.h>
+#include "disk.h"
 
 const char *argp_program_version = "miragedisk 0.0";
 const char *argp_program_bug_address = "gordon@gjcp.net";
@@ -94,22 +95,23 @@ void getsample(int fd, int area, char *filename) {
 	// now we pull the sample
 	
 	track = 2+(area*13);
-	fd_readtrack(fd, track, buffer);
 
-	// first block is special, because it has the params at the start
+	// first track is special, because it has the params at the start
+	// we'll start reading from sector 1 and only read 4096 bytes
+	fd_readwrite(fd, MFD_READ, track, 1, 4096, buffer);
 	for (i=0; i<4096; i++) {
-		sf_buffer[i] = (buffer[i+1024]-128)<<8;
+		sf_buffer[i] = (buffer[i]-128)<<8;
 	}
 	sf_write_short(snd, sf_buffer, 4096);
 	
+	// now we read full 5120-byte blocks
 	for(j = ++track; j<track+12; j++) {
-		fd_readtrack(fd, j, buffer);
+		fd_readwrite(fd, MFD_READ, j, 0, 5120, buffer);		
 		for (i=0; i<5120; i++) {
 			sf_buffer[i] = (buffer[i]-128)<<8;
 		}		
 		sf_write_short(snd, sf_buffer, 5120);
-	}
-		
+	}	
 	sf_close(snd);
 }
 
@@ -136,26 +138,26 @@ void putsample(int fd, int area, char *filename) {
 	
 	// first block is special, because it has the params at the start
 	// making the first track hold 1k of params and 4k of sample
-	// need to get the original track into the buffer first
-	fd_readtrack(fd, track, buffer);
+
 	sf_read_short(snd, sf_buffer, 4096);
 	for (i=0; i<4096; i++) {
-		buffer[i+1024] = (sf_buffer[i]>>8)+128;
-		if (buffer[i+1024] ==0 ) buffer[i+1024] = 1;
-	}
-	fd_writetrack(fd, track, buffer);
 
+		buffer[i] = (sf_buffer[i]>>8)+128;  // convert to unsigned int
+		if (buffer[i] ==0 ) buffer[i+1024] = 1; // smash any zero values which will stop the oscillator
+
+	}
+	fd_readwrite(fd, MFD_WRITE, track, 1, 4096, buffer);
 	track++;
+	
+	// now write the remaining tracks
 	for(j = track; j<track+12; j++) {
 		sf_read_short(snd, sf_buffer, 5120);
 		for (i=0; i<5120; i++) {
 			buffer[i] = (sf_buffer[i]>>8)+128;
 			if (buffer[i] ==0 ) buffer[i] = 1;
 		}
-
-		fd_writetrack(fd, j, buffer);
+		fd_readwrite(fd, MFD_WRITE, j, 0, 5120, buffer);
 	}
-		
 	sf_close(snd);
 }
 

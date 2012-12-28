@@ -21,8 +21,8 @@
 #ifndef __DISK_H
 #define __DISK_H
 
-#define MFD_RD 0;
-#define MFD_WR 1;
+#define MFD_READ 0
+#define MFD_WRITE 1
 
 void fd_recalibrate(int fd);
 void fd_seek(int fd, int track);
