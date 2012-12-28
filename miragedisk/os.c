@@ -31,7 +31,50 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "disk.h"
+
+int hex_to_int(char x) {
+	x=toupper(x);
+	if( x>= '0' && x<= '9') return(x-'0');
+	return(10+(x-'A'));
+}
+
+int load_srec(FILE *in, char *buffer) {
+	// this is messy horrible code nicked from 6809emu
+	
+	char buf[200];
+	int num_bytes,i,p,done=0;
+	long start_addr;
+	unsigned char value;
+
+	fgets(buf,200,in);
+	while(!done) {
+		/* read len */  /* 2 bytes of addr, 1 byte is checksum */
+		num_bytes = (16*hex_to_int(buf[2])+hex_to_int(buf[3]))-3;
+    
+		/* read addr */
+		start_addr=0;
+		for(p=4,i=0;i<4;i++)
+			start_addr = (start_addr<<4) + hex_to_int(buf[p++]);
+
+			/* read data */
+			for(i=0;i<num_bytes;i++) {
+				value = 16*hex_to_int(buf[p])+hex_to_int(buf[p+1]);
+				p+=2;
+				buffer[start_addr+i-0x8000] = value; // shift down $8000 to allow for the RAM mapping
+			}
+
+		/* check for ending */
+		if(!strncmp("S9",buf,2)) {
+			break;   /* done */
+		}
+		fgets(buf,200,in);
+		if(feof(in))done=1;
+	}
+	return(1);
+}
+
 
 void get_os_sectors(int fd, char *buffer) {
 	// get the OS from the disk into a buffer
@@ -94,20 +137,31 @@ void put_os(int fd, char *filename) {
 	// get the OS from disk, and save as a binary image
 	
 	char buffer[16384];
-	FILE *out;
-	
-	out=fopen(filename,"r");
-	if(!out) {
+	FILE *in;
+
+	in=fopen(filename,"r");
+	if(!in) {
 		printf("cannot open %s\n", filename);
 		exit(1);
 	}
 
-	if (fread(buffer, 1, 16384, out) != 16384) {
-		printf("error reading %s\n", filename);
-		fclose(out);
-		exit(1);
+	if (strncmp(strrchr(filename, '.'), ".s19", 4) == -1) {
+		// doesn't end with .s19, so we'll assume (possibly wrongly)
+		// that it isn't a Motorola S-REC file	
+
+		if (fread(buffer, 1, 16384, in) != 16384) {
+			printf("error reading %s\n", filename);
+			fclose(in);
+			exit(1);
+		}
+		fclose(in);
+	} else {
+		// *does* end with .s19, so we'll assume (possibly wrongly)
+		// that this is a Motorola S-REC file
+		load_srec(in, buffer);
+		
 	}
-	fclose(out);
+	
 	put_os_sectors(fd, buffer);
 }
 
