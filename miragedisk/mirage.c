@@ -29,7 +29,7 @@
 #include "disk.h"
 #include "os.h"
 
-const char *argp_program_version = "miragedisk 0.0";
+const char *argp_program_version = "miragedisk 0.1";
 const char *argp_program_bug_address = "gordon@gjcp.net";
 
 enum { NONE, GET, PUT, GET_OS, PUT_OS } mode;
