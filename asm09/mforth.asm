@@ -47,6 +47,7 @@ irqj	jmp irqhandler
 firqj	jmp firqhandler
 osj	jmp start
 
+	org dstack
 *** some utility routines
 *** set up serial handler, runopsys configured the UART for us
 serialinit
@@ -144,12 +145,56 @@ start
 	jsr serialinit
 	
 	andcc #$bf	* enable interrupt
-	ldx #bootmsg	point to startup message
+*** below this line, will be replaced with Forth words
+	ldy #begin
+        ldx ,y++	* You'll see this idiom a lot
+        jmp [,x++]
+begin   fdb cold
+
+*** actual Forth definitions below this line
+dp0     fcb   $80	* flag byte
+	fcc 'til'	* name is written backwards for search routine
+	fdb   $0000       * lfa of zero indicates start of dictionary
+lit     fdb *+2	* this is a primitive, so CFA points to the first byte of the actual code
+        ldd ,y++	* read the value at the interpreter pointer and bump
+        pshu  d	* stack
+        ldx ,y++	* next word (told you you'd see this quite a bit)
+        jmp [,x++]
+
+	fcb $80
+	fcc 'gsm.'
+	fdb lit-6	* LFA points to the flag byte of the preceding word
+dotmsg	fdb *+2
+	pulu x
 	jsr prtstr
+	ldx ,y++
+	jmp [,x++]
+	
+	fcb $80
+	fcc 'hcnarb'
+	fdb dotmsg-7
+branch	fdb *+2
+	ldd ,y		* interpreter pointer points to offset, get it in d
+	leay d,y	* add d to interp ptr
+	ldx ,y++	* next
+	jmp [,x++]
+	
+cold	fdb docol
+	fdb lit, bootmsg
+	fdb dotmsg
+	fdb branch, -2
 	
 die	jmp die
+
 	
 bootmsg	fcb $0d, $0a
 	fcc "Mirage Forth 0.0"
 	fcb $0d, $0a, $00
+
+*** will become part of the real def for colon	
+docol   pshs y		* save IP
+        leay 0,x	* new IP is word pointer
+        ldx  ,y++	* next
+        jmp   [,x++]
+
 	

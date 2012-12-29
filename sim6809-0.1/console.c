@@ -280,6 +280,7 @@ void console_command()
     case 'z' :
       if (more_params(&strptr)) {
     reset();
+    rpc = 0x800e;
 	console_active = 0;
 	execute_addr(readhex(&strptr));
 	if (regon) {
