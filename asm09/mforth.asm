@@ -302,8 +302,10 @@ divmod3	std 0,u
 	clrb
 	subd 2,u
 	std 2,u
-slmodr	ldx ,y++
+divmodr	ldx ,y++
 	jmp [,x++]
+
+
 
 
 	fcb $80
