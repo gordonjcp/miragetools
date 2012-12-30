@@ -260,7 +260,7 @@ mult	fdb *+2		* ( n1 n2 -- n1*n2 )
 	fdb mult-4
 divmod	lda 2,u
 	pshs a
-	bpl slmod2
+	bpl divmod2
 	clra
 	clrb
 	subd 2,u
@@ -305,8 +305,146 @@ divmod3	std 0,u
 divmodr	ldx ,y++
 	jmp [,x++]
 
+* okay, we've got some stack manipulation and arithmetic words
+* and of course lit which lets us put a literal value on the stack
+* now some conditionals
+* Note that this code takes a cue from jonesforth, and makes TRUE be 1
+* instead of -1 (or $ffff) to make it saner for those of us used to C
+
+	fcb $80
+	fcc '='
+	fdb divmod-7
+equal	fdb *+2
+	pulu d		* pop top of stack
+	cmpd 0,u	* compare with top of stack
+	beq equal1
+	clrb
+	bra equal2
+equal1	ldb #1
+equal2	clra
+	std 0,u
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc '<>'
+	fdb equal-4
+nequal	fdb *+2
+	pulu d		* pop top of stack
+	cmpd 0,u	* compare with top of stack
+	bne equal1	* the comparison is inverted but the rest can be shared with equal
+	clrb
+	bra equal2
+
+	fcb $80
+	fcc '<'
+	fdb nequal-5
+lsthan	fdb *+2
+	pulu d		* pop top of stack
+	cmpd 0,u	* compare with top of stack
+	bls equal1	* shared with equal
+	clrb
+	bra equal2
+
+	fcb $80
+	fcc '>'
+	fdb lsthan-4
+gtthan	fdb *+2
+	pulu d		* pop top of stack
+	cmpd 0,u	* compare with top of stack
+	bgt equal1	* shared with equal
+	clrb
+	bra equal2
+
+* will add (less or greater than) or equal to later on
+* also 0=, 0<>, 0<, 0>
+* time for some bitwise operators
+
+	fcb $80
+	fcc 'dna'
+	fdb gtthan-4
+btand	fdb *+2		* ( n1 n2 -- n1 & n2 )
+	pulu d
+	andb 1,u	* oddly there's no two-byte AND
+	anda 0,u
+	std 0,u
+	ldx ,y++
+	jmp [,x++]	
 
 
+	fcb $80
+	fcc 'ro'
+	fdb btand-6
+btor	fdb *+2		* ( n1 n2 -- n1 & n2 )
+	pulu d
+	orb 1,u	* there's no two-byte OR either
+	ora 0,u	* so just do them separately
+	std 0,u
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc 'rox'
+	fdb btand-5
+btxor	fdb *+2		* ( n1 n2 -- n1 & n2 )
+	pulu d
+	eorb 1,u	* and there's no two-byte XOR
+	eora 0,u	* so just do them separately
+	std 0,u
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc 'trevni'
+	fdb btxor-6
+btinv	fdb *+2		* bitwise invert
+	ldd 0,u	* get top of stack
+	coma		* complement
+	comb
+	std 0,u	* store it back
+	ldx ,y++
+	jmp [,x++]
+
+* we want to be able to fiddle with memory, too
+* so we want store and fetch primitives
+	fcb $80
+	fcc '!'
+	fdb btinv-9
+store	fdb *+2		* Store 16-bit value in memory ( val addr -- )
+	pulu x
+	pulu d
+	std 0,x	* store two bytes at address
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc '!c'
+	fdb store-4
+cstore	fdb *+2		* Store 8-bit value in memory ( val addr -- )
+	pulu x
+	pulu d
+	stb 0,x	* store only the lower byte
+	ldx ,y++
+	jmp [,x++]
+	
+	fcb $80
+	fcc '@'
+	fdb cstore-5
+fetch	fdb *+2		* Fetch 16-bit value from address on stack
+	ldd [0,u]	* top of stack holds address
+	std 0,u	* now it holds the value
+	ldx ,y++
+	jmp [,x++]
+	fcb $80
+	fcc '@'
+	fdb store-4
+cfetch	fdb *+2		* Fetch 16-bit value from address on stack
+	ldb [0,u]	* top of stack holds address, get just one byte
+	clra		* and clear the top byte
+	std 0,u	* top of stack holds the value
+	ldx ,y++
+	jmp [,x++]
+	
 
 	fcb $80
 	fcc 'gsm.'
