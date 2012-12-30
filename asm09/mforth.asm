@@ -154,12 +154,106 @@ begin   fdb cold
 *** actual Forth definitions below this line
 dp0     fcb   $80	* flag byte
 	fcc 'til'	* name is written backwards for search routine
-	fdb   $0000       * lfa of zero indicates start of dictionary
-lit     fdb *+2	* this is a primitive, so CFA points to the first byte of the actual code
+	fdb   $0000       * Link Field Address of zero indicates start of dictionary
+lit     fdb *+2	* this is a primitive, so Code Field Address points to the first byte of the actual code
         ldd ,y++	* read the value at the interpreter pointer and bump
         pshu  d	* stack
         ldx ,y++	* next word (told you you'd see this quite a bit)
         jmp [,x++]
+
+	fcb $80
+	fcc 'pord'
+	fdb lit-6	* LFA points to the flag byte of the previous word
+drop	fdb *+2		* drop top of stack ( n -- )
+	leau 2,u	* bump user stack up by two
+	ldx ,y++	* next
+	jmp [,x++]	 
+
+	fcb $80
+	fcc 'paws'
+	fdb drop-7
+swap	fdb *+2		* swap the top two values on the stack ( n1 n2 -- n2 n1 )
+	pulu d		* top is in d
+	pulu x		* second top is in x
+	pshu d		* put d back first
+	pshu x		* and put x on top
+	ldx ,y++
+	jmp [,x++]
+	
+	fcb $80
+	fcc 'pud'
+	fdb swap-7
+dup	fdb *+2		* duplicate top entry on stack ( n -- n n )
+	ldd 0,u	* U points to top of stack, no offset
+	pshu d
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc 'revo'
+	fdb dup-6
+over	fdb *+2		* duplicate the second-top entry on the stack ( n1 n2 -- n1 n2 n1 )
+	ldd 2,u	* U points to top of stack but we offset two up
+	pshu d
+	ldx ,y++
+	jmp [,x++]
+	
+	fcb $80
+	fcc 'tor'
+	fdb over-7
+rot	fdb *+2		* rotate top three items ( n1 n2 n3 -- n2 n3 n1 )
+	pshs y		* save IP, we'll need it
+	pulu d,x,y	* ( n1 n2 n3 -- d x y )
+	pshu d,x	* ( x d -- n2 n3 )
+	pshu y		* ( y -- n2 n3 n1 )
+	puls y		* restore IP again...
+	ldx ,y++	* and use it for NEXT
+	jmp [,x++]
+	
+	fcb $80
+	fcc '+'		
+	fdb rot-6
+plus	fdb *+2		* ( n1 n2 -- n1+n2 )
+	pulu d		* remove top of stack
+	addd 0,u	* add top of stack, no offset
+	std 0,u 	* store D back onto the stack
+	ldx ,y++	* next
+	jmp [,x++]
+
+	fcb $80
+	fcc '-'
+	fdb plus-4
+minus	fdb *+2		* ( n1 n2 -- n1-n2 )
+	pulu d		* remove top of stack
+	subd 0,u	* subtract top of stack, no offset
+	std 0,u 	* store D back onto the stack
+	ldx ,y++	* next
+	jmp [,x++]
+
+	fcb	$80
+	fcc	'*'
+	fdb	minus-4
+mult	fdb *+2		* ( n1 n2 -- n1*n2 )
+	lda 1,u	* multiply lower byte of multiplicand
+	ldb 3,u	* by lower byte of multiplier
+	mul
+	pshs d	* save on stack
+	lda 0,u	* multiply upper byte of multiplicand
+	ldb 3,u	* by lower byte of multiplier
+	mul
+	addb 0,s	* add to result
+	stb 0,s	* store
+	lda 1,u	* multiply lower byte of multiplicand
+	ldb 2,u	* by upper byte of multiplier
+	mul
+	addb 0,s	* add to result
+	stb 0,s	* store
+	puls d	* restore D from result
+	leau 2,u	* discard top value
+	std 0,u	* store
+	ldx ,y++	* next
+	jmp [,x++]
+
 
 	fcb $80
 	fcc 'gsm.'
@@ -183,8 +277,6 @@ cold	fdb docol
 	fdb lit, bootmsg
 	fdb dotmsg
 	fdb branch, -2
-	
-die	jmp die
 
 	
 bootmsg	fcb $0d, $0a
