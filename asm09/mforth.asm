@@ -200,8 +200,19 @@ dup	fdb *+2		* duplicate top entry on stack ( n -- n n )
 	jmp [,x++]
 
 	fcb $80
+	fcc 'pud?'
+	fdb swap-7
+qdup	fdb *+2		* duplicate top entry on stack ( n -- n n ) if non-zero
+	ldd 0,u	* U points to top of stack, no offset
+	cmpd #0	* is it zero?
+	beq qdup1	* yes, branch	
+	pshu d		* no, stack a copy
+qdup1	ldx ,y++	* next
+	jmp [,x++]
+
+	fcb $80
 	fcc 'revo'
-	fdb dup-6
+	fdb qdup-7
 over	fdb *+2		* duplicate the second-top entry on the stack ( n1 n2 -- n1 n2 n1 )
 	ldd 2,u	* U points to top of stack but we offset two up
 	pshu d
@@ -518,30 +529,44 @@ emit	fdb *+2
 	jsr prtchr
 	ldx ,y++
 	jmp [,x++]
-
+	
+	fcb $80
+	fcc 'hcnarb'
+	fdb emit-7
+branch	fdb *+2
+branch1	ldd ,y		* interpreter pointer points to offset, get it in d
+	leay d,y	* add d to interp ptr
+	ldx ,y++	* next
+	jmp [,x++]
+	
+	fcb $80
+	fcc 'hcnarb0'
+	fdb dotmsg-9
+zbranch	fdb *+2
+	pulu d		* top of stack
+	cmpd #0	* is it zero?
+	beq branch1	* yes, branch
+	leay 2,y	* no, bump IP over offset and...
+	ldx ,y++	* next
+	jmp [,x++]
 
 	fcb $80
 	fcc 'gsm.'
-	fdb lit-6	* LFA points to the flag byte of the preceding word
+	fdb zbranch-10	* LFA points to the flag byte of the preceding word
 dotmsg	fdb *+2
 	pulu x
 	jsr prtstr
 	ldx ,y++
 	jmp [,x++]
-	
-	fcb $80
-	fcc 'hcnarb'
-	fdb dotmsg-7
-branch	fdb *+2
-	ldd ,y		* interpreter pointer points to offset, get it in d
-	leay d,y	* add d to interp ptr
-	ldx ,y++	* next
-	jmp [,x++]
-	
+
+*** test word, not linked in the dictionary	
 cold	fdb docol
 	fdb lit, bootmsg
 	fdb dotmsg
-	fdb branch, -2
+	fdb key, qdup, zbranch, -6
+	fdb lit, 42, emit
+	fdb emit
+	fdb branch, -18
 
 	
 bootmsg	fcb $0d, $0a
