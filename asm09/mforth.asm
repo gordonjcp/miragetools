@@ -499,7 +499,26 @@ qkeye	clra
 	fcc 'yek'
 	fdb qkey-7
 key	fdb *+2
+	ldd aciain	* anything in the buffer?
+	cmpd aciaout
+	bne key1	* yes
+	clrb		* no, stack a zero instead
+	bra keye
+key1	jsr serialget
+keye	clra
+	pshu d
+	ldx ,y++
+	jmp [,x++]
 	
+	fcb $80
+	fcc 'time'
+	fdb key-6
+emit	fdb *+2
+	pulu d
+	jsr prtchr
+	ldx ,y++
+	jmp [,x++]
+
 
 	fcb $80
 	fcc 'gsm.'
