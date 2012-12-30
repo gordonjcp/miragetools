@@ -230,9 +230,10 @@ minus	fdb *+2		* ( n1 n2 -- n1-n2 )
 	ldx ,y++	* next
 	jmp [,x++]
 
-	fcb	$80
-	fcc	'*'
-	fdb	minus-4
+* mult and divmod shamelessly nicked from Dave Dunfield's Micro Forth
+	fcb $80
+	fcc '*'
+	fdb minus-4
 mult	fdb *+2		* ( n1 n2 -- n1*n2 )
 	lda 1,u	* multiply lower byte of multiplicand
 	ldb 3,u	* by lower byte of multiplier
@@ -252,6 +253,56 @@ mult	fdb *+2		* ( n1 n2 -- n1*n2 )
 	leau 2,u	* discard top value
 	std 0,u	* store
 	ldx ,y++	* next
+	jmp [,x++]
+
+	fcb $80
+	fcc 'dom/'
+	fdb mult-4
+divmod	lda 2,u
+	pshs a
+	bpl slmod2
+	clra
+	clrb
+	subd 2,u
+	std 2,u
+	lda 0,s
+divmod2	eora 0,u
+	pshs a
+	ldd 0,u
+	beq divmodr
+	bpl divmod1
+	coma
+	comb
+	addd #1
+	std 0,u
+divmod1	clra
+	clrb
+	ldx #17
+divmodl	andcc	#$fe
+divmodm	rol 3,u
+	rol 2,u
+	leax -1,x
+	beq divmodd
+	rolb
+	rola
+	cmpd 0,u
+	blo divmodl
+	subd 0,u
+	orcc #1
+	bra divmodm
+divmodd	tst 1,s
+	bpl divmod3
+	coma
+	comb
+	addd #1
+divmod3	std 0,u
+	tst 0,s++
+	bpl divmodr
+	clra
+	clrb
+	subd 2,u
+	std 2,u
+slmodr	ldx ,y++
 	jmp [,x++]
 
 
