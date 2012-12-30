@@ -109,31 +109,41 @@ prtstr2	puls b,x
 	rts
 	
 *** IRQ handlers (NMI taken care of by ROM)
+
 irqhandler
 	rti		* dummy routine
+
+* decode incoming MIDI status bytes and handle them appropriately
+* in this case, only $f1 is decoded, and puts a character in the terminal FIFO
 firqhandler
-	pshs a,x	* save registers
-*	lda #$07
-*	sta $e201
+	pshs d,x	* save registers
 	ldx aciain	* input pointer
 	lda aciasr	* get ACIA status
 	bita #$80	* IRQ fired?
 	beq firqend	* no, strange, oh well
 	lda aciadr	* get the data from the ACIA
+	cmpa #$80
+	bls firqchr	* less, it's some sort of status byte
+	sta aciachr	* store it for later
+	bra firqend	* aciain hasn't been touched
+	
+firqchr	ldb aciachr	* get the status
+	cmpb #$f1	* MIDI Quarterframe (ie. a keystroke)?
+	bne firqend	* no, finish
 	sta ,x+	* save and nudge the pointer
 	cmpx #aciain	* ran off end?
 	bne firqend
 	ldx #aciabuffer * yes, reset back to the start of the buffer 
 firqend
 	stx aciain	* save pointer
-	puls x,a	* restore
+	puls x,d	* restore
 	rti		
 
 aciabuffer
 	fcb 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
 aciain	fdb aciabuffer
 aciaout	fdb aciabuffer
-
+aciachr	fcb 0		* store last byte 
 start	
 	lda #$0
 	lds #rstack	* set up return stack
@@ -435,15 +445,60 @@ fetch	fdb *+2		* Fetch 16-bit value from address on stack
 	std 0,u	* now it holds the value
 	ldx ,y++
 	jmp [,x++]
+
 	fcb $80
 	fcc '@'
-	fdb store-4
+	fdb fetch-4
 cfetch	fdb *+2		* Fetch 16-bit value from address on stack
 	ldb [0,u]	* top of stack holds address, get just one byte
 	clra		* and clear the top byte
 	std 0,u	* top of stack holds the value
 	ldx ,y++
 	jmp [,x++]
+
+* will add cmove and related words later
+* now let's fiddle with the stacks
+	fcb $80
+	fcc 'r>'	* looks the wrong way round, remember we reverse names so it's really '>r'
+	fdb cfetch-5
+ptor	fdb *+2		* pop the top of parameter stack onto the return stack
+	pulu d
+	pshs d
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc '>r'
+	fdb ptor-5
+rtop	fdb *+2		* pop the top of return stack onto the parameter stack
+	puls d
+	pshu d
+	ldx ,y++
+	jmp [,x++]
+
+* need to add @rsp, rsp!, @dsp, dsp!
+
+* key and emit deal with actually reading and writing characters
+
+	fcb $80
+	fcc 'yek?'
+	fdb rtop-5
+qkey	fdb *+2		* check if a key is available
+	ldd aciain	* input pointer to buffer
+	cmpd aciaout	* output pointer to buffer
+	bne qkey1	* not equal, there's *something*
+qkey1	clrb
+	bra qkeye
+qkey2	ldb #1
+qkeye	clra
+	pshu d
+	ldx ,y++
+	jmp [,x++]
+
+	fcb $80
+	fcc 'yek'
+	fdb qkey-7
+key	fdb *+2
 	
 
 	fcb $80
