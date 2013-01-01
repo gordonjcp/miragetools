@@ -17,6 +17,11 @@
 * You should have received a copy of the GNU General Public License
 * along with mforth.  If not, see <http://www.gnu.org/licenses/>.
 
+*** mforth owes rather a lot to Dave Dunfield's Micro Forth implementation
+*** and jonesforth, both of which were poked about at for ideas
+*** In particular, the technique of searching backwards through words in
+*** the dictionary came from Micro Forth, along with some arithmetic routines
+
 ******************************************************************
 * Rough guide to the Mirage memory map
 * $0000-$7fff bank-switched sample RAM
@@ -175,7 +180,7 @@ lit     fdb *+2	* this is a primitive, so Code Field Address points to the first
 
 	fcb $80
 	fcc 'pord'
-	fdb lit-6	* LFA points to the flag byte of the previous word
+	fdb lit		* LFA points to the code field of the previous word
 drop	fdb *+2		* drop top of stack ( n -- )
 	leau 2,u	* bump user stack up by two
 	ldx ,y++	* next
@@ -183,7 +188,7 @@ drop	fdb *+2		* drop top of stack ( n -- )
 
 	fcb $80
 	fcc 'paws'
-	fdb drop-7
+	fdb drop
 swap	fdb *+2		* swap the top two values on the stack ( n1 n2 -- n2 n1 )
 	pulu d		* top is in d
 	pulu x		* second top is in x
@@ -194,7 +199,7 @@ swap	fdb *+2		* swap the top two values on the stack ( n1 n2 -- n2 n1 )
 	
 	fcb $80
 	fcc 'pud'
-	fdb swap-7
+	fdb swap
 dup	fdb *+2		* duplicate top entry on stack ( n -- n n )
 	ldd 0,u	* U points to top of stack, no offset
 	pshu d
@@ -203,7 +208,7 @@ dup	fdb *+2		* duplicate top entry on stack ( n -- n n )
 
 	fcb $80
 	fcc 'pud?'
-	fdb swap-7
+	fdb swap
 qdup	fdb *+2		* duplicate top entry on stack ( n -- n n ) if non-zero
 	ldd 0,u	* U points to top of stack, no offset
 	cmpd #0	* is it zero?
@@ -214,7 +219,7 @@ qdup1	ldx ,y++	* next
 
 	fcb $80
 	fcc 'revo'
-	fdb qdup-7
+	fdb qdup
 over	fdb *+2		* duplicate the second-top entry on the stack ( n1 n2 -- n1 n2 n1 )
 	ldd 2,u	* U points to top of stack but we offset two up
 	pshu d
@@ -223,7 +228,7 @@ over	fdb *+2		* duplicate the second-top entry on the stack ( n1 n2 -- n1 n2 n1 
 	
 	fcb $80
 	fcc 'tor'
-	fdb over-7
+	fdb over
 rot	fdb *+2		* rotate top three items ( n1 n2 n3 -- n2 n3 n1 )
 	pshs y		* save IP, we'll need it
 	pulu d,x,y	* ( n1 n2 n3 -- d x y )
@@ -235,7 +240,7 @@ rot	fdb *+2		* rotate top three items ( n1 n2 n3 -- n2 n3 n1 )
 	
 	fcb $80
 	fcc '+'		
-	fdb rot-6
+	fdb rot
 plus	fdb *+2		* ( n1 n2 -- n1+n2 )
 	pulu d		* remove top of stack
 	addd 0,u	* add top of stack, no offset
@@ -245,7 +250,7 @@ plus	fdb *+2		* ( n1 n2 -- n1+n2 )
 
 	fcb $80
 	fcc '-'
-	fdb plus-4
+	fdb plus
 minus	fdb *+2		* ( n1 n2 -- n1-n2 )
 	pulu d		* remove top of stack
 	subd 0,u	* subtract top of stack, no offset
@@ -256,7 +261,7 @@ minus	fdb *+2		* ( n1 n2 -- n1-n2 )
 * mult and divmod shamelessly nicked from Dave Dunfield's Micro Forth
 	fcb $80
 	fcc '*'
-	fdb minus-4
+	fdb minus
 mult	fdb *+2		* ( n1 n2 -- n1*n2 )
 	lda 1,u	* multiply lower byte of multiplicand
 	ldb 3,u	* by lower byte of multiplier
@@ -280,7 +285,7 @@ mult	fdb *+2		* ( n1 n2 -- n1*n2 )
 
 	fcb $80
 	fcc 'dom/'
-	fdb mult-4
+	fdb mult
 divmod	lda 2,u
 	pshs a
 	bpl divmod2
@@ -336,7 +341,7 @@ divmodr	ldx ,y++
 
 	fcb $80
 	fcc '='
-	fdb divmod-7
+	fdb divmod
 equal	fdb *+2
 	pulu d		* pop top of stack
 	cmpd 0,u	* compare with top of stack
@@ -351,7 +356,7 @@ equal2	clra
 
 	fcb $80
 	fcc '<>'
-	fdb equal-4
+	fdb equal
 nequal	fdb *+2
 	pulu d		* pop top of stack
 	cmpd 0,u	* compare with top of stack
@@ -361,7 +366,7 @@ nequal	fdb *+2
 
 	fcb $80
 	fcc '<'
-	fdb nequal-5
+	fdb nequal
 lsthan	fdb *+2
 	pulu d		* pop top of stack
 	cmpd 0,u	* compare with top of stack
@@ -371,7 +376,7 @@ lsthan	fdb *+2
 
 	fcb $80
 	fcc '>'
-	fdb lsthan-4
+	fdb lsthan
 gtthan	fdb *+2
 	pulu d		* pop top of stack
 	cmpd 0,u	* compare with top of stack
@@ -385,7 +390,7 @@ gtthan	fdb *+2
 
 	fcb $80
 	fcc 'dna'
-	fdb gtthan-4
+	fdb gtthan
 btand	fdb *+2		* ( n1 n2 -- n1 & n2 )
 	pulu d
 	andb 1,u	* oddly there's no two-byte AND
@@ -397,7 +402,7 @@ btand	fdb *+2		* ( n1 n2 -- n1 & n2 )
 
 	fcb $80
 	fcc 'ro'
-	fdb btand-6
+	fdb btand
 btor	fdb *+2		* ( n1 n2 -- n1 & n2 )
 	pulu d
 	orb 1,u	* there's no two-byte OR either
@@ -408,7 +413,7 @@ btor	fdb *+2		* ( n1 n2 -- n1 & n2 )
 
 	fcb $80
 	fcc 'rox'
-	fdb btand-5
+	fdb btand
 btxor	fdb *+2		* ( n1 n2 -- n1 & n2 )
 	pulu d
 	eorb 1,u	* and there's no two-byte XOR
@@ -419,7 +424,7 @@ btxor	fdb *+2		* ( n1 n2 -- n1 & n2 )
 
 	fcb $80
 	fcc 'trevni'
-	fdb btxor-6
+	fdb btxor
 btinv	fdb *+2		* bitwise invert
 	ldd 0,u	* get top of stack
 	coma		* complement
@@ -432,7 +437,7 @@ btinv	fdb *+2		* bitwise invert
 * so we want store and fetch primitives
 	fcb $80
 	fcc '!'
-	fdb btinv-9
+	fdb btinv
 store	fdb *+2		* Store 16-bit value in memory ( val addr -- )
 	pulu x
 	pulu d
@@ -442,7 +447,7 @@ store	fdb *+2		* Store 16-bit value in memory ( val addr -- )
 
 	fcb $80
 	fcc '!c'
-	fdb store-4
+	fdb store
 cstore	fdb *+2		* Store 8-bit value in memory ( val addr -- )
 	pulu x
 	pulu d
@@ -452,7 +457,7 @@ cstore	fdb *+2		* Store 8-bit value in memory ( val addr -- )
 	
 	fcb $80
 	fcc '@'
-	fdb cstore-5
+	fdb cstore
 fetch	fdb *+2		* Fetch 16-bit value from address on stack
 	ldd [0,u]	* top of stack holds address
 	std 0,u	* now it holds the value
@@ -461,7 +466,7 @@ fetch	fdb *+2		* Fetch 16-bit value from address on stack
 
 	fcb $80
 	fcc '@'
-	fdb fetch-4
+	fdb fetch
 cfetch	fdb *+2		* Fetch 16-bit value from address on stack
 	ldb [0,u]	* top of stack holds address, get just one byte
 	clra		* and clear the top byte
@@ -473,7 +478,7 @@ cfetch	fdb *+2		* Fetch 16-bit value from address on stack
 * now let's fiddle with the stacks
 	fcb $80
 	fcc 'r>'	* looks the wrong way round, remember we reverse names so it's really '>r'
-	fdb cfetch-5
+	fdb cfetch
 ptor	fdb *+2		* pop the top of parameter stack onto the return stack
 	pulu d
 	pshs d
@@ -482,7 +487,7 @@ ptor	fdb *+2		* pop the top of parameter stack onto the return stack
 
 	fcb $80
 	fcc '>r'
-	fdb ptor-5
+	fdb ptor
 rtop	fdb *+2		* pop the top of return stack onto the parameter stack
 	puls d
 	pshu d
@@ -495,7 +500,7 @@ rtop	fdb *+2		* pop the top of return stack onto the parameter stack
 
 	fcb $80
 	fcc 'yek?'
-	fdb rtop-5
+	fdb rtop
 qkey	fdb *+2		* check if a key is available
 	ldd aciain	* input pointer to buffer
 	cmpd aciaout	* output pointer to buffer
@@ -510,7 +515,7 @@ qkeye	clra
 
 	fcb $80
 	fcc 'yek'
-	fdb qkey-7
+	fdb qkey
 key	fdb *+2
 	ldd aciain	* anything in the buffer?
 	cmpd aciaout
@@ -525,7 +530,7 @@ keye	clra
 	
 	fcb $80
 	fcc 'time'
-	fdb key-6
+	fdb key
 emit	fdb *+2
 	pulu d
 	jsr prtchr
@@ -534,7 +539,7 @@ emit	fdb *+2
 	
 	fcb $80
 	fcc 'hcnarb'
-	fdb emit-7
+	fdb emit
 branch	fdb *+2
 branch1	ldd ,y		* interpreter pointer points to offset, get it in d
 	leay d,y	* add d to interp ptr
@@ -543,7 +548,7 @@ branch1	ldd ,y		* interpreter pointer points to offset, get it in d
 	
 	fcb $80
 	fcc 'hcnarb0'
-	fdb dotmsg-9
+	fdb dotmsg
 zbranch	fdb *+2
 	pulu d		* top of stack
 	cmpd #0	* is it zero?
@@ -554,7 +559,7 @@ zbranch	fdb *+2
 
 	fcb $80
 	fcc 'gsm.'
-	fdb zbranch-10	* LFA points to the flag byte of the preceding word
+	fdb zbranch
 dotmsg	fdb *+2
 	pulu x
 	jsr prtstr
@@ -563,23 +568,19 @@ dotmsg	fdb *+2
 
 	fcb $80
 	fcc 's;'
-	fdb dotmsg-7
+	fdb dotmsg
 semis	fdb *+2		* return from a colon definition
         puls  y	* unstack the previous IP
         ldx   ,y++	* next...
         jmp   [,x++]
 
 
-	fcb $80
-	fcc 'drow'
-	fdb semis-5
-word	fdb *+2		* skip spaces, return address and length of first word
-	
+
 
 *** test word, for now
 	fcb $80
 	fcc 'dloc'
-	fdb semis-5
+	fdb semis
 cold	fdb docol
 	fdb lit, bootmsg
 	fdb dotmsg
@@ -591,7 +592,7 @@ cold	fdb docol
 
 	fcb $80
 	fcc 'drow.'
-	fdb cold-7
+	fdb cold
 dotword	fdb *+2
 	pulu d
 	jsr hexword
@@ -600,7 +601,7 @@ dotword	fdb *+2
 	
 	fcb $80
 	fcc 'yekw'
-	fdb dotword-8
+	fdb dotword
 wkey	fdb *+2
 	jsr waitkey
 	pshu d
