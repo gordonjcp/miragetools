@@ -58,7 +58,7 @@ serialinit
 	clra
 serial_loop1
 	sta ,x+	* zero out 16 bytes
-	cmpx #aciain
+	cmpx #aciain	* aciain must be immediately after aciabuffer
 	bne serial_loop1
 	lda #$95	 * ACIA control = RX interrupt, 8n1, no TX interrupt
 	sta aciasr
@@ -156,6 +156,8 @@ start
 	
 	andcc #$bf	* enable interrupt
 *** below this line, will be replaced with Forth words
+	ldd #begin
+	jsr hexword
 	ldy #begin
         ldx ,y++	* You'll see this idiom a lot
         jmp [,x++]
@@ -559,24 +561,93 @@ dotmsg	fdb *+2
 	ldx ,y++
 	jmp [,x++]
 
-*** test word, not linked in the dictionary	
+	fcb $80
+	fcc 's;'
+	fdb dotmsg-7
+semis	fdb *+2		* return from a colon definition
+        puls  y	* unstack the previous IP
+        ldx   ,y++	* next...
+        jmp   [,x++]
+
+
+	fcb $80
+	fcc 'drow'
+	fdb semis-5
+word	fdb *+2		* skip spaces, return address and length of first word
+	
+
+*** test word, for now
+	fcb $80
+	fcc 'dloc'
+	fdb semis-5
 cold	fdb docol
 	fdb lit, bootmsg
 	fdb dotmsg
+*	fdb wkey, emit, branch, -6
 	fdb key, qdup, zbranch, -6
 	fdb lit, 42, emit
 	fdb emit
 	fdb branch, -18
 
+	fcb $80
+	fcc 'drow.'
+	fdb cold-7
+dotword	fdb *+2
+	pulu d
+	jsr hexword
+	ldx ,y++
+	jmp [,x++]
 	
+	fcb $80
+	fcc 'yekw'
+	fdb dotword-8
+wkey	fdb *+2
+	jsr waitkey
+	pshu d
+	ldx ,y++
+	jmp [,x++]
+
 bootmsg	fcb $0d, $0a
 	fcc "Mirage Forth 0.0"
 	fcb $0d, $0a, $00
+
+* some handy words for printing hex values
+hexchr	andb #$0f	* lower nybble
+	cmpb #$09	* less than 10?
+	bls hexchr1	* yes, branch
+	addb #$27	* no, add on offset to 'a' - 10
+hexchr1	addb #$30	* add on offset to '0'
+	jsr prtchr
+	rts
+	
+hexbyte	pshs b
+	lsrb
+	lsrb
+	lsrb
+	lsrb
+	jsr hexchr
+	puls b
+	jsr hexchr
+	rts
+
+hexword	pshs d
+	tfr a,b
+	jsr hexbyte
+	puls d
+	jsr hexbyte
+	rts
+	
+waitkey	ldd aciain
+	cmpd aciaout
+	beq waitkey
+	jsr serialget
+	clra
+	rts
+
 
 *** will become part of the real def for colon	
 docol   pshs y		* save IP
         leay 0,x	* new IP is word pointer
         ldx  ,y++	* next
         jmp   [,x++]
-
-	
+end	fcb 0	
