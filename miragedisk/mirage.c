@@ -32,13 +32,15 @@
 const char *argp_program_version = "miragedisk 0.1";
 const char *argp_program_bug_address = "gordon@gjcp.net";
 
-enum { NONE, GET, PUT, GET_OS, PUT_OS } mode;
+enum { NONE, GET, PUT, GET_OS, PUT_OS, GET_AREA, PUT_AREA} mode;
 
 static struct argp_option options[] = {
 	{"get", 'g', "AREA", 0, "Get sample from disk" },
 	{"put", 'p', "AREA", 0, "Write sample to disk" },
 	{"get-os", GET_OS, NULL, 0, "Get OS from disk" },
 	{"put-os", PUT_OS, NULL, 0, "Write OS to disk" },
+	{"get-area", 'G', "AREA", 0, "Get sample and program from disk" },
+	{"put-area", 'P', "AREA", 0, "Write sample and program to disk" },
 	{ 0 }
 };
 
@@ -56,6 +58,8 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 	switch (key) {
 		case 'g': arguments->mode = GET; arguments->area = atoi(arg); break;
 		case 'p': arguments->mode = PUT; arguments->area = atoi(arg); break;
+		case 'G': arguments->mode = GET_AREA; arguments->area = atoi(arg); break;
+		case 'P': arguments->mode = PUT_AREA; arguments->area = atoi(arg); break;		
 		case GET_OS: arguments->mode = GET_OS; break;
 		case PUT_OS: arguments->mode = PUT_OS; break;		
 		case ARGP_KEY_ARG:
@@ -72,6 +76,11 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 	}
 	return 0;
 }
+
+void getarea(int fd, int area, char *filename) { }
+
+void putarea(int fd, int area, char *filename) { }
+
 
 void getsample(int fd, int area, char *filename) {
 
@@ -185,14 +194,19 @@ int main (int argc, char **argv) {
 		exit(1);
 	}
 
-	if (arguments.area<0) arguments.area=0;
-	if (arguments.area>5) arguments.area=5;
+	if ((arguments.area<0) || (arguments.area>5)) {
+		perror("implausible area (needs to be 0-5)\n");
+		exit(1);
+	}
+
 
 	switch(arguments.mode) {
 		case GET: getsample(fd, arguments.area, arguments.sample); break;
 		case PUT: putsample(fd, arguments.area, arguments.sample); break;
 		case GET_OS: get_os(fd, arguments.sample); break;
 		case PUT_OS: put_os(fd, arguments.sample); break;
+		case GET_AREA: getarea(fd, arguments.area, arguments.sample); break;
+		case PUT_AREA: putarea(fd, arguments.area, arguments.sample); break;		
 	}
 	close(fd);
 }
