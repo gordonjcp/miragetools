@@ -1538,10 +1538,36 @@ savesec	ldd ,u++
 	andcc #$bf
 	rts
 	
+	fcb $80
+	fcc 'cdadr'
+	fdb savesec
+rdadc	
+	pshs u
+	ldu #$b050
+	ldx #$e418
+	ldb #$10
+	jsr $f571
+	puls u
+	rts
+
+	fcb $80
+	fcc 'enut'
+	fdb rdadc
+tune
+	pshs y
+	ldd ,u++
+	ldx #$e418
+	ldy #$0
+	jsr $f5be
+	sty ,--u
+*	jsr $f5dc
+	puls y
+	rts
+	
 * 'here' - address of last word in dictionary
 	fcb	$80
 	fcc	'ereh'
-	fdb	savesec
+	fdb	tune
 here	jsr	variab		variable subroutine
 	fdb	here		default is itself
 * dictionary grows from here

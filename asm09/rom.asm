@@ -210,7 +210,8 @@ coldstart:
 	lda   #$10
 	sta   $e200	; fd off, ram bank 0
 	ldx   #$e400	; reset vcf chips
-cold1:	clr   ,x+
+cold1:	
+	clr   ,x+
 	cmpx  #$e408
 	bne   cold1
 	sta   $e418	; write mpx addr preset
@@ -857,44 +858,46 @@ swapbytes:
 	bne   swapbytes
 	rts   
 
-
-*** qchip dealie of some sort
-unknown4:
-	cmpb  #$10
-	beq   unknown41
-	jmp   ospanic	; what's b got to do with it and why is 16 bad?
-
-unknown41:
-	stb   $e200          ;via data reg 2
-	ldb   #$b0	
-unknown42:
-	jsr   unknown6
-	bsr   unknown5
+*** sweep one filter
+*** called from filter tuning routine
+*** X contains filter address
+*** B is set to $10
+swponefilt:
+	cmpb  #$10	* B is preloaded with $10 by the filter tuning routine
+	beq   swponefilt1 
+	jmp   ospanic	* Panic if B doesn't contain the right value to set up the VIA port? why?
+			
+swponefilt1:
+	stb   $e200     * via data reg 2, motor off, muted, compressor input
+	ldb   #$b0	* initial filter cutoff
+swponefilt2:
+	jsr   setmaxres
+	bsr   unknown5	* measure filter
 	ldy   #$0000
+	bsr   unknown5	* measure filter four times
 	bsr   unknown5
 	bsr   unknown5
 	bsr   unknown5
-	bsr   unknown5
-	cmpy  #$0000
-	beq   unknown44
+	cmpy  #$0000	* didn't hear the tone at all
+	beq   swponefilt4 
 	cmpy  #$0fa0		; 4000 decimal
-	bcc   unknown44
+	bcc   swponefilt4	* higher or same as some large number, end
 	cmpy  #$0085
-	bcs   unknown43
-	incb  
-	bra   unknown42
-unknown43:
-	cmpy  #$0080
-	bhi   unknown44
-	decb  
-	bra   unknown42
-unknown44:
-	subb  #$7a
-	stb   $18,u
-	clrb  
-	jsr   unknown6
-	stb   -16,x
-	rts   
+	bcs   swponefilt3 * lower than some smallish number, proceed
+	incb  		* raise the cutoff
+	bra   swponefilt2	* try again
+swponefilt3:
+	cmpy  #$0080	* higher?
+	bhi   swponefilt4 * more than $80, less than $85, end
+	decb  		* sweep down
+	bra   swponefilt2 * try again
+swponefilt4:
+	subb  #$7a	* subtract some offset
+	stb   $18,u	* store in the voice parameter table
+	clrb  		* zero B
+	jsr   setmaxres	* close filter
+	stb   -16,x	* stop resonance
+	rts   		* return
 
 	nop   
 	nop   
@@ -903,19 +906,20 @@ unknown44:
 	nop   
 	nop   
 
-*** another qchip dealie
+*** measure filter frequency
+*** loops around incrementing Y and reading the ADC
 unknown5:
 	lda   $ece2		; doc adc
 unknown51:
-	bsr   unknown6
-	leay  $0001,y		
-	beq   unknown5end		
+	bsr   setmaxres
+	leay  $0001,y		; increment y
+	beq   unknown5end	; wrapped to zero? return
 	lda   $ece2		; doc adc
 	cmpa  #$90		; 144 decimal
-	bcs   unknown51
+	bcs   unknown51		; loop if less
 unknown52:
-	bsr   unknown6
-	leay  $0001,y		// pretty sure that's inc y
+	bsr   setmaxres
+	leay  $0001,y		; inc y
 	beq   unknown5end	// end, if zero
 	lda   $ece2		// get doc adc
 	cmpa  #$70		// 112 decimal
@@ -923,23 +927,30 @@ unknown52:
 unknown5end
 	rts   
 
-
-*** another qchip dealie
-unknown6:
-	lda   #$ff		// what's x set to when we get here?
-	sta   ,x
-	sta   -16,x		// -16?
-	stb   ,x
-	stb   -8,x		// -8?
+*** set filter DAC for tuning, only called from swponefilt and unknown5
+*** X initially set to $e418, filter DACs
+*** B initially set to $b0
+*** sets cutoff to B and resonance to maximum
+setmaxres:
+	lda   #$ff	maximum
+	sta   ,x	DAC MUX preset
+	sta   -16,x	DAC resonance
+	stb   ,x	DAC MUX preset
+	stb   -8,x	DAC cutoff
 	rts   
 
+*** Called from OS at AE1D during startup
+*** U contains $E418, start of multiplexer and D contains $0000
+*** leaves U pointing at next filter
+*** note that the Mirage monitor disk docs have it wrong
+*** cutoff is $e410-$e417
+*** resonance is $e408-$e40f
 
-*** another qchip dealie
-unknown7:
-	sta   ,u
-	sta   -8,u
-	stb   ,u+
-	stb   -$11,u
+setfilterdac:
+	sta   ,u	* preset DAC for cutoff
+	sta   -8,u	* set cutoff to A
+	stb   ,u+	* preset DAC for resonance and advance U to next filter
+	stb   -$11,u    * set resonance to B
 	rts   
 
 

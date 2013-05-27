@@ -43,10 +43,10 @@ unknown2 EQU $F52D
 unknown3 EQU $F541
 copybytes EQU $F55B
 swapbytes EQU $F564
-unknown4 EQU $F571
+swponefilt EQU $F571
 unknown5 EQU $F5BE
 unknown6 EQU $F5DC
-unknown7 EQU $F5E7
+setfilterdac EQU $F5E7
 unknown8 EQU $F5F1
 unknown9 EQU $F6DD
 resetvec EQU $FC7F
@@ -65,6 +65,12 @@ firqvec:
 
 osvec:
 800E: 7E B9 20    JMP   osentry
+
+*** OS parameters
+* $8012 tuning
+* $8013 bend range
+* $8014 velocity sens
+* $8015 upper/lower?
 
 8011: 00 32 02 1E 40 00 22 A0 00 30 00 01 01 01 7E 
 
@@ -729,7 +735,7 @@ osvec:
 875C: 35 82       PULS  A,PC ;(PUL? PC=RTS)
 
 startup875e:
-875E: BD AE 17    JSR   $AE17
+875E: BD AE 17    JSR   zerofilter
 8761: 8E 80 38    LDX   #$8038
 startup875e1:
 8764: 6F 80       CLR   ,X+	clear 32 bytes
@@ -1171,15 +1177,17 @@ resetkybd:
 8AD2: 4F          CLRA  
 8AD3: 5F          CLRB  
 8AD4: ED 88 1A    STD   $1A,X
-8AD7: 1C AF       ANDCC #$AF
-8AD9: A1 88 27    CMPA  $27,X
-8ADC: 23 03       BLS   $8AE1
-8ADE: A6 88 27    LDA   $27,X
-8AE1: E6 88 28    LDB   $28,X
-8AE4: BD F5 E7    JSR   unknown7
-8AE7: 1A 50       ORCC  #$50
-8AE9: EC 88 29    LDD   $29,X
-8AEC: 6E 98 2B    JMP   [$2B,X]
+
+*** something to do with setting the filter
+8AD7: 1C AF       ANDCC #$AF		; unmask IRQ and FIRQ
+8AD9: A1 88 27    CMPA  $27,X		; resonance
+8ADC: 23 03       BLS   $8AE1		; less than <something>
+8ADE: A6 88 27    LDA   $27,X		; set it to what we compared with
+8AE1: E6 88 28    LDB   $28,X		; cutoff
+8AE4: BD F5 E7    JSR   setfilterdac	; set DAC
+8AE7: 1A 50       ORCC  #$50		; mask interrupts
+8AE9: EC 88 29    LDD   $29,X		; address of next task?
+8AEC: 6E 98 2B    JMP   [$2B,X]		; go to it and good luck
 
 8AEF: E3 88 2D    ADDD  $2D,X
 8AF2: 25 05       BCS   $8AF9
@@ -1280,7 +1288,7 @@ resetkybd:
 8BB7: A7 61       STA   $0001,S
 8BB9: BD F6 DD    JSR   unknown9
 8BBC: 35 40       PULS  U
-8BBE: 1C AF       ANDCC #$AF
+8BBE: 1C AF       ANDCC #$AF	; unmask FIRQ and IRQ
 8BC0: 39          RTS   
 
 8BC1: 86 40       LDA   #$40
@@ -2745,7 +2753,7 @@ resetkybd:
 9701: 50          NEGB  
 9702: 86 14       LDA   #$14
 9704: B7 E2 00    STA   $E200
-9707: BD AE 17    JSR   $AE17
+9707: BD AE 17    JSR   zerofilter
 970A: 8E E4 1F    LDX   #$E41F
 970D: 96 18       LDA   $18
 970F: BB B2 83    ADDA  $B283
@@ -5623,21 +5631,25 @@ AE10: BD A4 04    JSR   $A404
 AE13: 35 04       PULS  B
 AE15: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-startupae17:
+*** loops around the filters setting resonance and cutoff to zero
+
+zerofilter:
 AE17: CE E4 18    LDU   #$E418		; DAC multiplexer, outputs off
-AE1A: CC 00 00    LDD   #$0000	
-AE1D: BD F5 E7    JSR   unknown7	; store D into filter resonance and cutoff
-AE20: 11 83 E4 20 CMPU  #$E420
-AE24: 26 F7       BNE   $AE1D
-AE26: CE B0 52    LDU   #$B052
-AE29: CC 8A D7    LDD   #$8AD7
-AE2C: 8E 8B BE    LDX   #$8BBE
-AE2F: ED C8 1C    STD   $1C,U
-AE32: AF C8 2B    STX   $2B,U
-AE35: 6F C8 1A    CLR   $1A,U
-AE38: 33 C8 4D    LEAU  $4D,U
-AE3B: 11 83 B2 BA CMPU  #$B2BA
-AE3F: 25 EE       BCS   $AE2F
+AE1A: CC 00 00    LDD   #$0000
+zerofilter2:
+AE1D: BD F5 E7    JSR   setfilterdac
+AE20: 11 83 E4 20 CMPU  #$E420		; done all filters?
+AE24: 26 F7       BNE   zerofilter2	; no, continue
+AE26: CE B0 52    LDU   #$B052		; in a block of data, variable storage?
+AE29: CC 8A D7    LDD   #$8AD7		; possibly filter update routine
+AE2C: 8E 8B BE    LDX   #$8BBE		; unmask IRQ and FIRQ
+zerofilter3:
+AE2F: ED C8 1C    STD   $1C,U		; store address of filter routine
+AE32: AF C8 2B    STX   $2B,U		; store address of unmask routine
+AE35: 6F C8 1A    CLR   $1A,U		; zero
+AE38: 33 C8 4D    LEAU  $4D,U		; add 77 bytes
+AE3B: 11 83 B2 BA CMPU  #$B2BA		; done all eight voices?
+AE3F: 25 EE       BCS   zerofilter3	; no, loop
 AE41: 39          RTS   
 
 AE42: AC FF 16 00 CPX   [$1600,S]
@@ -5847,7 +5859,10 @@ B2C0: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 B2D0: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
 B2E0: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
 B2F0: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 00 
-B300: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
+B300: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+*** $b31d is the start of the lower parameters
+
 B310: 00 00 00 00 00 00 00 00 00 00 00 00 00 32 B3 DE 
 B320: B3 E0 B3 DE B3 E0 00 02 00 00 00 BE 1E 00 00 00 
 B330: 00 F0 00 00 00 00 B3 FE B4 1E B3 FE B4 1E 00 00 
@@ -5887,6 +5902,9 @@ B540: 00 00 00 00 00 00 00 08 02 01 3C 00 00 00 03 00
 B550: 00 00 0A 1F 18 18 18 00 00 00 00 00 02 1E 14 18 
 B560: 19 00 00 00 00 00 00 00 00 00 00 08 02 01 3C 00 
 B570: 00 00 03 00 00 00 0A 1F 18 18 18 00 00 00 00 00 
+
+*** $b58e is the start of the upper parameters
+
 B580: 02 1E 14 18 19 00 00 00 00 00 00 00 00 00 32 B6 
 B590: 4F B6 51 B6 4F B6 51 00 04 00 00 00 BE 1E 00 01 
 B5A0: 00 01 F0 00 00 00 00 B6 6F B6 8F B6 6F B6 8F 00 
@@ -5926,7 +5944,11 @@ B7B0: 00 00 00 00 00 00 00 00 08 02 01 3C 00 00 00 03
 B7C0: 00 00 00 0A 1F 18 18 18 00 00 00 00 00 02 1E 14 
 B7D0: 18 19 00 00 00 00 00 00 00 00 00 00 08 02 01 3C 
 B7E0: 00 00 00 03 00 00 00 0A 1F 18 18 18 00 00 00 00 
-B7F0: 00 02 1E 14 18 19 00 00 00 00 00 00 00 00 00 00 
+B7F0: 00 02 1E 14 18 19 00 00 00 00 00 00 00 00 00 00
+
+* might be sequence data
+* everything after this point gets clobbered by the sequencer!
+
 B800: 01 39 39 39 B8 0A B8 35 B8 0A 00 C9 40 00 00 40 
 B810: 00 01 00 00 03 00 18 49 40 00 CB 40 18 4B 40 00 
 B820: C7 40 18 47 40 00 BB 40 18 3B 40 00 C2 40 60 42 
@@ -5970,44 +5992,45 @@ B932: 7E B9 00    JMP   $B900
 
 *** after filter tuning
 *** grab pitch wheel, compute offset?
+*** once this has run, assuming the pitch wheel ADC returns $82 we get $61 in $900a
 B935: 86 18       LDA   #$18	
 B937: B7 E2 00    STA   $E200	stop motor, select pitch wheel
-B93A: B6 EC E1    LDA   $ECE1
-B93D: B6 EC E2    LDA   $ECE2
+B93A: B6 EC E1    LDA   $ECE1	no idea why we read the control register, starts the ADC?
+B93D: B6 EC E2    LDA   $ECE2	read ADC (to be thrown away)
 B940: 3D          MUL   
 B941: 3D          MUL   
-B942: 3D          MUL   
-B943: F6 EC E2    LDB   $ECE2
-B946: F7 90 0E    STB   $900E
+B942: 3D          MUL   	wait for ADC to settle
+B943: F6 EC E2    LDB   $ECE2	read ADC
+B946: F7 90 0E    STB   $900E	store value
 B949: 3D          MUL   
 B94A: 3D          MUL   
-B94B: 3D          MUL   
-B94C: F6 EC E2    LDB   $ECE2
-B94F: F7 90 0D    STB   $900D
+B94B: 3D          MUL   	wait
+B94C: F6 EC E2    LDB   $ECE2	read ADC
+B94F: F7 90 0D    STB   $900D	store value
 B952: 3D          MUL   
 B953: 3D          MUL   
-B954: 3D          MUL   
-B955: F6 EC E2    LDB   $ECE2
-B958: F7 90 0C    STB   $900C
-B95B: 4F          CLRA  
-B95C: FB 90 0D    ADDB  $900D
-B95F: 89 00       ADCA  #$00
-B961: FB 90 0E    ADDB  $900E
-B964: 89 00       ADCA  #$00
-B966: 47          ASRA  
-B967: 56          RORB  
-B968: 47          ASRA  
-B969: 56          RORB  
-B96A: F7 90 0A    STB   $900A
+B954: 3D          MUL   	wait
+B955: F6 EC E2    LDB   $ECE2	read ADC
+B958: F7 90 0C    STB   $900C	we have three ADC values
+B95B: 4F          CLRA  	clear A
+B95C: FB 90 0D    ADDB  $900D	add previous value to B
+B95F: 89 00       ADCA  #$00	carry into A
+B961: FB 90 0E    ADDB  $900E	add first value into B
+B964: 89 00       ADCA  #$00	carry into A
+B966: 47          ASRA  	bit 0 of A into carry
+B967: 56          RORB  	divide by two, keeping carry from A
+B968: 47          ASRA  	bit 0 of a into carry again
+B969: 56          RORB  	divide by two again
+B96A: F7 90 0A    STB   $900A	save
 B96D: 39          RTS   
 
 filterthing:
 *** this appears to do the filter tuning
-B96E: CE B0 50    LDU   #$B050	unknown
+B96E: CE B0 50    LDU   #$B050	unknown - filter parameters?
 B971: 8E E4 18    LDX   #$E418	first DAC channel
 B974: C6 10       LDB   #$10	
-B976: BD F5 71    JSR   unknown4 sweep one filter
-B979: 33 C8 4D    LEAU  $4D,U
+B976: BD F5 71    JSR   swponefilt sweep one filter
+B979: 33 C8 4D    LEAU  $4D,U	77 bytes, again
 B97C: 30 01       LEAX  $0001,X	next channel
 B97E: 8C E4 1F    CMPX  #$E41F	done?
 B981: 23 F1       BLS   $B974	no, loop

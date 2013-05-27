@@ -4,3 +4,4 @@ sim6809
 *.img
 *.lst
 as9
+*~
