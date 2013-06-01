@@ -24,5 +24,6 @@
 #define __OS_H
 
 void get_os(int fd, char *filename);
+void put_os(int fd, char *filename);
 
 #endif

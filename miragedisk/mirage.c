@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sndfile.h>
+#include <unistd.h>
 #include "disk.h"
 #include "os.h"
 
@@ -77,10 +78,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 	return 0;
 }
 
-unsigned char *getarea(int fd, int area) {
+char *getarea(int fd, int area) {
 	// get a whole area from the disk
 	// returns a pointer to the disk area in RAM
-	unsigned char *buffer;
+	char *buffer;
 	int track = 0, i;
 	
 	buffer = malloc(5120 * 13); // 13 tracks, only large sectors
@@ -107,10 +108,10 @@ void getsample(int fd, int area, char *filename) {
 	SNDFILE *snd;
 	SF_INFO info;
 	
-	int i, j, track;
+	int i;
 	
 	//char buffer[5632];
-	unsigned char *diskarea;
+	char *diskarea;
 	short sf_buffer[65536];
 
 	info.samplerate = 22050;
@@ -186,12 +187,6 @@ static struct argp argp = { options, parse_opt, "FILE", "mirage disk tool" };
 int main (int argc, char **argv) {
 
 	int fd = -1;	// file descriptor for floppy
-	SNDFILE *snd;
-	SF_INFO info;
-	
-	int track, sect, i, j;
-	unsigned char buffer[5632]; // track buffer
-	short int sf_buffer[5120];
 	
 	struct arguments arguments;
 	arguments.mode=NONE;
@@ -220,4 +215,5 @@ int main (int argc, char **argv) {
 		//case PUT_AREA: putarea(fd, arguments.area, arguments.sample); break;		
 	}
 	close(fd);
+	return 0;
 }

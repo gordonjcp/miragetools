@@ -24,12 +24,10 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 #include <linux/fdreg.h>
 
 #include "disk.h"
-
-static char buffer[5632];
-static struct floppy_raw_cmd raw_cmd;
 
 void fd_readwrite(int fd, int rdwr, int trk, int sect, int len, char *buffer) {
 	// read or write either a 5120-byte "track" or 512-byte sector
@@ -90,7 +88,7 @@ void fd_seek(int fd, int trk) {
 	// seek to a particular track
 	
 	struct floppy_raw_cmd raw_cmd;
-	int tmp, i;
+	int tmp;
 	raw_cmd.track = trk;
 	raw_cmd.flags = FD_RAW_INTR | FD_RAW_NEED_SEEK;
 
@@ -106,7 +104,7 @@ void fd_seek(int fd, int trk) {
 void fd_seekin(int fd) {
 	// step one track in
 	struct floppy_raw_cmd raw_cmd;
-	int tmp, i;
+	int tmp;
 
 	raw_cmd.flags = FD_RAW_INTR;
 	raw_cmd.cmd_count = 0;

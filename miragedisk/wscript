@@ -15,7 +15,7 @@ def configure(conf):
     conf.check_tool('compiler_cc')
 
     # set for debugging
-    conf.env.CCFLAGS = ['-O0', '-g', '-ggdb']
+    conf.env.CCFLAGS = ['-O0', '-g', '-ggdb', '-Werror', '-Wall']
     conf.check_cfg(package='sndfile', uselib_store='SNDFILE', atleast_version='1.0.21', mandatory=True, args='--cflags --libs')
 def build(bld):
 

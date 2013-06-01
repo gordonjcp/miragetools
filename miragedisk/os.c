@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "disk.h"
 
 int hex_to_int(char x) {
@@ -42,11 +43,12 @@ int hex_to_int(char x) {
 
 int load_srec(FILE *in, char *buffer) {
 	// this is messy horrible code nicked from 6809emu
+	// it wasn't so messy and horrible before I messed with it
 	
 	char buf[200];
 	int num_bytes,i,p,done=0;
 	long start_addr;
-	unsigned char value;
+	char value;
 
 	fgets(buf,200,in);
 	while(!done) {
