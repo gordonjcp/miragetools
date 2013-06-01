@@ -108,7 +108,7 @@ void put_os_sectors(int fd, char *buffer) {
 	fd_readwrite(fd, MFD_WRITE, track, 5, 512, buffer + 10752);
 	track++;
 	// loop through the remaining tracks
-	for(; track<=10; track++) {
+	for(; track<=11; track++) {
 
 		fd_readwrite(fd, MFD_WRITE, track, 5, 512, buffer + 10240+(512*track));
 	}
