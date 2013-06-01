@@ -77,7 +77,27 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state) {
 	return 0;
 }
 
-void getarea(int fd, int area, char *filename) { }
+unsigned char *getarea(int fd, int area) {
+	// get a whole area from the disk
+	// returns a pointer to the disk area in RAM
+	unsigned char *buffer;
+	int track = 0, i;
+	
+	buffer = malloc(5120 * 13); // 13 tracks, only large sectors
+	if (!buffer) {
+		perror("failed to allocate buffer\n");
+		exit(1);
+	}
+
+	// okay, now pull the whole program area off the disk
+	track = 2+(area*13);
+
+	for(i = 0; i<13; i++) {
+		fd_readwrite(fd, MFD_READ, track+i, 0, 5120, buffer+(5120*i));
+	}	
+
+	return buffer;
+}
 
 void putarea(int fd, int area, char *filename) { }
 
@@ -89,8 +109,9 @@ void getsample(int fd, int area, char *filename) {
 	
 	int i, j, track;
 	
-	char buffer[5632];
-	short sf_buffer[5120];
+	//char buffer[5632];
+	unsigned char *diskarea;
+	short sf_buffer[65536];
 
 	info.samplerate = 22050;
 	info.channels = 1;
@@ -102,26 +123,16 @@ void getsample(int fd, int area, char *filename) {
 		sf_perror(NULL);
 		exit(1);
 	}
-	// now we pull the sample
 	
-	track = 2+(area*13);
-
-	// first track is special, because it has the params at the start
-	// we'll start reading from sector 1 and only read 4096 bytes
-	fd_readwrite(fd, MFD_READ, track, 1, 4096, buffer);
-	for (i=0; i<4096; i++) {
-		sf_buffer[i] = (buffer[i]-128)<<8;
+	diskarea = getarea(fd, area);
+	
+	for (i=0; i < 65536; i++) {
+		sf_buffer[i] = (diskarea[i+1024]-128)<<8;
 	}
-	sf_write_short(snd, sf_buffer, 4096);
 	
-	// now we read full 5120-byte blocks
-	for(j = ++track; j<track+12; j++) {
-		fd_readwrite(fd, MFD_READ, j, 0, 5120, buffer);		
-		for (i=0; i<5120; i++) {
-			sf_buffer[i] = (buffer[i]-128)<<8;
-		}		
-		sf_write_short(snd, sf_buffer, 5120);
-	}	
+	sf_write_short(snd, sf_buffer, 65536);
+	
+	free(diskarea);
 	sf_close(snd);
 }
 
@@ -205,8 +216,8 @@ int main (int argc, char **argv) {
 		case PUT: putsample(fd, arguments.area, arguments.sample); break;
 		case GET_OS: get_os(fd, arguments.sample); break;
 		case PUT_OS: put_os(fd, arguments.sample); break;
-		case GET_AREA: getarea(fd, arguments.area, arguments.sample); break;
-		case PUT_AREA: putarea(fd, arguments.area, arguments.sample); break;		
+		//case GET_AREA: getarea(fd, arguments.area, arguments.sample); break;
+		//case PUT_AREA: putarea(fd, arguments.area, arguments.sample); break;		
 	}
 	close(fd);
 }
