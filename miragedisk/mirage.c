@@ -152,7 +152,7 @@ void putsample(int fd, int area, char *filename) {
 	sf_read_short(snd, sf_buffer, 4096);
 	for (i=0; i<4096; i++) {
 		buffer[i] = (sf_buffer[i]>>8)+128;  // convert to unsigned int
-		if (buffer[i] ==0 ) buffer[i+1024] = 1; // smash any zero values which will stop the oscillator
+		if (buffer[i] ==0 ) buffer[i] = 1; // smash any zero values which will stop the oscillator
 	}
 	fd_readwrite(fd, MFD_WRITE, track, 1, 4096, buffer);
 	track++;
