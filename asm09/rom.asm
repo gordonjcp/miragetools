@@ -1108,7 +1108,8 @@ ledpatterns:
 
 
 *** check for expansion cartridge, jump to startup code
-*** appears to check for 16 bytes of zeros at the start of the cart rom?
+*** Checks for a sequence of $00-$0f in the first 16 bytes of cart ROM
+*** Thanks to Caithleanne Logan for pointing this out
 resetvec:
 	clra  
 	ldx   #$c000
