@@ -42,6 +42,7 @@ static struct argp_option options[] = {
 	{"put-os", PUT_OS, NULL, 0, "Write OS to disk" },
 	{"get-area", 'G', "AREA", 0, "Get sample and program from disk" },
 	{"put-area", 'P', "AREA", 0, "Write sample and program to disk" },
+	{"format", 'f', NULL, 0, "Format a blank disk" },
 	{ 0 }
 };
 
