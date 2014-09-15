@@ -1142,12 +1142,12 @@ ospanic2:
 	fill $ff,825
 
 *** cpu vectors
-	fdb	$fc7f	; reserved
-	fdb	$fc7f	; swi3
-	fdb 	$fc7f	; swi2
+	fdb	resetvec; reserved
+	fdb	resetvec; swi3
+	fdb 	resetvec; swi2
 	fdb	$800b	; firq
 	fdb	$8008	; irq
-	fdb	$fc7f	; swi
-	fdb	$f0b0	; nmi
-	fdb	$fc7f	; reset
+	fdb	resetvec; swi
+	fdb	nmivec	; nmi
+	fdb	resetvec; reset
 
