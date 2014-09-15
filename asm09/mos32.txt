@@ -4679,15 +4679,15 @@ A632: BD AB 00    JSR   $AB00	* error
 A635: 16 00 17    LBRA  $A64F	* lbra rts
 
 A638: 86 02       LDA   #$02	* 2
-A63A: B7 80 E1    STA   $80E1	* another variable
-A63D: BD A8 47    JSR   $A847	* call
+A63A: B7 80 E1    STA   $80E1	* another variable, load/save
+A63D: BD A8 47    JSR   $A847	* call load/save sequence
 A640: B6 80 06    LDA   fdcstat
 A643: 81 00       CMPA  #$00
-A645: 27 05       BEQ   $A64C
-A647: BD AB 00    JSR   $AB00
+A645: 27 05       BEQ   $A64C	* okay?
+A647: BD AB 00    JSR   $AB00	* nope, error
 A64A: 20 03       BRA   $A64F
 
-A64C: BD A9 7C    JSR   $A97C
+A64C: BD A9 7C    JSR   $A97C	* call
 A64F: BD F4 D6    JSR   disablefd
 A652: 39          RTS   
 
@@ -4724,135 +4724,139 @@ A698: BD F4 D6    JSR   disablefd
 A69B: 39          RTS   
 
 A69C: 10 8E FB 90 LDY   #$FB90	* lower sounds
-A6A0: BD AA D2    JSR   $AAD2
+A6A0: BD AA D2    JSR   $AAD2	* look up values
 A6A3: B6 80 06    LDA   fdcstat
 A6A6: 81 00       CMPA  #$00
-A6A8: 27 06       BEQ   $A6B0
-A6AA: BD AB 00    JSR   $AB00
-A6AD: 16 00 37    LBRA  $A6E7
+A6A8: 27 06       BEQ   $A6B0	* okay?
+A6AA: BD AB 00    JSR   $AB00	* no, error
+A6AD: 16 00 37    LBRA  $A6E7	* lbra rts
 
-A6B0: 7F 80 DD    CLR   $80DD
-A6B3: 86 02       LDA   #$02
-A6B5: B7 80 DE    STA   $80DE
-A6B8: 7F 80 E0    CLR   $80E0
-A6BB: B6 80 E1    LDA   $80E1
-A6BE: 81 00       CMPA  #$00
-A6C0: 26 05       BNE   $A6C7
-A6C2: BD A7 36    JSR   $A736
-A6C5: 20 07       BRA   $A6CE
+A6B0: 7F 80 DD    CLR   $80DD	* clear some flag
+A6B3: 86 02       LDA   #$02	* 02
+A6B5: B7 80 DE    STA   $80DE	* some variable
+A6B8: 7F 80 E0    CLR   $80E0	* some variable
+A6BB: B6 80 E1    LDA   $80E1	* some variable
+A6BE: 81 00       CMPA  #$00	* is it zero?	
+A6C0: 26 05       BNE   $A6C7	* skip
+A6C2: BD A7 36    JSR   $A736	* call
+A6C5: 20 07       BRA   $A6CE	* continue
 
-A6C7: 81 02       CMPA  #$02
-A6C9: 26 03       BNE   $A6CE
-A6CB: BD A7 8B    JSR   $A78B
+A6C7: 81 02       CMPA  #$02	* is it 2?
+A6C9: 26 03       BNE   $A6CE	* no, continue
+A6CB: BD A7 8B    JSR   $A78B	* call
 A6CE: B6 80 06    LDA   fdcstat
 A6D1: 81 00       CMPA  #$00
-A6D3: 27 05       BEQ   $A6DA
-A6D5: BD AB 00    JSR   $AB00
+A6D3: 27 05       BEQ   $A6DA	* okay
+A6D5: BD AB 00    JSR   $AB00	
 A6D8: 20 0D       BRA   $A6E7
 
-A6DA: BD A7 AE    JSR   $A7AE
+A6DA: BD A7 AE    JSR   $A7AE 	* call read/write sector
 A6DD: B6 80 06    LDA   fdcstat
 A6E0: 81 00       CMPA  #$00
 A6E2: 27 03       BEQ   $A6E7
 A6E4: BD AB 00    JSR   $AB00
 A6E7: 39          RTS   
 
-A6E8: 10 8E FB 9C LDY   #$FB9C
-A6EC: BD AA D2    JSR   $AAD2
+* upper sounds?
+A6E8: 10 8E FB 9C LDY   #$FB9C	* upper sounds table
+A6EC: BD AA D2    JSR   $AAD2	* get sector
 A6EF: B6 80 06    LDA   fdcstat
 A6F2: 81 00       CMPA  #$00
-A6F4: 27 06       BEQ   $A6FC
-A6F6: BD AB 00    JSR   $AB00
-A6F9: 16 00 39    LBRA  $A735
+A6F4: 27 06       BEQ   $A6FC	* okay?
+A6F6: BD AB 00    JSR   $AB00	* nope, error
+A6F9: 16 00 39    LBRA  $A735	* lbra rts
 
-A6FC: 86 02       LDA   #$02
-A6FE: B7 80 DD    STA   $80DD
-A701: B7 80 E0    STA   $80E0
-A704: 86 04       LDA   #$04
-A706: B7 80 DE    STA   $80DE
-A709: B6 80 E1    LDA   $80E1
-A70C: 81 00       CMPA  #$00
-A70E: 26 05       BNE   $A715
-A710: BD A7 36    JSR   $A736
-A713: 20 07       BRA   $A71C
+A6FC: 86 02       LDA   #$02	* select upper bank
+A6FE: B7 80 DD    STA   $80DD	* save in bank variable
+A701: B7 80 E0    STA   $80E0	* upper sample
+A704: 86 04       LDA   #$04	* 4 is?
+A706: B7 80 DE    STA   $80DE	* some variable
+A709: B6 80 E1    LDA   $80E1	* load/save?
+A70C: 81 00       CMPA  #$00	* load?
+A70E: 26 05       BNE   $A715	* skip
+A710: BD A7 36    JSR   $A736	* call
+A713: 20 07       BRA   $A71C	* continue 
 
-A715: 81 02       CMPA  #$02
-A717: 26 03       BNE   $A71C
-A719: BD A7 8B    JSR   $A78B
+A715: 81 02       CMPA  #$02	* save?
+A717: 26 03       BNE   $A71C	* continue
+A719: BD A7 8B    JSR   $A78B	* call save param block
 A71C: B6 80 06    LDA   fdcstat
 A71F: 81 00       CMPA  #$00
-A721: 27 05       BEQ   $A728
-A723: BD AB 00    JSR   $AB00
-A726: 20 0D       BRA   $A735
+A721: 27 05       BEQ   $A728	* okay?
+A723: BD AB 00    JSR   $AB00	* nope, error
+A726: 20 0D       BRA   $A735	* bra rts
 
-A728: BD A7 AE    JSR   $A7AE
+A728: BD A7 AE    JSR   $A7AE	* call read/write sector
 A72B: B6 80 06    LDA   fdcstat
 A72E: 81 00       CMPA  #$00
-A730: 27 03       BEQ   $A735
-A732: BD AB 00    JSR   $AB00
+A730: 27 03       BEQ   $A735	* okay?
+A732: BD AB 00    JSR   $AB00	nope, error
 A735: 39          RTS   
 
+* load parameter block and copy
 A736: B6 80 D6    LDA   vfirstsec
 A739: B7 80 03    STA   fdcsect
-A73C: B6 E2 00    LDA   $E200	* bank fiddling?
-A73F: BA 80 DD    ORA   $80DD
-A742: B7 E2 00    STA   $E200
-A745: 8E 00 00    LDX   #$0000
+A73C: B6 E2 00    LDA   $E200	* get bank (VIA IORB)
+A73F: BA 80 DD    ORA   $80DD	* bank select?
+A742: B7 E2 00    STA   $E200	* select it
+A745: 8E 00 00    LDX   #$0000	* load address
 A748: BF 80 04    STX   fdcbuff
 A74B: BD F4 48    JSR   readsector
 A74E: B6 80 06    LDA   fdcstat
-A751: 81 00       CMPA  #$00
-A753: 27 03       BEQ   $A758
-A755: 16 00 32    LBRA  $A78A
+A751: 81 00       CMPA  #$00	
+A753: 27 03       BEQ   $A758	* okay?
+A755: 16 00 32    LBRA  $A78A	* lbra rts
 
-A758: B6 80 E0    LDA   $80E0
+A758: B6 80 E0    LDA   $80E0	* some variable
 A75B: 81 00       CMPA  #$00
-A75D: 26 0B       BNE   $A76A
-A75F: 8E B3 1D    LDX   #$B31D
-A762: CC 02 71    LDD   #$0271
-A765: C3 B3 1D    ADDD  #$B31D
-A768: 20 0D       BRA   $A777
+A75D: 26 0B       BNE   $A76A	* skip if it's zero
+A75F: 8E B3 1D    LDX   #$B31D	* lower params?
+A762: CC 02 71    LDD   #$0271	* think that's the length
+A765: C3 B3 1D    ADDD  #$B31D	* end address?
+A768: 20 0D       BRA   $A777	* jump
 
-A76A: 81 02       CMPA  #$02
-A76C: 26 09       BNE   $A777
-A76E: 8E B5 8E    LDX   #$B58E
-A771: CC 02 71    LDD   #$0271
-A774: C3 B5 8E    ADDD  #$B58E
-A777: FD 80 DB    STD   $80DB
-A77A: 10 8E 00 00 LDY   #$0000
-A77E: A6 A0       LDA   ,Y+
+A76A: 81 02       CMPA  #$02	was it 2?
+A76C: 26 09       BNE   $A777	no, jump
+A76E: 8E B5 8E    LDX   #$B58E	* upper params?
+A771: CC 02 71    LDD   #$0271	* length?
+A774: C3 B5 8E    ADDD  #$B58E	* end address?
+A777: FD 80 DB    STD   $80DB	* some variable
+A77A: 10 8E 00 00 LDY   #$0000	* bottom of RAM
+A77E: A6 A0       LDA   ,Y+	
 A780: A7 80       STA   ,X+
-A782: BC 80 DB    CPX   $80DB
-A785: 26 F7       BNE   $A77E
-A787: 7C 80 D6    INC   vfirstsec
+A782: BC 80 DB    CPX   $80DB	* finished?
+A785: 26 F7       BNE   $A77E	* nope
+A787: 7C 80 D6    INC   vfirstsec	* bump the stored first sector
 A78A: 39          RTS   
 
+* save parameter block
 A78B: B6 80 D6    LDA   vfirstsec
 A78E: B7 80 03    STA   fdcsect
-A791: B6 80 E0    LDA   $80E0
+A791: B6 80 E0    LDA   $80E0	* upper/lower?
 A794: 81 00       CMPA  #$00
-A796: 26 05       BNE   $A79D
-A798: 8E B3 1D    LDX   #$B31D
+A796: 26 05       BNE   $A79D	* lower?
+A798: 8E B3 1D    LDX   #$B31D	* parameter block address
 A79B: 20 07       BRA   $A7A4
 
 A79D: 81 02       CMPA  #$02
-A79F: 26 03       BNE   $A7A4
-A7A1: 8E B5 8E    LDX   #$B58E
+A79F: 26 03       BNE   $A7A4	* upper?
+A7A1: 8E B5 8E    LDX   #$B58E	* parameter block address
 A7A4: BF 80 04    STX   fdcbuff
 A7A7: BD F4 76    JSR   writesector
 A7AA: 7C 80 D6    INC   vfirstsec
 A7AD: 39          RTS   
 
+* read or write sector?
 A7AE: B6 80 D6    LDA   vfirstsec
 A7B1: B7 80 03    STA   fdcsect
 A7B4: B6 80 D5    LDA   vfirsttrk
 A7B7: B7 80 02    STA   fdctrk
 A7BA: B6 E2 00    LDA   $E200	* bank fiddling?
-A7BD: BA 80 DD    ORA   $80DD
-A7C0: B7 E2 00    STA   $E200
-A7C3: 8E 00 00    LDX   #$0000
+A7BD: BA 80 DD    ORA   $80DD	* bank value
+A7C0: B7 E2 00    STA   $E200	* select it
+A7C3: 8E 00 00    LDX   #$0000	* load address
 A7C6: BF 80 04    STX   fdcbuff
-A7C9: B6 80 E1    LDA   $80E1
+A7C9: B6 80 E1    LDA   $80E1	* load/save?
 A7CC: 81 00       CMPA  #$00
 A7CE: 26 05       BNE   $A7D5
 A7D0: BD F4 48    JSR   readsector
@@ -4925,7 +4929,7 @@ A86C: C3 B8 00    ADDD  #$B800
 A86F: FD 80 DB    STD   $80DB	* save it, end of seq?
 A872: 8E B8 00    LDX   #$B800	* start of sequence address
 A875: BF 80 04    STX   fdcbuff
-A878: B6 80 E1    LDA   $80E1	* some variable, read/write?
+A878: B6 80 E1    LDA   $80E1	* some variable, load/save?
 A87B: 81 00       CMPA  #$00	* is it zero?	
 A87D: 26 05       BNE   $A884	* no, skip
 A87F: BD F4 48    JSR   readsector
@@ -5126,12 +5130,12 @@ AA2E: 39          RTS
 
 AA2F: 10 8E FB 8C LDY   #$FB8C	* OS Flags?
 AA33: 86 02       LDA   #$02
-AA35: B7 80 E3    STA   $80E3
-AA38: BD AA D2    JSR   $AAD2
+AA35: B7 80 E3    STA   $80E3	* $02 in this variable again
+AA38: BD AA D2    JSR   $AAD2	* get sectors
 AA3B: B6 80 06    LDA   fdcstat
 AA3E: 81 00       CMPA  #$00
 AA40: 27 03       BEQ   $AA45
-AA42: 16 00 8C    LBRA  $AAD1
+AA42: 16 00 8C    LBRA  $AAD1	* lbra rts
 
 AA45: B6 80 D5    LDA   vfirsttrk
 AA48: B7 80 02    STA   fdctrk
@@ -5139,7 +5143,7 @@ AA4B: B6 80 D6    LDA   vfirstsec
 AA4E: B7 80 03    STA   fdcsect
 AA51: 8E 80 D2    LDX   #$80D2
 AA54: 86 0A       LDA   #$0A
-AA56: B7 80 01    STA   $8001
+AA56: B7 80 01    STA   fdcrtry
 AA59: B6 80 E2    LDA   $80E2
 AA5C: 81 00       CMPA  #$00
 AA5E: 26 0A       BNE   $AA6A
@@ -5151,8 +5155,8 @@ AA68: 20 07       BRA   $AA71
 AA6A: 81 02       CMPA  #$02
 AA6C: 26 03       BNE   $AA71
 AA6E: BD F0 37    JSR   fdcfillsector
-AA71: 7A 80 01    DEC   $8001
-AA74: B6 80 01    LDA   $8001
+AA71: 7A 80 01    DEC   fdcrtry
+AA74: B6 80 01    LDA   fdcrtry
 AA77: 27 07       BEQ   $AA80
 AA79: B6 80 06    LDA   fdcstat
 AA7C: 81 00       CMPA  #$00
