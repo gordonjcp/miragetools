@@ -5714,11 +5714,11 @@ AE4A: B6 80 03    LDA   fdcsect
 AE4D: 81 06       CMPA  #$06	* run out of sectors?
 AE4F: 26 E3       BNE   $AE34	* must be wrong, jumps to the middle of an instruction!
 AE51: 7C 80 02    INC   fdctrk
-AE54: 7C A2 42    INC   $A242
+AE54: 7C A2 42    INC   $A242	* this is in the middle of code
 AE57: B6 80 02    LDA   fdctrk
-AE5A: 81 50       CMPA  #$50
+AE5A: 81 50       CMPA  #$50	* run out of tracks?
 AE5C: 24 0D       BCC   $AE6B
-AE5E: BD AE F0    JSR   $AEF0
+AE5E: BD AE F0    JSR   $AEF0	* this points to an endless loop
 AE61: B6 80 06    LDA   fdcstat
 AE64: 81 00       CMPA  #$00
 AE66: 27 03       BEQ   $AE6B
@@ -5729,6 +5729,7 @@ AE6E: 81 01       CMPA  #$01
 AE70: 26 BF       BNE   $AE31	* jumps to the middle of an instruction
 AE72: 39          RTS   
 
+* read sector, indentical to ROM code at $f000
 AE73: B6 80 03    LDA   fdcsect
 AE76: 97 02       STA   $02
 AE78: 86 88       LDA   #$88
@@ -5739,6 +5740,8 @@ AE80: 96 03       LDA   $03
 AE82: A7 80       STA   ,X+
 AE84: 20 F9       BRA   $AE7F
 
+* read sector returning last byte in A
+* identical to ROM code at $f013
 AE86: B6 80 03    LDA   fdcsect
 AE89: 97 02       STA   $02
 AE8B: 86 88       LDA   #$88
@@ -5748,6 +5751,8 @@ AE92: 13          SYNC
 AE93: 96 03       LDA   $03
 AE95: 20 FB       BRA   $AE92
 
+* write sector
+* identical to code at $f024
 AE97: B6 80 03    LDA   fdcsect
 AE9A: 97 02       STA   $02
 AE9C: 86 A8       LDA   #$A8
@@ -5758,6 +5763,8 @@ AEA4: A6 80       LDA   ,X+
 AEA6: 97 03       STA   $03
 AEA8: 20 F9       BRA   $AEA3
 
+* write directory sector
+* identical to code at $f037
 AEAA: B6 80 03    LDA   fdcsect
 AEAD: 97 02       STA   $02
 AEAF: 86 A8       LDA   #$A8
@@ -5768,6 +5775,8 @@ AEB7: A6 84       LDA   ,X
 AEB9: 97 03       STA   $03
 AEBB: 20 F9       BRA   $AEB6
 
+* read whole track
+* identical to code at $f04a
 AEBD: 86 E8       LDA   #$E8
 AEBF: B7 80 00    STA   $8000
 AEC2: 97 00       STA   $00
@@ -5776,6 +5785,8 @@ AEC5: 96 03       LDA   $03
 AEC7: A7 80       STA   ,X+
 AEC9: 20 F9       BRA   $AEC4
 
+* write whole track
+* identical to code at $f058
 AECB: 86 F8       LDA   #$F8
 AECD: B7 80 00    STA   $8000
 AED0: 97 00       STA   $00
@@ -5784,11 +5795,15 @@ AED3: A6 80       LDA   ,X+
 AED5: 97 03       STA   $03
 AED7: 20 F9       BRA   $AED2
 
+* seek track 0
+* identical to code at $f066
 AED9: 86 0C       LDA   #$0C
 AEDB: B7 80 00    STA   $8000
 AEDE: 97 00       STA   $00
 AEE0: 20 FE       BRA   $AEE0
 
+* seek to track
+* identical to code at $f06f
 AEE2: B6 80 02    LDA   fdctrk
 AEE5: 97 03       STA   $03
 AEE7: 86 1C       LDA   #$1C
@@ -5796,16 +5811,22 @@ AEE9: B7 80 00    STA   $8000
 AEEC: 97 00       STA   $00
 AEEE: 20 FE       BRA   $AEEE
 
+* step head in
+* identical to code at $f07d
 AEF0: 86 58       LDA   #$58
 AEF2: B7 80 00    STA   $8000
 AEF5: 97 00       STA   $00
 AEF7: 20 FE       BRA   $AEF7
 
+* step head out
+* identical to code at $f086
 AEF9: 86 78       LDA   #$78
 AEFB: B7 80 00    STA   $8000
 AEFE: 97 00       STA   $00
 AF00: 20 FE       BRA   $AF00
 
+* reset FDC, force interrupt
+* identical to code at $f08f
 AF02: 86 D0       LDA   #$D0
 AF04: B7 80 00    STA   $8000
 AF07: 97 00       STA   $00
@@ -5817,6 +5838,8 @@ AF12: 10 8E 00 01 LDY   #$0001
 AF16: 17 00 01    LBSR  $AF1A
 AF19: 39          RTS   
 
+* delay loop
+* identical to code at $f0a7
 AF1A: 12          NOP   
 AF1B: 12          NOP   
 AF1C: 12          NOP   
@@ -5825,6 +5848,8 @@ AF1E: 31 3F       LEAY  $FFFF,Y
 AF20: 26 F8       BNE   $AF1A
 AF22: 39          RTS   
 
+* FDC interrupt handler
+* identical to code at $f0b0
 AF23: 32 6C       LEAS  $000C,S
 AF25: D6 00       LDB   $00
 AF27: F7 80 06    STB   fdcstat
@@ -5854,6 +5879,8 @@ AF5A: F6 80 06    LDB   fdcstat
 AF5D: C4 18       ANDB  #$18
 AF5F: F7 80 06    STB   fdcstat
 AF62: 39          RTS   
+* end of "ghost" disk routines
+
 
 AF63: FF FF FF FF FF FF FF FF FF FF FF FF FF 
 
