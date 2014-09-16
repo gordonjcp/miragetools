@@ -1306,25 +1306,27 @@ resetkybd:
 8BC9: ED 88 1C    STD   $1C,X
 8BCC: 39          RTS   
 
+* calculate tuning from note number
 8BCD: E6 26       LDB   $0006,Y
-8BCF: D1 7D       CMPB  $7D
-8BD1: 25 02       BCS   $8BD5
-8BD3: C0 18       SUBB  #$18
-8BD5: 4F          CLRA  
-8BD6: 4C          INCA  
-8BD7: C0 0C       SUBB  #$0C
-8BD9: 2A FB       BPL   $8BD6
-8BDB: 4A          DECA  
-8BDC: CB 0C       ADDB  #$0C
-8BDE: 8E 8B F1    LDX   #$8BF1
-8BE1: E6 85       LDB   B,X
-8BE3: 83 03 B1    SUBD  #$03B1
-8BE6: E3 49       ADDD  $0009,U
-8BE8: 2A 01       BPL   $8BEB
+8BCF: D1 7D       CMPB  $7D	* max note = 125?
+8BD1: 25 02       BCS   $8BD5	* lower?
+8BD3: C0 18       SUBB  #$18	* no, subtract 24
+8BD5: 4F          CLRA  	* counter
+8BD6: 4C          INCA  	* add 1
+8BD7: C0 0C       SUBB  #$0C	* subtract 12 semitones
+8BD9: 2A FB       BPL   $8BD6	* if it's greater than zero, loop
+8BDB: 4A          DECA  	* back off one
+8BDC: CB 0C       ADDB  #$0C	* add the last octave back
+8BDE: 8E 8B F1    LDX   #$8BF1	* point to the lookup table
+8BE1: E6 85       LDB   B,X	* fetch the corresponding value
+8BE3: 83 03 B1    SUBD  #$03B1	* 945?
+8BE6: E3 49       ADDD  $0009,U	* not sure what's here
+8BE8: 2A 01       BPL   $8BEB	* skip if positive
 8BEA: 4F          CLRA  
-8BEB: ED A8 10    STD   $10,Y
-8BEE: 7E 8C A0    JMP   $8CA0
+8BEB: ED A8 10    STD   $10,Y	* not sure what's here
+8BEE: 7E 8C A0    JMP   $8CA0	* jump
 
+* lookup table
 8BF1: 00 15 2B 40 55 6B 80 95 AB C0 D5 EB 
 
 8BFD: 8E 80 68    LDX   #$8068
@@ -5274,6 +5276,7 @@ AB29: 39          RTS
 
 AB2A: B7 A2 
 
+* points into sequence memory
 AB2C: FE B8 04    LDU   $B804
 AB2F: A6 C0       LDA   ,U+
 AB31: DF EC       STU   $EC
@@ -5697,12 +5700,19 @@ AE3B: 11 83 B2 BA CMPU  #$B2BA		; done all eight voices?
 AE3F: 25 EE       BCS   zerofilter3	; no, loop
 AE41: 39          RTS   
 
-AE42: AC FF 16 00 CPX   [$1600,S]
-AE46: 2B 7C       BMI   $AEC4
-AE48: 80 03       SUBA  #$03
+* below are some FDC routines that never seem to be used
+* I suspect they are dead code because some of the jumps make no sense
+* they may have been prototype versions of ROM routines
+* they're certainly very similar.
+* Per Rainer Buchty's suggestion this may be better read from $AE44
+*AE42: AC FF 16 00 CPX   [$1600,S]
+*AE46: 2B 7C       BMI   $AEC4	* jumps into the middle of a loop without setup
+*AE48: 80 03       SUBA  #$03
+AE44: 16 00 2B    LBRA $AE72	* lbra rts, possibly from previous routine
+AE47: 7C 80 03    INC	fdcsect	
 AE4A: B6 80 03    LDA   fdcsect
-AE4D: 81 06       CMPA  #$06
-AE4F: 26 E3       BNE   $AE34
+AE4D: 81 06       CMPA  #$06	* run out of sectors?
+AE4F: 26 E3       BNE   $AE34	* must be wrong, jumps to the middle of an instruction!
 AE51: 7C 80 02    INC   fdctrk
 AE54: 7C A2 42    INC   $A242
 AE57: B6 80 02    LDA   fdctrk
@@ -5716,7 +5726,7 @@ AE68: 16 00 07    LBRA  $AE72
 
 AE6B: B6 A2 42    LDA   $A242
 AE6E: 81 01       CMPA  #$01
-AE70: 26 BF       BNE   $AE31
+AE70: 26 BF       BNE   $AE31	* jumps to the middle of an instruction
 AE72: 39          RTS   
 
 AE73: B6 80 03    LDA   fdcsect
