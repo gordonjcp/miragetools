@@ -1094,6 +1094,8 @@ ledpatterns:
 
 *** track/sector info for long sequences
 	fcb $0c,$05,$1f,$05,$23,$05,$36,$05,$37,$05,$4a,$05
+
+*** something to do with the directory bytes
 	fcb $00,$00,$00,$02,$08,$20,$04,$00,$10,$00,$40,$06,$18,$60,$01,$02
 	fcb $04,$08,$10,$20,$40,$80,$01,$02,$04,$e6,$9d,$7b,$fe,$fd,$fb,$fe
 	fcb $fe,$fd,$fd,$fb,$01,$01,$01,$02,$02,$02,$02,$03,$03,$03,$03,$03

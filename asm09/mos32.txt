@@ -4506,9 +4506,13 @@ A4B5: 20 02       BRA   $A4B9
 A4B7: 1A 01       ORCC  #$01
 A4B9: 39          RTS   
 
+* fiddles with some variables
+* then forces an FDC interrupt and sets the track
+* think this turns $80d0 = bank number
+* into $80d1 = offset in table
 A4BA: B7 80 CF    STA   $80CF
-A4BD: F7 80 D0    STB   $80D0
-A4C0: BD AB 20    JSR   $AB20
+A4BD: F7 80 D0    STB   $80D0 
+A4C0: BD AB 20    JSR   $AB20 * no idea, -1 *4 > $80d1
 A4C3: 7F 80 07    CLR   fdcerr
 A4C6: 86 E8       LDA   #$E8
 A4C8: 1F 8B       TFR   A,DP
@@ -4517,14 +4521,13 @@ A4CD: B6 80 02    LDA   fdctrk
 A4D0: B7 E8 01    STA   $E801
 A4D3: 39          RTS   
 
-
 * load samples?
 A4D4: BD F4 C6    JSR   enablefd
 A4D7: 86 40       LDA   #$40	
 A4D9: B4 E2 00    ANDA  $E200	* wait for /RDY
 A4DC: 81 00       CMPA  #$00
-A4DE: 26 08       BNE   $A4E8
-A4E0: 86 07       LDA   #$07
+A4DE: 26 08       BNE   $A4E8	* okay?
+A4E0: 86 07       LDA   #$07	* no
 A4E2: B7 80 07    STA   fdcerr
 A4E5: 16 00 4E    LBRA  $A536
 
@@ -4534,33 +4537,34 @@ A4EE: 81 00       CMPA  #$00
 A4F0: 27 03       BEQ   $A4F5
 A4F2: 16 00 41    LBRA  $A536
 
-A4F5: 7F 80 E1    CLR   $80E1
-A4F8: 7F 80 E3    CLR   $80E3
-A4FB: B6 80 CF    LDA   $80CF
-A4FE: 81 01       CMPA  #$01
-A500: 27 07       BEQ   $A509
-A502: B6 80 CF    LDA   $80CF
-A505: 81 03       CMPA  #$03
-A507: 26 14       BNE   $A51D
+* load upper or lower samples
+A4F5: 7F 80 E1    CLR   $80E1	* load
+A4F8: 7F 80 E3    CLR   $80E3	* some variable
+A4FB: B6 80 CF    LDA   $80CF	* some variable
+A4FE: 81 01       CMPA  #$01	* is it 1?
+A500: 27 07       BEQ   $A509	* yes, continue
+A502: B6 80 CF    LDA   $80CF	
+A505: 81 03       CMPA  #$03	
+A507: 26 14       BNE   $A51D	* not 3, continue
 A509: B6 E2 00    LDA   $E200	* VIA IORB
-A50C: 84 FC       ANDA  #$FC	* Bank select 0
+A50C: 84 FC       ANDA  #$FC	* Bank select lower/0
 A50E: B7 E2 00    STA   $E200	* write VIA IORB
-A511: BD A6 9C    JSR   $A69C
+A511: BD A6 9C    JSR   $A69C	* load lower sounds
 A514: B6 80 06    LDA   fdcstat
 A517: 81 00       CMPA  #$00
-A519: 27 02       BEQ   $A51D
-A51B: 20 19       BRA   $A536
+A519: 27 02       BEQ   $A51D	* okay?
+A51B: 20 19       BRA   $A536	* no, stop floppy
 
-A51D: B6 80 CF    LDA   $80CF
+A51D: B6 80 CF    LDA   $80CF	* some variable
 A520: 81 02       CMPA  #$02
-A522: 27 07       BEQ   $A52B
-A524: B6 80 CF    LDA   $80CF
-A527: 81 03       CMPA  #$03
-A529: 26 0B       BNE   $A536
+A522: 27 07       BEQ   $A52B	* is it 2?
+A524: B6 80 CF    LDA   $80CF	* some variable
+A527: 81 03       CMPA  #$03	* is it 3?
+A529: 26 0B       BNE   $A536	* no, end
 A52B: B6 E2 00    LDA   $E200 	* VIA IORB
 A52E: 84 FC       ANDA  #$FC	* Bank Select 0
 A530: B7 E2 00    STA   $E200	* write VIA IORB
-A533: BD A6 E8    JSR   $A6E8
+A533: BD A6 E8    JSR   $A6E8	* load upper
 A536: BD F4 D6    JSR   disablefd
 A539: 39          RTS   
 
@@ -4723,6 +4727,7 @@ A695: BD AB 00    JSR   $AB00	* find error message
 A698: BD F4 D6    JSR   disablefd
 A69B: 39          RTS   
 
+* load/save lower sounds
 A69C: 10 8E FB 90 LDY   #$FB90	* lower sounds
 A6A0: BD AA D2    JSR   $AAD2	* look up values
 A6A3: B6 80 06    LDA   fdcstat
@@ -4731,30 +4736,30 @@ A6A8: 27 06       BEQ   $A6B0	* okay?
 A6AA: BD AB 00    JSR   $AB00	* no, error
 A6AD: 16 00 37    LBRA  $A6E7	* lbra rts
 
-A6B0: 7F 80 DD    CLR   $80DD	* clear some flag
+A6B0: 7F 80 DD    CLR   $80DD	* clear bank value?
 A6B3: 86 02       LDA   #$02	* 02
 A6B5: B7 80 DE    STA   $80DE	* some variable
-A6B8: 7F 80 E0    CLR   $80E0	* some variable
-A6BB: B6 80 E1    LDA   $80E1	* some variable
-A6BE: 81 00       CMPA  #$00	* is it zero?	
+A6B8: 7F 80 E0    CLR   $80E0	* upper/lower sample
+A6BB: B6 80 E1    LDA   $80E1	* load/save
+A6BE: 81 00       CMPA  #$00	* is it load?
 A6C0: 26 05       BNE   $A6C7	* skip
-A6C2: BD A7 36    JSR   $A736	* call
+A6C2: BD A7 36    JSR   $A736	* call load parameter and copy
 A6C5: 20 07       BRA   $A6CE	* continue
 
 A6C7: 81 02       CMPA  #$02	* is it 2?
 A6C9: 26 03       BNE   $A6CE	* no, continue
-A6CB: BD A7 8B    JSR   $A78B	* call
+A6CB: BD A7 8B    JSR   $A78B	* call save parameter
 A6CE: B6 80 06    LDA   fdcstat
 A6D1: 81 00       CMPA  #$00
 A6D3: 27 05       BEQ   $A6DA	* okay
 A6D5: BD AB 00    JSR   $AB00	
-A6D8: 20 0D       BRA   $A6E7
+A6D8: 20 0D       BRA   $A6E7 	* bra rts
 
 A6DA: BD A7 AE    JSR   $A7AE 	* call read/write sector
 A6DD: B6 80 06    LDA   fdcstat
 A6E0: 81 00       CMPA  #$00
-A6E2: 27 03       BEQ   $A6E7
-A6E4: BD AB 00    JSR   $AB00
+A6E2: 27 03       BEQ   $A6E7	* okay?
+A6E4: BD AB 00    JSR   $AB00 	* nope, error
 A6E7: 39          RTS   
 
 * upper sounds?
@@ -4846,7 +4851,7 @@ A7A7: BD F4 76    JSR   writesector
 A7AA: 7C 80 D6    INC   vfirstsec
 A7AD: 39          RTS   
 
-* read or write sector?
+* read or write sectors based on what we discovered from the lookup table
 A7AE: B6 80 D6    LDA   vfirstsec
 A7B1: B7 80 03    STA   fdcsect
 A7B4: B6 80 D5    LDA   vfirsttrk
@@ -4858,55 +4863,55 @@ A7C3: 8E 00 00    LDX   #$0000	* load address
 A7C6: BF 80 04    STX   fdcbuff
 A7C9: B6 80 E1    LDA   $80E1	* load/save?
 A7CC: 81 00       CMPA  #$00
-A7CE: 26 05       BNE   $A7D5
+A7CE: 26 05       BNE   $A7D5	* not load
 A7D0: BD F4 48    JSR   readsector
 A7D3: 20 07       BRA   $A7DC
 
 A7D5: 81 02       CMPA  #$02
-A7D7: 26 03       BNE   $A7DC
+A7D7: 26 03       BNE   $A7DC	* not save, skip
 A7D9: BD F4 76    JSR   writesector
 A7DC: B6 80 06    LDA   fdcstat
 A7DF: 81 00       CMPA  #$00
-A7E1: 27 02       BEQ   $A7E5
-A7E3: 20 61       BRA   $A846
+A7E1: 27 02       BEQ   $A7E5	* okay?
+A7E3: 20 61       BRA   $A846	* bra rts
 
 A7E5: 7C 80 03    INC   fdcsect
 A7E8: B6 80 03    LDA   fdcsect
-A7EB: 81 05       CMPA  #$05
-A7ED: 27 05       BEQ   $A7F4
-A7EF: 8C 80 00    CMPX  #$8000
-A7F2: 26 D2       BNE   $A7C6
+A7EB: 81 05       CMPA  #$05	* did we fall off into the short sectors?
+A7ED: 27 05       BEQ   $A7F4	* yes
+A7EF: 8C 80 00    CMPX  #$8000	* did we run out of bank?
+A7F2: 26 D2       BNE   $A7C6	* no, go back for more sectors
 A7F4: B6 80 03    LDA   fdcsect
-A7F7: 81 05       CMPA  #$05
-A7F9: 26 1A       BNE   $A815
-A7FB: 7F 80 03    CLR   fdcsect
-A7FE: 7C 80 02    INC   fdctrk
-A801: B6 80 02    LDA   fdctrk
+A7F7: 81 05       CMPA  #$05	* short sectors?
+A7F9: 26 1A       BNE   $A815	* no, check for end
+A7FB: 7F 80 03    CLR   fdcsect	* sector 0
+A7FE: 7C 80 02    INC   fdctrk	* next track
+A801: B6 80 02    LDA   fdctrk	* or is it the last one?
 A804: B1 80 D7    CMPA  vlasttrk
-A807: 22 0C       BHI   $A815
-A809: BD F0 7D    JSR   fdcseekin
+A807: 22 0C       BHI   $A815	* yes, end
+A809: BD F0 7D    JSR   fdcseekin	* step
 A80C: B6 80 06    LDA   fdcstat
 A80F: 81 00       CMPA  #$00
-A811: 27 02       BEQ   $A815
-A813: 20 31       BRA   $A846
+A811: 27 02       BEQ   $A815	* okay?
+A813: 20 31       BRA   $A846	* bra rts
 
 A815: B6 80 02    LDA   fdctrk
 A818: B1 80 D7    CMPA  vlasttrk
-A81B: 22 05       BHI   $A822
-A81D: 8C 80 00    CMPX  #$8000
-A820: 26 A4       BNE   $A7C6
-A822: B6 80 02    LDA   fdctrk
+A81B: 22 05       BHI   $A822	* last track?
+A81D: 8C 80 00    CMPX  #$8000	* did we run out of bank?
+A820: 26 A4       BNE   $A7C6	* no, go back for more sectors
+A822: B6 80 02    LDA   fdctrk	* last track?
 A825: B1 80 D7    CMPA  vlasttrk
-A828: 22 07       BHI   $A831
-A82A: 8C 80 00    CMPX  #$8000
-A82D: 10 26 FF 95 LBNE  $A7C6
-A831: 7C 80 DD    INC   $80DD
+A828: 22 07       BHI   $A831	* yes
+A82A: 8C 80 00    CMPX  #$8000	* did we run out of bank?
+A82D: 10 26 FF 95 LBNE  $A7C6	* no, go back for more sectors
+A831: 7C 80 DD    INC   $80DD	* increment bank value
 A834: B6 80 02    LDA   fdctrk
 A837: B1 80 D7    CMPA  vlasttrk
-A83A: 22 0A       BHI   $A846
-A83C: B6 80 DD    LDA   $80DD
-A83F: B1 80 DE    CMPA  $80DE
-A842: 10 26 FF 74 LBNE  $A7BA
+A83A: 22 0A       BHI   $A846	* end
+A83C: B6 80 DD    LDA   $80DD	* bank value?
+A83F: B1 80 DE    CMPA  $80DE	* end value?
+A842: 10 26 FF 74 LBNE  $A7BA	* no, jump back and set the bank
 A846: 39          RTS   
 
 * read or write sequence
@@ -4960,13 +4965,15 @@ A8B3: BC 80 DB    CPX   $80DB	* have we reached the end?
 A8B6: 26 BD       BNE   $A875	* no, go back around
 A8B8: 39          RTS   
 
-A8B9: 7F 80 E2    CLR   $80E2
-A8BC: BD AA 2F    JSR   $AA2F
+
+* 
+A8B9: 7F 80 E2    CLR   $80E2	* some flag
+A8BC: BD AA 2F    JSR   $AA2F	* check "directory"?
 A8BF: B6 80 06    LDA   fdcstat * saved FDC status
 A8C2: 81 00       CMPA  #$00	* zero?
 A8C4: 27 06       BEQ   $A8CC	* yes, jump
-A8C6: BD AB 00    JSR   $AB00	* call
-A8C9: 16 00 AF    LBRA  $A97B	* why branch, it goes to rts?
+A8C6: BD AB 00    JSR   $AB00	* nope, error
+A8C9: 16 00 AF    LBRA  $A97B	* lbra rts
 
 A8CC: B6 80 CF    LDA   $80CF	* some variable
 A8CF: 81 03       CMPA  #$03	
@@ -4975,7 +4982,7 @@ A8D5: F6 80 D0    LDB   $80D0	* some variable
 A8D8: 5A          DECB  	* decrease
 A8D9: 8E FB DF    LDX   #$FBDF	* table in ROM, initially holds $06
 A8DC: A6 85       LDA   B,X
-A8DE: B4 80 D2    ANDA  $80D2
+A8DE: B4 80 D2    ANDA  $80D2	* sample directory?
 A8E1: 81 00       CMPA  #$00
 A8E3: 26 05       BNE   $A8EA
 A8E5: C6 04       LDB   #$04
@@ -5111,6 +5118,7 @@ AA05: 27 03       BEQ   $AA0A
 AA07: BD AB 00    JSR   $AB00
 AA0A: 39          RTS   
 
+* sequence directory?
 AA0B: F6 80 D0    LDB   $80D0
 AA0E: 5A          DECB  
 AA0F: B6 80 CF    LDA   $80CF
@@ -5128,6 +5136,9 @@ AA28: B4 80 D3    ANDA  $80D3
 AA2B: B7 80 D3    STA   $80D3
 AA2E: 39          RTS   
 
+* seems to get the directory "byte" into an address
+* hideously complicated though, isn't it?
+* it has to read three times, and handles its own retries
 AA2F: 10 8E FB 8C LDY   #$FB8C	* OS Flags?
 AA33: 86 02       LDA   #$02
 AA35: B7 80 E3    STA   $80E3	* $02 in this variable again
@@ -5141,20 +5152,20 @@ AA45: B6 80 D5    LDA   vfirsttrk
 AA48: B7 80 02    STA   fdctrk
 AA4B: B6 80 D6    LDA   vfirstsec
 AA4E: B7 80 03    STA   fdcsect
-AA51: 8E 80 D2    LDX   #$80D2
+AA51: 8E 80 D2    LDX   #$80D2	* address to load "directory" byte to
 AA54: 86 0A       LDA   #$0A
-AA56: B7 80 01    STA   fdcrtry
-AA59: B6 80 E2    LDA   $80E2
-AA5C: 81 00       CMPA  #$00
+AA56: B7 80 01    STA   fdcrtry	* bunch of retries
+AA59: B6 80 E2    LDA   $80E2	* some variable
+AA5C: 81 00       CMPA  #$00	* is it zero?
 AA5E: 26 0A       BNE   $AA6A
 AA60: BD F0 13    JSR   fdcskipsector
 AA63: B6 E8 03    LDA   $E803
-AA66: A7 84       STA   ,X
-AA68: 20 07       BRA   $AA71
+AA66: A7 84       STA   ,X	* get the last byte of the sector
+AA68: 20 07       BRA   $AA71	* continue
 
-AA6A: 81 02       CMPA  #$02
-AA6C: 26 03       BNE   $AA71
-AA6E: BD F0 37    JSR   fdcfillsector
+AA6A: 81 02       CMPA  #$02	* is it 2?
+AA6C: 26 03       BNE   $AA71	* no, continue
+AA6E: BD F0 37    JSR   fdcfillsector	* save
 AA71: 7A 80 01    DEC   fdcrtry
 AA74: B6 80 01    LDA   fdcrtry
 AA77: 27 07       BEQ   $AA80
@@ -5199,6 +5210,8 @@ AACD: 10 23 FF 88 LBLS  $AA59
 AAD1: 39          RTS   
 
 * called with address of table in Y
+* looks like $80e3 can be 0 or 2?
+* 
 AAD2: B6 80 E3    LDA   $80E3	* some variable
 AAD5: 81 00       CMPA  #$00	
 AAD7: 26 05       BNE   $AADE	* not zero? skip...
@@ -5238,6 +5251,9 @@ AB1A: 86 08       LDA   #$08	* error message 8
 AB1C: B7 80 07    STA   fdcerr	* save
 AB1F: 39          RTS   	* return
 
+* subtract 1 and multiply by four
+* this would be awfully handy for finding sequences and 
+* samples in the offset tables
 AB20: F7 80 D0    STB   $80D0
 AB23: 5A          DECB  
 AB24: 58          ASLB  

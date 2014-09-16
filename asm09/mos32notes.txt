@@ -1,0 +1,16 @@
+$80cf - sequence or sample to load?  can be 1, 2 or 3 for loading samples
+$80d0 - sample or sequence selected?
+$80d1 - used in sector finder, offset into table in bytes?
+$80d2 - sample directory
+$80d3 - short sequence directory
+$80d4 - long sequence directory
+$80d5 - first track for disk
+$80d6 - first sector for disk
+$80d7 - last track for disk
+$80d8 - last sector for disk
+$80db - end of memory copy for copying parameter block
+$80dd - possibly bank value for load/save?
+$80e0 - upper/lower sample = 0/2?
+$80e1 - load/save in disk routines
+$80e2 - load/save directory sector?
+$80e3 - used in sector finder, offset?
