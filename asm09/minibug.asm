@@ -6,8 +6,9 @@ ram     equ $8000
 cksum   equ ram-1
 xlo     equ cksum-1
 xhi     equ xlo-1
+bytect  equ xhi-1
 
-stack   equ xhi
+stack   equ bytect
 
 
 aciac   equ $e100
@@ -84,7 +85,7 @@ outhexs bsr outhex
 * inhex - read a hex character
 inhex   bsr inch
         cmpa #'0'
-        bmi contrl      * below 0
+        lbmi contrl      * below 0
         cmpa #'9'
         ble inhex1      * between 0 and 9
         ora #$20        * smash case
@@ -106,7 +107,10 @@ byte    bsr inhex
         anda #$0f       * ensure it's four bits
         pshs b
         adda ,s+
-        
+        tfr a,b
+        adda cksum
+        sta cksum
+        tfr b,a
         rts
         
 * baddr - get a 16-bit hex word
@@ -125,9 +129,29 @@ change  bsr baddr
         sta ,x
         bra contrl
 
-load    bra contrl
-
-
+load    jsr inch
+        cmpa #'S'
+        bne load        * wait until we get an S
+        jsr inch        * get type
+        cmpa #'9'
+        beq load3       * start address
+        cmpa #'1'
+        bne load        * not a data record
+        clr cksum
+        bsr byte        * fetch length
+        suba #$02       * correct it
+        sta bytect
+        bsr baddr       * get address
+load1   bsr byte
+        dec bytect
+        beq load2       * zero bytes
+        sta ,x+
+        bra load1
+load2   inc cksum
+        beq load
+        jmp ctrlerr
+load3   jmp contrl
+  
 start   orcc #$55       * disable interrupts
         lda #$03        * ACIA master reset
         sta aciac
@@ -152,8 +176,9 @@ contrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
         beq change
         cmpb #'g'
         beq ctrlgo
-        lda #'?'
+ctrlerr lda #'?'
         jsr outch
         bra contrl
-ctrlgo  jmp ctrlgo      * fixme
+ctrlgo  jsr baddr
+        jmp ,x
 
