@@ -87,6 +87,7 @@ inhex   bsr inch
         bmi contrl      * below 0
         cmpa #'9'
         ble inhex1      * between 0 and 9
+        ora #$20        * smash case
         cmpa #'a'       * 10-16?
         bmi contrl      * fixme, needs case insensitive
         cmpa #'f'
@@ -122,9 +123,10 @@ change  bsr baddr
         bsr outhexs
         bsr byte
         sta ,x
+        bra contrl
 
 load    bra contrl
-print   bra contrl
+
 
 start   orcc #$55       * disable interrupts
         lda #$03        * ACIA master reset
@@ -148,8 +150,6 @@ contrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
         beq load
         cmpb #'m'
         beq change
-        cmpb #'p'
-        beq print
         cmpb #'g'
         beq ctrlgo
         lda #'?'
