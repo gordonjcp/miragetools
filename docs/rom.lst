@@ -1114,7 +1114,8 @@ FC74: 79 7F 7F 7F 7F 7F 7F 7F 7F 7F 7F
 
 
 *** Check for expansion cartridge, jump to startup code
-;// appears to check for 16 bytes of zeros at the start of the cart ROM?
+// Checks for a sequence of $00-$0f in the first 16 bytes of cart ROM
+// Thanks to Caithleanne Logan for pointing this out
 resetvec:
 FC7F: 4F          CLRA  
 FC80: 8E C0 00    LDX   #$C000

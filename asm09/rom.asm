@@ -1094,6 +1094,8 @@ ledpatterns:
 
 *** track/sector info for long sequences
 	fcb $0c,$05,$1f,$05,$23,$05,$36,$05,$37,$05,$4a,$05
+
+*** something to do with the directory bytes
 	fcb $00,$00,$00,$02,$08,$20,$04,$00,$10,$00,$40,$06,$18,$60,$01,$02
 	fcb $04,$08,$10,$20,$40,$80,$01,$02,$04,$e6,$9d,$7b,$fe,$fd,$fb,$fe
 	fcb $fe,$fd,$fd,$fb,$01,$01,$01,$02,$02,$02,$02,$03,$03,$03,$03,$03
@@ -1108,7 +1110,8 @@ ledpatterns:
 
 
 *** check for expansion cartridge, jump to startup code
-*** appears to check for 16 bytes of zeros at the start of the cart rom?
+*** Checks for a sequence of $00-$0f in the first 16 bytes of cart ROM
+*** Thanks to Caithleanne Logan for pointing this out
 resetvec:
 	clra  
 	ldx   #$c000
@@ -1141,12 +1144,12 @@ ospanic2:
 	fill $ff,825
 
 *** cpu vectors
-	fdb	$fc7f	; reserved
-	fdb	$fc7f	; swi3
-	fdb 	$fc7f	; swi2
+	fdb	resetvec; reserved
+	fdb	resetvec; swi3
+	fdb 	resetvec; swi2
 	fdb	$800b	; firq
 	fdb	$8008	; irq
-	fdb	$fc7f	; swi
-	fdb	$f0b0	; nmi
-	fdb	$fc7f	; reset
+	fdb	resetvec; swi
+	fdb	nmivec	; nmi
+	fdb	resetvec; reset
 

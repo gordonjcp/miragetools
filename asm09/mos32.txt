@@ -86,6 +86,13 @@ osvec:
 80B0: 0F 0F 00 DA 60 00 00 00 00 00 00 00 82 25 82 25 
 80C0: A2 4A 00 00 00 00 A1 BC 00 00 00 00 00 00 00 FF 
 80D0: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+
+* variables for disk routines
+* $80d5 - first track
+* $80d6 - first sector
+* $80d7 - last track
+* $80d8 - last sector
+
 80E0: FF FF FF FF 00 C0 00 00 FF FF FF 01 B8 0A AB 2A 
 80F0: FF FF FF FF 01 02 04 08 10 20 40 80 FE FD FB F7 
 8100: EF DF BF 7F 00 00 00 00 00 00 00 00 00 00 00 00 
@@ -114,23 +121,25 @@ osvec:
 8270: FF FF FF FF FF FF FF FF 82 80 82 7C 10 11 01 0A 
 8280: 00 00 00 00 00 00 00 00 00 00 00 00 
 
+* appears to be some sort of linked list task loop
+
 828C: 34 01       PSHS  CC
-828E: 0F 4E       CLR   $4E
-8290: 1A 50       ORCC  #$50
-8292: 96 4E       LDA   $4E
-8294: 26 07       BNE   $829D
-8296: 10 9E 59    LDY   $59
-8299: 26 04       BNE   $829F
-829B: 0F 38       CLR   $38
+828E: 0F 4E       CLR   $4E	* some variable
+8290: 1A 50       ORCC  #$50	* disable interrupts
+8292: 96 4E       LDA   $4E	* get variable
+8294: 26 07       BNE   $829D	* zero? return
+8296: 10 9E 59    LDY   $59	* some 16-bit variable
+8299: 26 04       BNE   $829F	* zero? continue
+829B: 0F 38       CLR   $38	* clear some variable
 829D: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-829F: EC A4       LDD   ,Y
-82A1: DD 59       STD   $59
-82A3: 26 02       BNE   $82A7
-82A5: DD 5B       STD   $5B
-82A7: 1C AF       ANDCC #$AF
-82A9: AD B8 02    JSR   [$02,Y]
-82AC: 20 E2       BRA   $8290
+829F: EC A4       LDD   ,Y	* fetch value pointed to by Y
+82A1: DD 59       STD   $59	* store value back
+82A3: 26 02       BNE   $82A7	* zero?
+82A5: DD 5B       STD   $5B	* no, store it here too
+82A7: 1C AF       ANDCC #$AF	* enable interrupts
+82A9: AD B8 02    JSR   [$02,Y]	* jump to next task in list?
+82AC: 20 E2       BRA   $8290	* and loop
 
 82AE: E6 24       LDB   $0004,Y
 82B0: C0 24       SUBB  #$24
@@ -1297,25 +1306,27 @@ resetkybd:
 8BC9: ED 88 1C    STD   $1C,X
 8BCC: 39          RTS   
 
+* calculate tuning from note number
 8BCD: E6 26       LDB   $0006,Y
-8BCF: D1 7D       CMPB  $7D
-8BD1: 25 02       BCS   $8BD5
-8BD3: C0 18       SUBB  #$18
-8BD5: 4F          CLRA  
-8BD6: 4C          INCA  
-8BD7: C0 0C       SUBB  #$0C
-8BD9: 2A FB       BPL   $8BD6
-8BDB: 4A          DECA  
-8BDC: CB 0C       ADDB  #$0C
-8BDE: 8E 8B F1    LDX   #$8BF1
-8BE1: E6 85       LDB   B,X
-8BE3: 83 03 B1    SUBD  #$03B1
-8BE6: E3 49       ADDD  $0009,U
-8BE8: 2A 01       BPL   $8BEB
+8BCF: D1 7D       CMPB  $7D	* max note = 125?
+8BD1: 25 02       BCS   $8BD5	* lower?
+8BD3: C0 18       SUBB  #$18	* no, subtract 24
+8BD5: 4F          CLRA  	* counter
+8BD6: 4C          INCA  	* add 1
+8BD7: C0 0C       SUBB  #$0C	* subtract 12 semitones
+8BD9: 2A FB       BPL   $8BD6	* if it's greater than zero, loop
+8BDB: 4A          DECA  	* back off one
+8BDC: CB 0C       ADDB  #$0C	* add the last octave back
+8BDE: 8E 8B F1    LDX   #$8BF1	* point to the lookup table
+8BE1: E6 85       LDB   B,X	* fetch the corresponding value
+8BE3: 83 03 B1    SUBD  #$03B1	* 945?
+8BE6: E3 49       ADDD  $0009,U	* not sure what's here
+8BE8: 2A 01       BPL   $8BEB	* skip if positive
 8BEA: 4F          CLRA  
-8BEB: ED A8 10    STD   $10,Y
-8BEE: 7E 8C A0    JMP   $8CA0
+8BEB: ED A8 10    STD   $10,Y	* not sure what's here
+8BEE: 7E 8C A0    JMP   $8CA0	* jump
 
+* lookup table
 8BF1: 00 15 2B 40 55 6B 80 95 AB C0 D5 EB 
 
 8BFD: 8E 80 68    LDX   #$8068
@@ -1823,20 +1834,20 @@ resetkybd:
 9034: BD 8B FD    JSR   $8BFD
 9037: 20 E6       BRA   $901F
 
-9039: 1A 50       ORCC  #$50
-903B: B6 E2 00    LDA   $E200
-903E: 84 FB       ANDA  #$FB
-9040: 8A 08       ORA   #$08
-9042: B7 E2 00    STA   $E200
+9039: 1A 50       ORCC  #$50	* mask interrupts
+903B: B6 E2 00    LDA   $E200	* VIA IORB
+903E: 84 FB       ANDA  #$FB	* mic/line
+9040: 8A 08       ORA   #$08	* set it high (can't remember which way round)
+9042: B7 E2 00    STA   $E200	* write it back
 9045: 1C AF       ANDCC #$AF
 9047: B6 EC E1    LDA   $ECE1
 904A: B6 EC E2    LDA   $ECE2
 904D: BD 88 5E    JSR   $885E
 9050: 1A 50       ORCC  #$50
 9052: F6 EC E2    LDB   $ECE2
-9055: B6 E2 00    LDA   $E200
-9058: 8A 0C       ORA   #$0C
-905A: B7 E2 00    STA   $E200
+9055: B6 E2 00    LDA   $E200	* VIA IORB
+9058: 8A 0C       ORA   #$0C	* mic/line and sample/play high
+905A: B7 E2 00    STA   $E200	* write it back
 905D: 1C AF       ANDCC #$AF
 905F: F7 90 0C    STB   $900C
 9062: 4F          CLRA  
@@ -2059,7 +2070,7 @@ resetkybd:
 91EC: EA 86       ORB   A,X
 91EE: BD A0 F2    JSR   $A0F2
 91F1: BD 9E 83    JSR   $9E83
-91F4: 7D 80 07    TST   $8007
+91F4: 7D 80 07    TST   fdcerr
 91F7: 27 07       BEQ   $9200
 91F9: BD 92 49    JSR   $9249
 91FC: BD 94 31    JSR   $9431
@@ -2751,8 +2762,8 @@ resetkybd:
 
 96FE: FF 18 1A    STU   $181A
 9701: 50          NEGB  
-9702: 86 14       LDA   #$14
-9704: B7 E2 00    STA   $E200
+9702: 86 14       LDA   #$14	* drive select high, sample/play high
+9704: B7 E2 00    STA   $E200	* VIA IORB
 9707: BD AE 17    JSR   zerofilter
 970A: 8E E4 1F    LDX   #$E41F
 970D: 96 18       LDA   $18
@@ -2766,7 +2777,7 @@ resetkybd:
 9722: D6 19       LDB   $19
 9724: 26 05       BNE   $972B
 9726: 86 10       LDA   #$10
-9728: B7 E2 00    STA   $E200
+9728: B7 E2 00    STA   $E200	* drive select high, sample/play low
 972B: BD 98 58    JSR   $9858
 972E: 5F          CLRB  
 972F: 96 17       LDA   $17
@@ -2859,8 +2870,8 @@ resetkybd:
 97D1: BD 8E CF    JSR   $8ECF
 97D4: BD 98 6C    JSR   $986C
 97D7: 2B 14       BMI   $97ED
-97D9: 96 9B       LDA   $9B
-97DB: B7 E2 00    STA   $E200
+97D9: 96 9B       LDA   $9B	* $809b, what's here?
+97DB: B7 E2 00    STA   $E200	* write it to IORB
 97DE: 5D          TSTB  
 97DF: 2A 09       BPL   $97EA
 97E1: C4 7F       ANDB  #$7F
@@ -2874,7 +2885,7 @@ resetkybd:
 97ED: 84 7F       ANDA  #$7F
 97EF: 97 94       STA   $94
 97F1: 96 9C       LDA   $9C
-97F3: B7 E2 00    STA   $E200
+97F3: B7 E2 00    STA   $E200	* not sure
 97F6: C4 7F       ANDB  #$7F
 97F8: 4F          CLRA  
 97F9: F7 98 47    STB   $9847
@@ -2925,15 +2936,15 @@ resetkybd:
 9856: 4F          CLRA  
 9857: 39          RTS   
 
-9858: B6 E2 00    LDA   $E200
-985B: 84 FC       ANDA  #$FC
-985D: D6 A4       LDB   $A4
-985F: 27 02       BEQ   $9863
-9861: 8A 02       ORA   #$02
-9863: 97 9B       STA   $9B
-9865: 4C          INCA  
-9866: 97 9C       STA   $9C
-9868: B7 E2 00    STA   $E200
+9858: B6 E2 00    LDA   $E200	* VIA IORB
+985B: 84 FC       ANDA  #$FC	* mask off all but bank selects
+985D: D6 A4       LDB   $A4	* variable in $80a4
+985F: 27 02       BEQ   $9863	* is it zero?
+9861: 8A 02       ORA   #$02	* no, toggle upper/lower
+9863: 97 9B       STA   $9B	* write it back to $809b
+9865: 4C          INCA  	* bump
+9866: 97 9C       STA   $9C	* write that back to $809c
+9868: B7 E2 00    STA   $E200	* select the bank
 986B: 39          RTS   
 
 986C: BD 9A 85    JSR   $9A85
@@ -2950,13 +2961,13 @@ resetkybd:
 
 9881: 30 89 80 00 LEAX  $8000,X
 9885: 96 9C       LDA   $9C
-9887: B7 E2 00    STA   $E200
+9887: B7 E2 00    STA   $E200		* bank select
 988A: 33 41       LEAU  $0001,U
 988C: E6 84       LDB   ,X
 988E: 39          RTS   
 
 988F: 1F 21       TFR   Y,X
-9891: B6 E2 00    LDA   $E200
+9891: B6 E2 00    LDA   $E200		* bank fiddling
 9894: 8C 80 00    CMPX  #$8000
 9897: 24 04       BCC   $989D
 9899: 96 9B       LDA   $9B
@@ -2964,7 +2975,7 @@ resetkybd:
 
 989D: 96 9C       LDA   $9C
 989F: 30 89 80 00 LEAX  $8000,X
-98A3: B7 E2 00    STA   $E200
+98A3: B7 E2 00    STA   $E200		* bank fiddling
 98A6: 31 21       LEAY  $0001,Y
 98A8: E7 84       STB   ,X
 98AA: 39          RTS   
@@ -3471,13 +3482,13 @@ resetkybd:
 9CA3: 81 62       CMPA  #$62
 9CA5: 26 07       BNE   $9CAE
 9CA7: 0F 84       CLR   $84
-9CA9: 8E 80 07    LDX   #$8007
+9CA9: 8E 80 07    LDX   #fdcerr
 9CAC: 20 13       BRA   $9CC1
 
 9CAE: 81 63       CMPA  #$63
 9CB0: 26 07       BNE   $9CB9
 9CB2: 0F 84       CLR   $84
-9CB4: 8E 80 06    LDX   #$8006
+9CB4: 8E 80 06    LDX   #fdcstat
 9CB7: 20 08       BRA   $9CC1
 
 9CB9: BD 94 31    JSR   $9431
@@ -3799,57 +3810,57 @@ resetkybd:
 9EF0: 20 08       BRA   $9EFA
 
 9EF2: 86 0F       LDA   #$0F
-9EF4: B7 80 07    STA   $8007
+9EF4: B7 80 07    STA   fdcerr
 9EF7: 7E 9F 1B    JMP   $9F1B
 
 9EFA: D6 8C       LDB   $8C
 9EFC: F1 82 1F    CMPB  $821F
 9EFF: 23 08       BLS   $9F09
 9F01: 86 0E       LDA   #$0E
-9F03: B7 80 07    STA   $8007
+9F03: B7 80 07    STA   fdcerr
 9F06: 7E 9F 1B    JMP   $9F1B
 
 9F09: FD 82 20    STD   $8220
 9F0C: BD 9F 60    JSR   $9F60
 9F0F: FC 82 20    LDD   $8220
-9F12: BD A4 35    JSR   $A435
-9F15: 25 04       BCS   $9F1B
-9F17: BD 9F 6F    JSR   $9F6F
+9F12: BD A4 35    JSR   $A435	* deal with disk commands
+9F15: 25 04       BCS   $9F1B	* is carry set if an error occurs?
+9F17: BD 9F 6F    JSR   $9F6F	* reset some stuff
 9F1A: 39          RTS   
 
-9F1B: BD 9F 6F    JSR   $9F6F
-9F1E: B6 80 07    LDA   $8007
-9F21: 27 3B       BEQ   $9F5E
-9F23: 81 01       CMPA  #$01
-9F25: 26 05       BNE   $9F2C
-9F27: CC 7A 9E    LDD   #$7A9E
+9F1B: BD 9F 6F    JSR   $9F6F	* reset
+9F1E: B6 80 07    LDA   fdcerr	* fetch stored FDC error	
+9F21: 27 3B       BEQ   $9F5E	* if it's zero, hang?
+9F23: 81 01       CMPA  #$01	* disk error?
+9F25: 26 05       BNE   $9F2C	* nope
+9F27: CC 7A 9E    LDD   #$7A9E	* "dE" code
 9F2A: 20 2F       BRA   $9F5B
 
-9F2C: 81 02       CMPA  #$02
+9F2C: 81 02       CMPA  #$02	
 9F2E: 25 09       BCS   $9F39
 9F30: 81 05       CMPA  #$05
 9F32: 22 05       BHI   $9F39
-9F34: CC 2A 8E    LDD   #$2A8E
+9F34: CC 2A 8E    LDD   #$2A8E	* "nF" code
 9F37: 20 22       BRA   $9F5B
 
 9F39: 81 06       CMPA  #$06
 9F3B: 26 05       BNE   $9F42
-9F3D: CC 38 7A    LDD   #$387A
+9F3D: CC 38 7A    LDD   #$387A	* "ud" code
 9F40: 20 19       BRA   $9F5B
 
 9F42: 81 07       CMPA  #$07
 9F44: 26 05       BNE   $9F4B
-9F46: CC 2A 7A    LDD   #$2A7A
+9F46: CC 2A 7A    LDD   #$2A7A	* "nd" code
 9F49: 20 10       BRA   $9F5B
 
 9F4B: 81 08       CMPA  #$08
 9F4D: 26 05       BNE   $9F54
-9F4F: CC CE 7A    LDD   #$CE7A
+9F4F: CC CE 7A    LDD   #$CE7A	* "Pd" code
 9F52: 20 07       BRA   $9F5B
 
 9F54: 81 09       CMPA  #$09
 9F56: 26 06       BNE   $9F5E
-9F58: CC 2A 1A    LDD   #$2A1A
+9F58: CC 2A 1A    LDD   #$2A1A	* "nc" code?
 9F5B: DD B3       STD   $B3
 9F5D: 39          RTS   
 
@@ -3862,14 +3873,15 @@ resetkybd:
 9F6B: BD F5 41    JSR   unknown3
 9F6E: 39          RTS   
 
-9F6F: 1A 50       ORCC  #$50
-9F71: BD F5 41    JSR   unknown3
-9F74: BD F5 2D    JSR   unknown2
-9F77: BD 87 5E    JSR   $875E
-9F7A: BD 89 6B    JSR   $896B
-9F7D: BD A0 7E    JSR   $A07E
+* Oooh, what's this
+9F6F: 1A 50       ORCC  #$50	* mask interrupts
+9F71: BD F5 41    JSR   unknown3	* reinit via
+9F74: BD F5 2D    JSR   unknown2	* set timer 2
+9F77: BD 87 5E    JSR   $875E	* stop oscillators
+9F7A: BD 89 6B    JSR   $896B	* reset keyboard controller
+9F7D: BD A0 7E    JSR   $A07E	* reset serial port
 9F80: 86 CC       LDA   #$CC
-9F82: B7 E2 0B    STA   $E20B
+9F82: B7 E2 0B    STA   $E20B	* no idea
 9F85: 7F E2 06    CLR   $E206
 9F88: 7F E2 07    CLR   $E207
 9F8B: 7F E2 04    CLR   $E204
@@ -3877,7 +3889,7 @@ resetkybd:
 9F91: 0F 79       CLR   $79
 9F93: 0F 6B       CLR   $6B
 9F95: 0F 72       CLR   $72
-9F97: 1C AF       ANDCC #$AF
+9F97: 1C AF       ANDCC #$AF	* re-enable interrupts
 9F99: 39          RTS   
 
 9F9A: 97 BA       STA   $BA
@@ -3938,15 +3950,16 @@ A053: 00 40 20 40 01 63 63 63 FC 7C C6 A0 04 07 00 01
 A063: 1F 1F 1F 1F 1F 7C 7C 7C 7C 7C 1F 1F 1F 1F 1F 7C 
 A073: 7C 7C 7C 7C 01 07 FF 3F C6 C6 3C 
 
-A07E: 86 03       LDA   #$03
-A080: B7 E1 00    STA   $E100
-A083: 86 95       LDA   #$95
-A085: B7 E1 00    STA   $E100
-A088: CC 82 25    LDD   #$8225
-A08B: DD BC       STD   $BC
-A08D: DD BE       STD   $BE
-A08F: CC A1 BC    LDD   #$A1BC
-A092: DD C6       STD   $C6
+* init ACIA
+A07E: 86 03       LDA   #$03	* ACIA Master Reset
+A080: B7 E1 00    STA   $E100	* ACIA control reg
+A083: 86 95       LDA   #$95	* /16, 8N1, RX interrupt on
+A085: B7 E1 00    STA   $E100	* ACIA control reg
+A088: CC 82 25    LDD   #$8225	* no idea
+A08B: DD BC       STD   $BC	* $80bc	- possibly serial ring buffer?
+A08D: DD BE       STD   $BE	* $80be
+A08F: CC A1 BC    LDD   #$A1BC	* no idea
+A092: DD C6       STD   $C6	* $80c6
 
 ; called from FIRQ ISR
 A094: CC A2 4A    LDD   #$A24A
@@ -4404,6 +4417,7 @@ A3E0: A2 F8 A2 4A A2 47 A2 47 A2 47 A2 47 A2 47 A2 47
 A3F0: A2 47 A2 47 A3 B0 A2 47 A3 BE A3 C6 A3 C2 A2 47 
 A400: A3 D3 A3 D3 
 
+* ring buffer, stores A in memory pointed to by $8278
 A404: 34 01       PSHS  CC
 A406: 1A 10       ORCC  #$10
 A408: BE 82 78    LDX   $8278
@@ -4414,6 +4428,7 @@ A412: 8E 82 7C    LDX   #$827C
 A415: BF 82 78    STX   $8278
 A418: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
+* get byte from ring buffer 
 A41A: BE 82 7A    LDX   $827A
 A41D: BC 82 78    CPX   $8278
 A420: 26 03       BNE   $A425
@@ -4428,51 +4443,52 @@ A42F: BF 82 7A    STX   $827A
 A432: 1A 01       ORCC  #$01
 A434: 39          RTS   
 
+* some sort of command dispatcher?
 A435: BD A4 BA    JSR   $A4BA
-A438: B6 80 07    LDA   $8007
+A438: B6 80 07    LDA   fdcerr
 A43B: 81 00       CMPA  #$00
-A43D: 27 03       BEQ   $A442
+A43D: 27 03       BEQ   $A442	* okay?
 A43F: 16 00 64    LBRA  $A4A6
 
-A442: B6 80 CF    LDA   $80CF
+A442: B6 80 CF    LDA   vbanktoload
 A445: 81 01       CMPA  #$01
 A447: 26 05       BNE   $A44E
-A449: BD A4 D4    JSR   $A4D4
+A449: BD A4 D4    JSR   $A4D4	* load samples
 A44C: 20 58       BRA   $A4A6
 
 A44E: 81 02       CMPA  #$02
 A450: 26 05       BNE   $A457
-A452: BD A4 D4    JSR   $A4D4
+A452: BD A4 D4    JSR   $A4D4	* load samples
 A455: 20 4F       BRA   $A4A6
 
 A457: 81 03       CMPA  #$03
 A459: 26 05       BNE   $A460
-A45B: BD A4 D4    JSR   $A4D4
+A45B: BD A4 D4    JSR   $A4D4	* load samples
 A45E: 20 46       BRA   $A4A6
 
 A460: 81 04       CMPA  #$04
 A462: 26 05       BNE   $A469
-A464: BD A5 3A    JSR   $A53A
+A464: BD A5 3A    JSR   $A53A	* save samples	
 A467: 20 3D       BRA   $A4A6
 
 A469: 81 05       CMPA  #$05
 A46B: 26 05       BNE   $A472
-A46D: BD A5 3A    JSR   $A53A
+A46D: BD A5 3A    JSR   $A53A	* save samples
 A470: 20 34       BRA   $A4A6
 
 A472: 81 06       CMPA  #$06
 A474: 26 05       BNE   $A47B
-A476: BD A5 3A    JSR   $A53A
+A476: BD A5 3A    JSR   $A53A	* save samples
 A479: 20 2B       BRA   $A4A6
 
 A47B: 81 07       CMPA  #$07
 A47D: 26 05       BNE   $A484
-A47F: BD A5 A1    JSR   $A5A1
+A47F: BD A5 A1    JSR   $A5A1	* sequence
 A482: 20 22       BRA   $A4A6
 
 A484: 81 08       CMPA  #$08
 A486: 26 05       BNE   $A48D
-A488: BD A5 FC    JSR   $A5FC
+A488: BD A5 FC    JSR   $A5FC	* sequence
 A48B: 20 19       BRA   $A4A6
 
 A48D: 81 09       CMPA  #$09
@@ -4487,10 +4503,10 @@ A49D: 20 07       BRA   $A4A6
 
 A49F: 81 0B       CMPA  #$0B
 A4A1: 26 03       BNE   $A4A6
-A4A3: BD A6 53    JSR   $A653
-A4A6: B6 E8 01    LDA   $E801
-A4A9: B7 80 02    STA   $8002
-A4AC: B6 80 07    LDA   $8007
+A4A3: BD A6 53    JSR   $A653	* save OS parameters
+A4A6: B6 E8 01    LDA   $E801	* track register
+A4A9: B7 80 02    STA   fdctrk
+A4AC: B6 80 07    LDA   fdcerr
 A4AF: 81 00       CMPA  #$00
 A4B1: 26 04       BNE   $A4B7
 A4B3: 1C FE       ANDCC #$FE
@@ -4499,124 +4515,132 @@ A4B5: 20 02       BRA   $A4B9
 A4B7: 1A 01       ORCC  #$01
 A4B9: 39          RTS   
 
-A4BA: B7 80 CF    STA   $80CF
-A4BD: F7 80 D0    STB   $80D0
-A4C0: BD AB 20    JSR   $AB20
-A4C3: 7F 80 07    CLR   $8007
+* fiddles with some variables
+* then forces an FDC interrupt and sets the track
+* think this turns $80d0 = bank number
+* into $80d1 = offset in table
+A4BA: B7 80 CF    STA   vbanktoload
+A4BD: F7 80 D0    STB   $80D0 
+A4C0: BD AB 20    JSR   $AB20 * no idea, -1 *4 > $80d1
+A4C3: 7F 80 07    CLR   fdcerr
 A4C6: 86 E8       LDA   #$E8
 A4C8: 1F 8B       TFR   A,DP
 A4CA: BD F0 8F    JSR   fdcforceinterrupt
-A4CD: B6 80 02    LDA   $8002
+A4CD: B6 80 02    LDA   fdctrk
 A4D0: B7 E8 01    STA   $E801
 A4D3: 39          RTS   
 
+* load samples?
 A4D4: BD F4 C6    JSR   enablefd
-A4D7: 86 40       LDA   #$40
-A4D9: B4 E2 00    ANDA  $E200
+A4D7: 86 40       LDA   #$40	
+A4D9: B4 E2 00    ANDA  $E200	* wait for /RDY
 A4DC: 81 00       CMPA  #$00
-A4DE: 26 08       BNE   $A4E8
-A4E0: 86 07       LDA   #$07
-A4E2: B7 80 07    STA   $8007
+A4DE: 26 08       BNE   $A4E8	* okay?
+A4E0: 86 07       LDA   #$07	* no
+A4E2: B7 80 07    STA   fdcerr
 A4E5: 16 00 4E    LBRA  $A536
 
 A4E8: BD A8 B9    JSR   $A8B9
-A4EB: B6 80 07    LDA   $8007
+A4EB: B6 80 07    LDA   fdcerr
 A4EE: 81 00       CMPA  #$00
 A4F0: 27 03       BEQ   $A4F5
 A4F2: 16 00 41    LBRA  $A536
 
-A4F5: 7F 80 E1    CLR   $80E1
-A4F8: 7F 80 E3    CLR   $80E3
-A4FB: B6 80 CF    LDA   $80CF
-A4FE: 81 01       CMPA  #$01
-A500: 27 07       BEQ   $A509
-A502: B6 80 CF    LDA   $80CF
-A505: 81 03       CMPA  #$03
-A507: 26 14       BNE   $A51D
-A509: B6 E2 00    LDA   $E200
-A50C: 84 FC       ANDA  #$FC
-A50E: B7 E2 00    STA   $E200
-A511: BD A6 9C    JSR   $A69C
-A514: B6 80 06    LDA   $8006
+* load upper or lower samples
+A4F5: 7F 80 E1    CLR   $80E1	* load
+A4F8: 7F 80 E3    CLR   $80E3	* some variable
+A4FB: B6 80 CF    LDA   vbanktoload	* bank to load
+A4FE: 81 01       CMPA  #$01	* is it 1?
+A500: 27 07       BEQ   $A509	* yes, continue
+A502: B6 80 CF    LDA   vbanktoload	* bank to load
+A505: 81 03       CMPA  #$03	
+A507: 26 14       BNE   $A51D	* not 3, continue
+A509: B6 E2 00    LDA   $E200	* VIA IORB
+A50C: 84 FC       ANDA  #$FC	* Bank select lower/0
+A50E: B7 E2 00    STA   $E200	* write VIA IORB
+A511: BD A6 9C    JSR   $A69C	* load lower sounds
+A514: B6 80 06    LDA   fdcstat
 A517: 81 00       CMPA  #$00
-A519: 27 02       BEQ   $A51D
-A51B: 20 19       BRA   $A536
+A519: 27 02       BEQ   $A51D	* okay?
+A51B: 20 19       BRA   $A536	* no, stop floppy
 
-A51D: B6 80 CF    LDA   $80CF
+A51D: B6 80 CF    LDA   vbanktoload	* bank to load
 A520: 81 02       CMPA  #$02
-A522: 27 07       BEQ   $A52B
-A524: B6 80 CF    LDA   $80CF
-A527: 81 03       CMPA  #$03
-A529: 26 0B       BNE   $A536
-A52B: B6 E2 00    LDA   $E200
-A52E: 84 FC       ANDA  #$FC
-A530: B7 E2 00    STA   $E200
-A533: BD A6 E8    JSR   $A6E8
+A522: 27 07       BEQ   $A52B	* is it 2?
+A524: B6 80 CF    LDA   vbanktoload	* bank to load
+A527: 81 03       CMPA  #$03	* is it 3?
+A529: 26 0B       BNE   $A536	* no, end
+A52B: B6 E2 00    LDA   $E200 	* VIA IORB
+A52E: 84 FC       ANDA  #$FC	* Bank Select 0
+A530: B7 E2 00    STA   $E200	* write VIA IORB
+A533: BD A6 E8    JSR   $A6E8	* load upper
 A536: BD F4 D6    JSR   disablefd
 A539: 39          RTS   
 
+* save sample?
 A53A: BD F4 C6    JSR   enablefd
 A53D: 86 40       LDA   #$40
-A53F: B4 E2 00    ANDA  $E200
+A53F: B4 E2 00    ANDA  $E200	* wait for /RDY
 A542: 81 00       CMPA  #$00
 A544: 26 08       BNE   $A54E
 A546: 86 07       LDA   #$07
-A548: B7 80 07    STA   $8007
-A54B: 16 00 4F    LBRA  $A59D
+A548: B7 80 07    STA   fdcerr
+A54B: 16 00 4F    LBRA  $A59D	* stop floppy, return
 
 A54E: 86 02       LDA   #$02
-A550: B7 80 E1    STA   $80E1
-A553: 7F 80 E3    CLR   $80E3
-A556: B6 80 CF    LDA   $80CF
+A550: B7 80 E1    STA   $80E1	* set save flag
+A553: 7F 80 E3    CLR   $80E3	* clear this one
+A556: B6 80 CF    LDA   vbanktoload	* bank to save really
 A559: 81 04       CMPA  #$04
 A55B: 27 07       BEQ   $A564
-A55D: B6 80 CF    LDA   $80CF
+A55D: B6 80 CF    LDA   vbanktoload
 A560: 81 06       CMPA  #$06
 A562: 26 14       BNE   $A578
-A564: B6 E2 00    LDA   $E200
+A564: B6 E2 00    LDA   $E200	* zero bank select
 A567: 84 FC       ANDA  #$FC
 A569: B7 E2 00    STA   $E200
-A56C: BD A6 9C    JSR   $A69C
-A56F: B6 80 06    LDA   $8006
+A56C: BD A6 9C    JSR   $A69C	* load/save sound
+A56F: B6 80 06    LDA   fdcstat
 A572: 81 00       CMPA  #$00
 A574: 27 02       BEQ   $A578
-A576: 20 25       BRA   $A59D
+A576: 20 25       BRA   $A59D	* stop floppy, return
 
-A578: B6 80 CF    LDA   $80CF
+A578: B6 80 CF    LDA   vbanktoload	* bank to load
 A57B: 81 05       CMPA  #$05
 A57D: 27 07       BEQ   $A586
-A57F: B6 80 CF    LDA   $80CF
+A57F: B6 80 CF    LDA   vbanktoload	* bank to load
 A582: 81 06       CMPA  #$06
 A584: 26 14       BNE   $A59A
-A586: B6 E2 00    LDA   $E200
+A586: B6 E2 00    LDA   $E200	* zero bank select
 A589: 84 FC       ANDA  #$FC
 A58B: B7 E2 00    STA   $E200
-A58E: BD A6 E8    JSR   $A6E8
-A591: B6 80 06    LDA   $8006
+A58E: BD A6 E8    JSR   $A6E8	* save upper
+A591: B6 80 06    LDA   fdcstat
 A594: 81 00       CMPA  #$00
 A596: 27 02       BEQ   $A59A
-A598: 20 03       BRA   $A59D
+A598: 20 03       BRA   $A59D	* stop floppy, return
 
 A59A: BD A9 7C    JSR   $A97C
 A59D: BD F4 D6    JSR   disablefd
 A5A0: 39          RTS   
 
+* /load/save sequence?
 A5A1: BD F4 C6    JSR   enablefd
 A5A4: 86 40       LDA   #$40
-A5A6: B4 E2 00    ANDA  $E200
+A5A6: B4 E2 00    ANDA  $E200	* wait for /RDY
 A5A9: 81 00       CMPA  #$00
 A5AB: 26 08       BNE   $A5B5
 A5AD: 86 07       LDA   #$07
-A5AF: B7 80 07    STA   $8007
+A5AF: B7 80 07    STA   fdcerr
 A5B2: 16 00 43    LBRA  $A5F8
 
 A5B5: BD A8 B9    JSR   $A8B9
-A5B8: B6 80 07    LDA   $8007
+A5B8: B6 80 07    LDA   fdcerr
 A5BB: 81 00       CMPA  #$00
 A5BD: 27 02       BEQ   $A5C1
 A5BF: 20 37       BRA   $A5F8
 
-A5C1: B6 80 CF    LDA   $80CF
+A5C1: B6 80 CF    LDA   vbanktoload	
 A5C4: 81 07       CMPA  #$07
 A5C6: 26 06       BNE   $A5CE
 A5C8: 10 8E FB A8 LDY   #$FBA8
@@ -4624,10 +4648,10 @@ A5CC: 20 08       BRA   $A5D6
 
 A5CE: 81 09       CMPA  #$09
 A5D0: 26 04       BNE   $A5D6
-A5D2: 10 8E FB C8 LDY   #$FBC8
+A5D2: 10 8E FB C8 LDY   #$FBC8	* table for long sequences
 A5D6: 7F 80 E3    CLR   $80E3
 A5D9: BD AA D2    JSR   $AAD2
-A5DC: B6 80 06    LDA   $8006
+A5DC: B6 80 06    LDA   fdcstat
 A5DF: 81 00       CMPA  #$00
 A5E1: 27 05       BEQ   $A5E8
 A5E3: BD AB 00    JSR   $AB00
@@ -4635,336 +4659,346 @@ A5E6: 20 10       BRA   $A5F8
 
 A5E8: 7F 80 E1    CLR   $80E1
 A5EB: BD A8 47    JSR   $A847
-A5EE: B6 80 06    LDA   $8006
+A5EE: B6 80 06    LDA   fdcstat
 A5F1: 81 00       CMPA  #$00
 A5F3: 27 03       BEQ   $A5F8
 A5F5: BD AB 00    JSR   $AB00
 A5F8: BD F4 D6    JSR   disablefd
 A5FB: 39          RTS   
 
+* write sequence?
 A5FC: BD F4 C6    JSR   enablefd
 A5FF: 86 40       LDA   #$40
-A601: B4 E2 00    ANDA  $E200
+A601: B4 E2 00    ANDA  $E200 * wait for /RDY
 A604: 81 00       CMPA  #$00
 A606: 26 08       BNE   $A610
 A608: 86 07       LDA   #$07
-A60A: B7 80 07    STA   $8007
+A60A: B7 80 07    STA   fdcerr
 A60D: 16 00 3F    LBRA  $A64F
 
-A610: B6 80 CF    LDA   $80CF
-A613: 81 08       CMPA  #$08
-A615: 26 06       BNE   $A61D
-A617: 10 8E FB A8 LDY   #$FBA8
+A610: B6 80 CF    LDA   vbanktoload 	* some variable
+A613: 81 08       CMPA  #$08	
+A615: 26 06       BNE   $A61D	* skip
+A617: 10 8E FB A8 LDY   #$FBA8	* pointer to short sequence
 A61B: 20 08       BRA   $A625
 
-A61D: 81 0A       CMPA  #$0A
-A61F: 26 04       BNE   $A625
-A621: 10 8E FB C8 LDY   #$FBC8
-A625: 7F 80 E3    CLR   $80E3
-A628: BD AA D2    JSR   $AAD2
-A62B: B6 80 06    LDA   $8006
+A61D: 81 0A       CMPA  #$0A	* 10?
+A61F: 26 04       BNE   $A625	* no, skip
+A621: 10 8E FB C8 LDY   #$FBC8	* table for long sequences
+A625: 7F 80 E3    CLR   $80E3	* flag, what does it do?
+A628: BD AA D2    JSR   $AAD2	* find sector
+A62B: B6 80 06    LDA   fdcstat
 A62E: 81 00       CMPA  #$00
-A630: 27 06       BEQ   $A638
-A632: BD AB 00    JSR   $AB00
-A635: 16 00 17    LBRA  $A64F
+A630: 27 06       BEQ   $A638	* fdc okay
+A632: BD AB 00    JSR   $AB00	* error
+A635: 16 00 17    LBRA  $A64F	* lbra rts
 
-A638: 86 02       LDA   #$02
-A63A: B7 80 E1    STA   $80E1
-A63D: BD A8 47    JSR   $A847
-A640: B6 80 06    LDA   $8006
+A638: 86 02       LDA   #$02	* 2
+A63A: B7 80 E1    STA   $80E1	* another variable, load/save
+A63D: BD A8 47    JSR   $A847	* call load/save sequence
+A640: B6 80 06    LDA   fdcstat
 A643: 81 00       CMPA  #$00
-A645: 27 05       BEQ   $A64C
-A647: BD AB 00    JSR   $AB00
+A645: 27 05       BEQ   $A64C	* okay?
+A647: BD AB 00    JSR   $AB00	* nope, error
 A64A: 20 03       BRA   $A64F
 
-A64C: BD A9 7C    JSR   $A97C
+A64C: BD A9 7C    JSR   $A97C	* call
 A64F: BD F4 D6    JSR   disablefd
 A652: 39          RTS   
 
+* save OS parameters
 A653: BD F4 C6    JSR   enablefd
 A656: 86 40       LDA   #$40
-A658: B4 E2 00    ANDA  $E200
+A658: B4 E2 00    ANDA  $E200	* wait for /RDY
 A65B: 81 00       CMPA  #$00
-A65D: 26 08       BNE   $A667
+A65D: 26 08       BNE   $A667	* okay, go
 A65F: 86 07       LDA   #$07
-A661: B7 80 07    STA   $8007
-A664: 16 00 31    LBRA  $A698
+A661: B7 80 07    STA   fdcerr
+A664: 16 00 31    LBRA  $A698	* branch to RTS
 
-A667: 86 02       LDA   #$02
-A669: B7 80 E3    STA   $80E3
-A66C: 10 8E FB 88 LDY   #$FB88
-A670: BD AA D2    JSR   $AAD2
-A673: B6 80 06    LDA   $8006
-A676: 81 00       CMPA  #$00
-A678: 27 05       BEQ   $A67F
-A67A: BD AB 00    JSR   $AB00
-A67D: 20 19       BRA   $A698
+A667: 86 02       LDA   #$02	* 2 is obviously significant
+A669: B7 80 E3    STA   $80E3	* some sort of flag
+A66C: 10 8E FB 88 LDY   #$FB88	* system parameter list
+A670: BD AA D2    JSR   $AAD2	* fetch start and end track/sector
+A673: B6 80 06    LDA   fdcstat
+A676: 81 00       CMPA  #$00	* zero?
+A678: 27 05       BEQ   $A67F	* yes, continue
+A67A: BD AB 00    JSR   $AB00	* call routine to work out which error
+A67D: 20 19       BRA   $A698	* branch to RTS
 
-A67F: B6 80 D6    LDA   $80D6
-A682: B7 80 03    STA   $8003
-A685: 8E 80 11    LDX   #$8011
-A688: BF 80 04    STX   $8004
+A67F: B6 80 D6    LDA   vfirstsec	* first sector
+A682: B7 80 03    STA   fdcsect	* save in OS sector
+A685: 8E 80 11    LDX   #$8011	* load address
+A688: BF 80 04    STX   fdcbuff	* save in OS load address
 A68B: BD F4 76    JSR   writesector
-A68E: B6 80 06    LDA   $8006
-A691: 81 00       CMPA  #$00
-A693: 27 03       BEQ   $A698
-A695: BD AB 00    JSR   $AB00
+A68E: B6 80 06    LDA   fdcstat	* fetch FDC status
+A691: 81 00       CMPA  #$00	* Ok?
+A693: 27 03       BEQ   $A698	* skip over error
+A695: BD AB 00    JSR   $AB00	* find error message
 A698: BD F4 D6    JSR   disablefd
 A69B: 39          RTS   
 
-A69C: 10 8E FB 90 LDY   #$FB90
-A6A0: BD AA D2    JSR   $AAD2
-A6A3: B6 80 06    LDA   $8006
+* load/save lower sounds
+A69C: 10 8E FB 90 LDY   #$FB90	* lower sounds
+A6A0: BD AA D2    JSR   $AAD2	* look up values
+A6A3: B6 80 06    LDA   fdcstat
 A6A6: 81 00       CMPA  #$00
-A6A8: 27 06       BEQ   $A6B0
-A6AA: BD AB 00    JSR   $AB00
-A6AD: 16 00 37    LBRA  $A6E7
+A6A8: 27 06       BEQ   $A6B0	* okay?
+A6AA: BD AB 00    JSR   $AB00	* no, error
+A6AD: 16 00 37    LBRA  $A6E7	* lbra rts
 
-A6B0: 7F 80 DD    CLR   $80DD
-A6B3: 86 02       LDA   #$02
-A6B5: B7 80 DE    STA   $80DE
-A6B8: 7F 80 E0    CLR   $80E0
-A6BB: B6 80 E1    LDA   $80E1
-A6BE: 81 00       CMPA  #$00
-A6C0: 26 05       BNE   $A6C7
-A6C2: BD A7 36    JSR   $A736
-A6C5: 20 07       BRA   $A6CE
+A6B0: 7F 80 DD    CLR   $80DD	* clear bank value?
+A6B3: 86 02       LDA   #$02	* 02
+A6B5: B7 80 DE    STA   $80DE	* some variable
+A6B8: 7F 80 E0    CLR   $80E0	* upper/lower sample
+A6BB: B6 80 E1    LDA   $80E1	* load/save
+A6BE: 81 00       CMPA  #$00	* is it load?
+A6C0: 26 05       BNE   $A6C7	* skip
+A6C2: BD A7 36    JSR   $A736	* call load parameter and copy
+A6C5: 20 07       BRA   $A6CE	* continue
 
-A6C7: 81 02       CMPA  #$02
-A6C9: 26 03       BNE   $A6CE
-A6CB: BD A7 8B    JSR   $A78B
-A6CE: B6 80 06    LDA   $8006
+A6C7: 81 02       CMPA  #$02	* is it 2?
+A6C9: 26 03       BNE   $A6CE	* no, continue
+A6CB: BD A7 8B    JSR   $A78B	* call save parameter
+A6CE: B6 80 06    LDA   fdcstat
 A6D1: 81 00       CMPA  #$00
-A6D3: 27 05       BEQ   $A6DA
-A6D5: BD AB 00    JSR   $AB00
-A6D8: 20 0D       BRA   $A6E7
+A6D3: 27 05       BEQ   $A6DA	* okay
+A6D5: BD AB 00    JSR   $AB00	
+A6D8: 20 0D       BRA   $A6E7 	* bra rts
 
-A6DA: BD A7 AE    JSR   $A7AE
-A6DD: B6 80 06    LDA   $8006
+A6DA: BD A7 AE    JSR   $A7AE 	* call read/write sector
+A6DD: B6 80 06    LDA   fdcstat
 A6E0: 81 00       CMPA  #$00
-A6E2: 27 03       BEQ   $A6E7
-A6E4: BD AB 00    JSR   $AB00
+A6E2: 27 03       BEQ   $A6E7	* okay?
+A6E4: BD AB 00    JSR   $AB00 	* nope, error
 A6E7: 39          RTS   
 
-A6E8: 10 8E FB 9C LDY   #$FB9C
-A6EC: BD AA D2    JSR   $AAD2
-A6EF: B6 80 06    LDA   $8006
+* load/save upper sounds
+A6E8: 10 8E FB 9C LDY   #$FB9C	* upper sounds table
+A6EC: BD AA D2    JSR   $AAD2	* get sector
+A6EF: B6 80 06    LDA   fdcstat
 A6F2: 81 00       CMPA  #$00
-A6F4: 27 06       BEQ   $A6FC
-A6F6: BD AB 00    JSR   $AB00
-A6F9: 16 00 39    LBRA  $A735
+A6F4: 27 06       BEQ   $A6FC	* okay?
+A6F6: BD AB 00    JSR   $AB00	* nope, error
+A6F9: 16 00 39    LBRA  $A735	* lbra rts
 
-A6FC: 86 02       LDA   #$02
-A6FE: B7 80 DD    STA   $80DD
-A701: B7 80 E0    STA   $80E0
-A704: 86 04       LDA   #$04
-A706: B7 80 DE    STA   $80DE
-A709: B6 80 E1    LDA   $80E1
-A70C: 81 00       CMPA  #$00
-A70E: 26 05       BNE   $A715
-A710: BD A7 36    JSR   $A736
-A713: 20 07       BRA   $A71C
+A6FC: 86 02       LDA   #$02	* select upper bank
+A6FE: B7 80 DD    STA   $80DD	* save in bank variable
+A701: B7 80 E0    STA   $80E0	* upper sample
+A704: 86 04       LDA   #$04	* 4 is?
+A706: B7 80 DE    STA   $80DE	* some variable
+A709: B6 80 E1    LDA   $80E1	* load/save?
+A70C: 81 00       CMPA  #$00	* load?
+A70E: 26 05       BNE   $A715	* skip
+A710: BD A7 36    JSR   $A736	* call
+A713: 20 07       BRA   $A71C	* continue 
 
-A715: 81 02       CMPA  #$02
-A717: 26 03       BNE   $A71C
-A719: BD A7 8B    JSR   $A78B
-A71C: B6 80 06    LDA   $8006
+A715: 81 02       CMPA  #$02	* save?
+A717: 26 03       BNE   $A71C	* continue
+A719: BD A7 8B    JSR   $A78B	* call save param block
+A71C: B6 80 06    LDA   fdcstat
 A71F: 81 00       CMPA  #$00
-A721: 27 05       BEQ   $A728
-A723: BD AB 00    JSR   $AB00
-A726: 20 0D       BRA   $A735
+A721: 27 05       BEQ   $A728	* okay?
+A723: BD AB 00    JSR   $AB00	* nope, error
+A726: 20 0D       BRA   $A735	* bra rts
 
-A728: BD A7 AE    JSR   $A7AE
-A72B: B6 80 06    LDA   $8006
+A728: BD A7 AE    JSR   $A7AE	* call read/write sector
+A72B: B6 80 06    LDA   fdcstat
 A72E: 81 00       CMPA  #$00
-A730: 27 03       BEQ   $A735
-A732: BD AB 00    JSR   $AB00
+A730: 27 03       BEQ   $A735	* okay?
+A732: BD AB 00    JSR   $AB00	nope, error
 A735: 39          RTS   
 
-A736: B6 80 D6    LDA   $80D6
-A739: B7 80 03    STA   $8003
-A73C: B6 E2 00    LDA   $E200
-A73F: BA 80 DD    ORA   $80DD
-A742: B7 E2 00    STA   $E200
-A745: 8E 00 00    LDX   #$0000
-A748: BF 80 04    STX   $8004
+* load parameter block and copy
+A736: B6 80 D6    LDA   vfirstsec
+A739: B7 80 03    STA   fdcsect
+A73C: B6 E2 00    LDA   $E200	* get bank (VIA IORB)
+A73F: BA 80 DD    ORA   $80DD	* bank select?
+A742: B7 E2 00    STA   $E200	* select it
+A745: 8E 00 00    LDX   #$0000	* load address
+A748: BF 80 04    STX   fdcbuff
 A74B: BD F4 48    JSR   readsector
-A74E: B6 80 06    LDA   $8006
-A751: 81 00       CMPA  #$00
-A753: 27 03       BEQ   $A758
-A755: 16 00 32    LBRA  $A78A
+A74E: B6 80 06    LDA   fdcstat
+A751: 81 00       CMPA  #$00	
+A753: 27 03       BEQ   $A758	* okay?
+A755: 16 00 32    LBRA  $A78A	* lbra rts
 
-A758: B6 80 E0    LDA   $80E0
+A758: B6 80 E0    LDA   $80E0	* some variable
 A75B: 81 00       CMPA  #$00
-A75D: 26 0B       BNE   $A76A
-A75F: 8E B3 1D    LDX   #$B31D
-A762: CC 02 71    LDD   #$0271
-A765: C3 B3 1D    ADDD  #$B31D
-A768: 20 0D       BRA   $A777
+A75D: 26 0B       BNE   $A76A	* skip if it's zero
+A75F: 8E B3 1D    LDX   #$B31D	* lower params?
+A762: CC 02 71    LDD   #$0271	* think that's the length
+A765: C3 B3 1D    ADDD  #$B31D	* end address?
+A768: 20 0D       BRA   $A777	* jump
 
-A76A: 81 02       CMPA  #$02
-A76C: 26 09       BNE   $A777
-A76E: 8E B5 8E    LDX   #$B58E
-A771: CC 02 71    LDD   #$0271
-A774: C3 B5 8E    ADDD  #$B58E
-A777: FD 80 DB    STD   $80DB
-A77A: 10 8E 00 00 LDY   #$0000
-A77E: A6 A0       LDA   ,Y+
+A76A: 81 02       CMPA  #$02	was it 2?
+A76C: 26 09       BNE   $A777	no, jump
+A76E: 8E B5 8E    LDX   #$B58E	* upper params?
+A771: CC 02 71    LDD   #$0271	* length?
+A774: C3 B5 8E    ADDD  #$B58E	* end address?
+A777: FD 80 DB    STD   $80DB	* some variable
+A77A: 10 8E 00 00 LDY   #$0000	* bottom of RAM
+A77E: A6 A0       LDA   ,Y+	
 A780: A7 80       STA   ,X+
-A782: BC 80 DB    CPX   $80DB
-A785: 26 F7       BNE   $A77E
-A787: 7C 80 D6    INC   $80D6
+A782: BC 80 DB    CPX   $80DB	* finished?
+A785: 26 F7       BNE   $A77E	* nope
+A787: 7C 80 D6    INC   vfirstsec	* bump the stored first sector
 A78A: 39          RTS   
 
-A78B: B6 80 D6    LDA   $80D6
-A78E: B7 80 03    STA   $8003
-A791: B6 80 E0    LDA   $80E0
+* save parameter block
+A78B: B6 80 D6    LDA   vfirstsec
+A78E: B7 80 03    STA   fdcsect
+A791: B6 80 E0    LDA   $80E0	* upper/lower?
 A794: 81 00       CMPA  #$00
-A796: 26 05       BNE   $A79D
-A798: 8E B3 1D    LDX   #$B31D
+A796: 26 05       BNE   $A79D	* lower?
+A798: 8E B3 1D    LDX   #$B31D	* parameter block address
 A79B: 20 07       BRA   $A7A4
 
 A79D: 81 02       CMPA  #$02
-A79F: 26 03       BNE   $A7A4
-A7A1: 8E B5 8E    LDX   #$B58E
-A7A4: BF 80 04    STX   $8004
+A79F: 26 03       BNE   $A7A4	* upper?
+A7A1: 8E B5 8E    LDX   #$B58E	* parameter block address
+A7A4: BF 80 04    STX   fdcbuff
 A7A7: BD F4 76    JSR   writesector
-A7AA: 7C 80 D6    INC   $80D6
+A7AA: 7C 80 D6    INC   vfirstsec
 A7AD: 39          RTS   
 
-A7AE: B6 80 D6    LDA   $80D6
-A7B1: B7 80 03    STA   $8003
-A7B4: B6 80 D5    LDA   $80D5
-A7B7: B7 80 02    STA   $8002
-A7BA: B6 E2 00    LDA   $E200
-A7BD: BA 80 DD    ORA   $80DD
-A7C0: B7 E2 00    STA   $E200
-A7C3: 8E 00 00    LDX   #$0000
-A7C6: BF 80 04    STX   $8004
-A7C9: B6 80 E1    LDA   $80E1
+* read or write sectors based on what we discovered from the lookup table
+A7AE: B6 80 D6    LDA   vfirstsec
+A7B1: B7 80 03    STA   fdcsect
+A7B4: B6 80 D5    LDA   vfirsttrk
+A7B7: B7 80 02    STA   fdctrk
+A7BA: B6 E2 00    LDA   $E200	* bank fiddling?
+A7BD: BA 80 DD    ORA   $80DD	* bank value
+A7C0: B7 E2 00    STA   $E200	* select it
+A7C3: 8E 00 00    LDX   #$0000	* load address
+A7C6: BF 80 04    STX   fdcbuff
+A7C9: B6 80 E1    LDA   $80E1	* load/save?
 A7CC: 81 00       CMPA  #$00
-A7CE: 26 05       BNE   $A7D5
+A7CE: 26 05       BNE   $A7D5	* not load
 A7D0: BD F4 48    JSR   readsector
 A7D3: 20 07       BRA   $A7DC
 
 A7D5: 81 02       CMPA  #$02
-A7D7: 26 03       BNE   $A7DC
+A7D7: 26 03       BNE   $A7DC	* not save, skip
 A7D9: BD F4 76    JSR   writesector
-A7DC: B6 80 06    LDA   $8006
+A7DC: B6 80 06    LDA   fdcstat
 A7DF: 81 00       CMPA  #$00
-A7E1: 27 02       BEQ   $A7E5
-A7E3: 20 61       BRA   $A846
+A7E1: 27 02       BEQ   $A7E5	* okay?
+A7E3: 20 61       BRA   $A846	* bra rts
 
-A7E5: 7C 80 03    INC   $8003
-A7E8: B6 80 03    LDA   $8003
-A7EB: 81 05       CMPA  #$05
-A7ED: 27 05       BEQ   $A7F4
-A7EF: 8C 80 00    CMPX  #$8000
-A7F2: 26 D2       BNE   $A7C6
-A7F4: B6 80 03    LDA   $8003
-A7F7: 81 05       CMPA  #$05
-A7F9: 26 1A       BNE   $A815
-A7FB: 7F 80 03    CLR   $8003
-A7FE: 7C 80 02    INC   $8002
-A801: B6 80 02    LDA   $8002
-A804: B1 80 D7    CMPA  $80D7
-A807: 22 0C       BHI   $A815
-A809: BD F0 7D    JSR   fdcseekin
-A80C: B6 80 06    LDA   $8006
+A7E5: 7C 80 03    INC   fdcsect
+A7E8: B6 80 03    LDA   fdcsect
+A7EB: 81 05       CMPA  #$05	* did we fall off into the short sectors?
+A7ED: 27 05       BEQ   $A7F4	* yes
+A7EF: 8C 80 00    CMPX  #$8000	* did we run out of bank?
+A7F2: 26 D2       BNE   $A7C6	* no, go back for more sectors
+A7F4: B6 80 03    LDA   fdcsect
+A7F7: 81 05       CMPA  #$05	* short sectors?
+A7F9: 26 1A       BNE   $A815	* no, check for end
+A7FB: 7F 80 03    CLR   fdcsect	* sector 0
+A7FE: 7C 80 02    INC   fdctrk	* next track
+A801: B6 80 02    LDA   fdctrk	* or is it the last one?
+A804: B1 80 D7    CMPA  vlasttrk
+A807: 22 0C       BHI   $A815	* yes, end
+A809: BD F0 7D    JSR   fdcseekin	* step
+A80C: B6 80 06    LDA   fdcstat
 A80F: 81 00       CMPA  #$00
-A811: 27 02       BEQ   $A815
-A813: 20 31       BRA   $A846
+A811: 27 02       BEQ   $A815	* okay?
+A813: 20 31       BRA   $A846	* bra rts
 
-A815: B6 80 02    LDA   $8002
-A818: B1 80 D7    CMPA  $80D7
-A81B: 22 05       BHI   $A822
-A81D: 8C 80 00    CMPX  #$8000
-A820: 26 A4       BNE   $A7C6
-A822: B6 80 02    LDA   $8002
-A825: B1 80 D7    CMPA  $80D7
-A828: 22 07       BHI   $A831
-A82A: 8C 80 00    CMPX  #$8000
-A82D: 10 26 FF 95 LBNE  $A7C6
-A831: 7C 80 DD    INC   $80DD
-A834: B6 80 02    LDA   $8002
-A837: B1 80 D7    CMPA  $80D7
-A83A: 22 0A       BHI   $A846
-A83C: B6 80 DD    LDA   $80DD
-A83F: B1 80 DE    CMPA  $80DE
-A842: 10 26 FF 74 LBNE  $A7BA
+A815: B6 80 02    LDA   fdctrk
+A818: B1 80 D7    CMPA  vlasttrk
+A81B: 22 05       BHI   $A822	* last track?
+A81D: 8C 80 00    CMPX  #$8000	* did we run out of bank?
+A820: 26 A4       BNE   $A7C6	* no, go back for more sectors
+A822: B6 80 02    LDA   fdctrk	* last track?
+A825: B1 80 D7    CMPA  vlasttrk
+A828: 22 07       BHI   $A831	* yes
+A82A: 8C 80 00    CMPX  #$8000	* did we run out of bank?
+A82D: 10 26 FF 95 LBNE  $A7C6	* no, go back for more sectors
+A831: 7C 80 DD    INC   $80DD	* increment bank value
+A834: B6 80 02    LDA   fdctrk
+A837: B1 80 D7    CMPA  vlasttrk
+A83A: 22 0A       BHI   $A846	* end
+A83C: B6 80 DD    LDA   $80DD	* bank value?
+A83F: B1 80 DE    CMPA  $80DE	* end value?
+A842: 10 26 FF 74 LBNE  $A7BA	* no, jump back and set the bank
 A846: 39          RTS   
 
-A847: B6 80 D6    LDA   $80D6
-A84A: B7 80 03    STA   $8003
-A84D: B6 80 D5    LDA   $80D5
-A850: B7 80 02    STA   $8002
-A853: B6 80 CF    LDA   $80CF
-A856: 81 07       CMPA  #$07
-A858: 27 07       BEQ   $A861
-A85A: B6 80 CF    LDA   $80CF
-A85D: 81 08       CMPA  #$08
-A85F: 26 08       BNE   $A869
-A861: CC 08 00    LDD   #$0800
+* read or write sequence
+A847: B6 80 D6    LDA   vfirstsec
+A84A: B7 80 03    STA   fdcsect
+A84D: B6 80 D5    LDA   vfirsttrk
+A850: B7 80 02    STA   fdctrk
+A853: B6 80 CF    LDA   vbanktoload	* some variable
+A856: 81 07       CMPA  #$07	* why 7? Short seq?
+A858: 27 07       BEQ   $A861	* skip...
+A85A: B6 80 CF    LDA   vbanktoload	* some variable
+A85D: 81 08       CMPA  #$08	* why 8? Long seq?
+A85F: 26 08       BNE   $A869	* skip...
+A861: CC 08 00    LDD   #$0800	* if it was 7, short seq is four sects
 A864: C3 B8 00    ADDD  #$B800
-A867: 20 06       BRA   $A86F
+A867: 20 06       BRA   $A86F	
 
-A869: CC 20 00    LDD   #$2000
+A869: CC 20 00    LDD   #$2000	* if it was 8, long seq?
 A86C: C3 B8 00    ADDD  #$B800
-A86F: FD 80 DB    STD   $80DB
-A872: 8E B8 00    LDX   #$B800
-A875: BF 80 04    STX   $8004
-A878: B6 80 E1    LDA   $80E1
-A87B: 81 00       CMPA  #$00
-A87D: 26 05       BNE   $A884
+A86F: FD 80 DB    STD   $80DB	* save it, end of seq?
+A872: 8E B8 00    LDX   #$B800	* start of sequence address
+A875: BF 80 04    STX   fdcbuff
+A878: B6 80 E1    LDA   $80E1	* some variable, load/save?
+A87B: 81 00       CMPA  #$00	* is it zero?	
+A87D: 26 05       BNE   $A884	* no, skip
 A87F: BD F4 48    JSR   readsector
 A882: 20 07       BRA   $A88B
 
 A884: 81 02       CMPA  #$02
 A886: 26 03       BNE   $A88B
 A888: BD F4 76    JSR   writesector
-A88B: B6 80 06    LDA   $8006
+A88B: B6 80 06    LDA   fdcstat	* end up here
 A88E: 81 00       CMPA  #$00
-A890: 27 02       BEQ   $A894
-A892: 20 24       BRA   $A8B8
+A890: 27 02       BEQ   $A894	* okay?
+A892: 20 24       BRA   $A8B8	* nope, error, rts
 
-A894: 7C 80 02    INC   $8002
-A897: B6 80 02    LDA   $8002
-A89A: B1 80 D7    CMPA  $80D7
-A89D: 22 0C       BHI   $A8AB
-A89F: BD F0 7D    JSR   fdcseekin
-A8A2: B6 80 06    LDA   $8006
+A894: 7C 80 02    INC   fdctrk	* next track
+A897: B6 80 02    LDA   fdctrk	* get track
+A89A: B1 80 D7    CMPA  vlasttrk * last one?
+A89D: 22 0C       BHI   $A8AB	* yes
+A89F: BD F0 7D    JSR   fdcseekin * nope, step
+A8A2: B6 80 06    LDA   fdcstat	
 A8A5: 81 00       CMPA  #$00
-A8A7: 27 02       BEQ   $A8AB
-A8A9: 20 0D       BRA   $A8B8
+A8A7: 27 02       BEQ   $A8AB	* okay?
+A8A9: 20 0D       BRA   $A8B8	* nope, error, rts
 
-A8AB: B6 80 02    LDA   $8002
-A8AE: B1 80 D7    CMPA  $80D7
-A8B1: 22 05       BHI   $A8B8
-A8B3: BC 80 DB    CPX   $80DB
-A8B6: 26 BD       BNE   $A875
+A8AB: B6 80 02    LDA   fdctrk	* saved FDC track
+A8AE: B1 80 D7    CMPA  vlasttrk	* reached this value?
+A8B1: 22 05       BHI   $A8B8	* bail
+A8B3: BC 80 DB    CPX   $80DB	* have we reached the end?
+A8B6: 26 BD       BNE   $A875	* no, go back around
 A8B8: 39          RTS   
 
-A8B9: 7F 80 E2    CLR   $80E2
-A8BC: BD AA 2F    JSR   $AA2F
-A8BF: B6 80 06    LDA   $8006
-A8C2: 81 00       CMPA  #$00
-A8C4: 27 06       BEQ   $A8CC
-A8C6: BD AB 00    JSR   $AB00
-A8C9: 16 00 AF    LBRA  $A97B
 
-A8CC: B6 80 CF    LDA   $80CF
-A8CF: 81 03       CMPA  #$03
-A8D1: 10 26 00 18 LBNE  $A8ED
-A8D5: F6 80 D0    LDB   $80D0
-A8D8: 5A          DECB  
-A8D9: 8E FB DF    LDX   #$FBDF
+* 
+A8B9: 7F 80 E2    CLR   $80E2	* some flag
+A8BC: BD AA 2F    JSR   $AA2F	* check "directory"?
+A8BF: B6 80 06    LDA   fdcstat * saved FDC status
+A8C2: 81 00       CMPA  #$00	* zero?
+A8C4: 27 06       BEQ   $A8CC	* yes, jump
+A8C6: BD AB 00    JSR   $AB00	* nope, error
+A8C9: 16 00 AF    LBRA  $A97B	* lbra rts
+
+A8CC: B6 80 CF    LDA   vbanktoload	* some variable
+A8CF: 81 03       CMPA  #$03	
+A8D1: 10 26 00 18 LBNE  $A8ED	* if it's not 3, skip this
+A8D5: F6 80 D0    LDB   $80D0	* some variable
+A8D8: 5A          DECB  	* decrease
+A8D9: 8E FB DF    LDX   #$FBDF	* table in ROM, initially holds $06
 A8DC: A6 85       LDA   B,X
-A8DE: B4 80 D2    ANDA  $80D2
+A8DE: B4 80 D2    ANDA  vsampledir	* sample directory?
 A8E1: 81 00       CMPA  #$00
 A8E3: 26 05       BNE   $A8EA
 A8E5: C6 04       LDB   #$04
-A8E7: F7 80 07    STB   $8007
-A8EA: 16 00 8E    LBRA  $A97B
+A8E7: F7 80 07    STB   fdcerr
+A8EA: 16 00 8E    LBRA  $A97B	* lbra rts
 
 A8ED: 81 07       CMPA  #$07
 A8EF: 10 26 00 5C LBNE  $A94F
@@ -4978,89 +5012,90 @@ A901: 8E FB EA    LDX   #$FBEA
 A904: F6 80 D0    LDB   $80D0
 A907: 5A          DECB  
 A908: A6 85       LDA   B,X
-A90A: B4 80 D4    ANDA  $80D4
+A90A: B4 80 D4    ANDA  vlseqdir
 A90D: 81 00       CMPA  #$00
 A90F: 26 13       BNE   $A924
 A911: 8E FB E2    LDX   #$FBE2
 A914: A6 85       LDA   B,X
-A916: B4 80 D3    ANDA  $80D3
+A916: B4 80 D3    ANDA  vsseqdir
 A919: 81 00       CMPA  #$00
 A91B: 26 05       BNE   $A922
 A91D: C6 05       LDB   #$05
-A91F: F7 80 07    STB   $8007
+A91F: F7 80 07    STB   fdcerr
 A922: 20 11       BRA   $A935
 
 A924: B6 80 E4    LDA   $80E4
 A927: 27 07       BEQ   $A930
 A929: 86 09       LDA   #$09
-A92B: B7 80 CF    STA   $80CF
+A92B: B7 80 CF    STA   vbanktoload
 A92E: 20 05       BRA   $A935
 
 A930: 86 09       LDA   #$09
-A932: B7 80 07    STA   $8007
+A932: B7 80 07    STA   fdcerr
 A935: 20 15       BRA   $A94C
 
 A937: 8E FB E2    LDX   #$FBE2
 A93A: F6 80 D0    LDB   $80D0
 A93D: 5A          DECB  
 A93E: A6 85       LDA   B,X
-A940: B4 80 D3    ANDA  $80D3
+A940: B4 80 D3    ANDA  vsseqdir
 A943: 81 00       CMPA  #$00
 A945: 26 05       BNE   $A94C
 A947: C6 05       LDB   #$05
-A949: F7 80 07    STB   $8007
-A94C: 16 00 2C    LBRA  $A97B
+A949: F7 80 07    STB   fdcerr
+A94C: 16 00 2C    LBRA  $A97B * lbra rts
 
 A94F: 8E FB D4    LDX   #$FBD4
-A952: B6 80 CF    LDA   $80CF
+A952: B6 80 CF    LDA   vbanktoload
 A955: F6 80 D0    LDB   $80D0
 A958: 5C          INCB  
 A959: 5C          INCB  
 A95A: 3D          MUL   
 A95B: A6 85       LDA   B,X
-A95D: B4 80 D2    ANDA  $80D2
+A95D: B4 80 D2    ANDA  vsampledir
 A960: 81 00       CMPA  #$00
 A962: 26 17       BNE   $A97B
-A964: B6 80 CF    LDA   $80CF
+A964: B6 80 CF    LDA   vbanktoload
 A967: 81 01       CMPA  #$01
 A969: 26 07       BNE   $A972
 A96B: C6 03       LDB   #$03
-A96D: F7 80 07    STB   $8007
+A96D: F7 80 07    STB   fdcerr
 A970: 20 09       BRA   $A97B
 
 A972: 81 02       CMPA  #$02
 A974: 26 05       BNE   $A97B
 A976: C6 02       LDB   #$02
-A978: F7 80 07    STB   $8007
+A978: F7 80 07    STB   fdcerr
 A97B: 39          RTS   
 
-A97C: 7F 80 E2    CLR   $80E2
-A97F: BD AA 2F    JSR   $AA2F
-A982: B6 80 06    LDA   $8006
+* called after saving samples
+A97C: 7F 80 E2    CLR   $80E2	* clear load/save flag
+A97F: BD AA 2F    JSR   $AA2F	* directory?
+A982: B6 80 06    LDA   fdcstat
 A985: 81 00       CMPA  #$00
-A987: 27 06       BEQ   $A98F
-A989: BD AB 00    JSR   $AB00
-A98C: 16 00 7B    LBRA  $AA0A
+A987: 27 06       BEQ   $A98F	* okay
+A989: BD AB 00    JSR   $AB00	* nope, error
+A98C: 16 00 7B    LBRA  $AA0A	* lbra rts
 
-A98F: B6 80 CF    LDA   $80CF
-A992: 81 06       CMPA  #$06
+A98F: B6 80 CF    LDA   vbanktoload
+A992: 81 06       CMPA  #$06	* sample
 A994: 10 26 00 12 LBNE  $A9AA
 A998: F6 80 D0    LDB   $80D0
 A99B: 5A          DECB  
 A99C: 8E FB DF    LDX   #$FBDF
 A99F: A6 85       LDA   B,X
-A9A1: BA 80 D2    ORA   $80D2
-A9A4: B7 80 D2    STA   $80D2
+A9A1: BA 80 D2    ORA   vsampledir
+A9A4: B7 80 D2    STA   vsampledir
 A9A7: 16 00 4E    LBRA  $A9F8
 
-A9AA: 81 08       CMPA  #$08
+A9AA: 81 08       CMPA  #$08	* sequence
 A9AC: 10 26 00 15 LBNE  $A9C5
 A9B0: 8E FB E2    LDX   #$FBE2
 A9B3: F6 80 D0    LDB   $80D0
 A9B6: 5A          DECB  
 A9B7: A6 85       LDA   B,X
-A9B9: BA 80 D3    ORA   $80D3
-A9BC: B7 80 D3    STA   $80D3
+A9B9: BA 80 D3    ORA   vsseqdir
+A9BC: B7 80 D3    STA   vsseqdir
 A9BF: BD AA 0B    JSR   $AA0B
 A9C2: 16 00 33    LBRA  $A9F8
 
@@ -5070,13 +5105,13 @@ A9CB: 8E FB EA    LDX   #$FBEA
 A9CE: F6 80 D0    LDB   $80D0
 A9D1: 5A          DECB  
 A9D2: A6 85       LDA   B,X
-A9D4: BA 80 D4    ORA   $80D4
-A9D7: B7 80 D4    STA   $80D4
+A9D4: BA 80 D4    ORA   vlseqdir
+A9D7: B7 80 D4    STA   vlseqdir
 A9DA: BD AA 0B    JSR   $AA0B
 A9DD: 16 00 18    LBRA  $A9F8
 
 A9E0: 8E FB D4    LDX   #$FBD4
-A9E3: B6 80 CF    LDA   $80CF
+A9E3: B6 80 CF    LDA   vbanktoload
 A9E6: 1C FE       ANDCC #$FE
 A9E8: 82 03       SBCA  #$03
 A9EA: F6 80 D0    LDB   $80D0
@@ -5084,68 +5119,72 @@ A9ED: 5C          INCB
 A9EE: 5C          INCB  
 A9EF: 3D          MUL   
 A9F0: A6 85       LDA   B,X
-A9F2: BA 80 D2    ORA   $80D2
-A9F5: B7 80 D2    STA   $80D2
+A9F2: BA 80 D2    ORA   vsampledir
+A9F5: B7 80 D2    STA   vsampledir
 A9F8: 86 02       LDA   #$02
 A9FA: B7 80 E2    STA   $80E2
 A9FD: BD AA 2F    JSR   $AA2F
-AA00: B6 80 06    LDA   $8006
+AA00: B6 80 06    LDA   fdcstat
 AA03: 81 00       CMPA  #$00
 AA05: 27 03       BEQ   $AA0A
 AA07: BD AB 00    JSR   $AB00
 AA0A: 39          RTS   
 
+* sequence directory?
 AA0B: F6 80 D0    LDB   $80D0
 AA0E: 5A          DECB  
-AA0F: B6 80 CF    LDA   $80CF
+AA0F: B6 80 CF    LDA   vbanktoload
 AA12: 81 08       CMPA  #$08
 AA14: 26 0D       BNE   $AA23
 AA16: 8E FB F0    LDX   #$FBF0
 AA19: A6 85       LDA   B,X
-AA1B: B4 80 D4    ANDA  $80D4
-AA1E: B7 80 D4    STA   $80D4
+AA1B: B4 80 D4    ANDA  vlseqdir
+AA1E: B7 80 D4    STA   vlseqdir
 AA21: 20 0B       BRA   $AA2E
 
 AA23: 8E FB ED    LDX   #$FBED
 AA26: A6 85       LDA   B,X
-AA28: B4 80 D3    ANDA  $80D3
-AA2B: B7 80 D3    STA   $80D3
+AA28: B4 80 D3    ANDA  vsseqdir
+AA2B: B7 80 D3    STA   vsseqdir
 AA2E: 39          RTS   
 
-AA2F: 10 8E FB 8C LDY   #$FB8C
+* seems to get the directory "byte" into an address
+* hideously complicated though, isn't it?
+* it has to read three times, and handles its own retries
+AA2F: 10 8E FB 8C LDY   #$FB8C	* OS Flags?
 AA33: 86 02       LDA   #$02
-AA35: B7 80 E3    STA   $80E3
-AA38: BD AA D2    JSR   $AAD2
-AA3B: B6 80 06    LDA   $8006
+AA35: B7 80 E3    STA   $80E3	* $02 in this variable again
+AA38: BD AA D2    JSR   $AAD2	* get sectors
+AA3B: B6 80 06    LDA   fdcstat
 AA3E: 81 00       CMPA  #$00
 AA40: 27 03       BEQ   $AA45
-AA42: 16 00 8C    LBRA  $AAD1
+AA42: 16 00 8C    LBRA  $AAD1	* lbra rts
 
-AA45: B6 80 D5    LDA   $80D5
-AA48: B7 80 02    STA   $8002
-AA4B: B6 80 D6    LDA   $80D6
-AA4E: B7 80 03    STA   $8003
-AA51: 8E 80 D2    LDX   #$80D2
+AA45: B6 80 D5    LDA   vfirsttrk
+AA48: B7 80 02    STA   fdctrk
+AA4B: B6 80 D6    LDA   vfirstsec
+AA4E: B7 80 03    STA   fdcsect
+AA51: 8E 80 D2    LDX   #vsampledir	* address to load "directory" byte to
 AA54: 86 0A       LDA   #$0A
-AA56: B7 80 01    STA   $8001
-AA59: B6 80 E2    LDA   $80E2
-AA5C: 81 00       CMPA  #$00
+AA56: B7 80 01    STA   fdcrtry	* bunch of retries
+AA59: B6 80 E2    LDA   $80E2	* some variable
+AA5C: 81 00       CMPA  #$00	* is it zero?
 AA5E: 26 0A       BNE   $AA6A
 AA60: BD F0 13    JSR   fdcskipsector
 AA63: B6 E8 03    LDA   $E803
-AA66: A7 84       STA   ,X
-AA68: 20 07       BRA   $AA71
+AA66: A7 84       STA   ,X	* get the last byte of the sector
+AA68: 20 07       BRA   $AA71	* continue
 
-AA6A: 81 02       CMPA  #$02
-AA6C: 26 03       BNE   $AA71
-AA6E: BD F0 37    JSR   fdcfillsector
-AA71: 7A 80 01    DEC   $8001
-AA74: B6 80 01    LDA   $8001
+AA6A: 81 02       CMPA  #$02	* is it 2?
+AA6C: 26 03       BNE   $AA71	* no, continue
+AA6E: BD F0 37    JSR   fdcfillsector	* save
+AA71: 7A 80 01    DEC   fdcrtry
+AA74: B6 80 01    LDA   fdcrtry
 AA77: 27 07       BEQ   $AA80
-AA79: B6 80 06    LDA   $8006
+AA79: B6 80 06    LDA   fdcstat
 AA7C: 81 00       CMPA  #$00
 AA7E: 26 D9       BNE   $AA59
-AA80: B6 80 06    LDA   $8006
+AA80: B6 80 06    LDA   fdcstat
 AA83: 81 00       CMPA  #$00
 AA85: 27 1E       BEQ   $AAA5
 AA87: BD F0 86    JSR   fdcseekout
@@ -5161,65 +5200,73 @@ AA9C: 20 07       BRA   $AAA5
 AA9E: 81 02       CMPA  #$02
 AAA0: 26 03       BNE   $AAA5
 AAA2: BD F0 37    JSR   fdcfillsector
-AAA5: B6 80 06    LDA   $8006
+AAA5: B6 80 06    LDA   fdcstat
 AAA8: 81 00       CMPA  #$00
 AAAA: 27 02       BEQ   $AAAE
 AAAC: 20 23       BRA   $AAD1
 
 AAAE: 30 01       LEAX  $0001,X
-AAB0: 7C 80 02    INC   $8002
-AAB3: B6 80 02    LDA   $8002
-AAB6: B1 80 D7    CMPA  $80D7
+AAB0: 7C 80 02    INC   fdctrk
+AAB3: B6 80 02    LDA   fdctrk
+AAB6: B1 80 D7    CMPA  vlasttrk
 AAB9: 22 0C       BHI   $AAC7
 AABB: BD F4 A4    JSR   gototrack2
-AABE: B6 80 06    LDA   $8006
+AABE: B6 80 06    LDA   fdcstat
 AAC1: 81 00       CMPA  #$00
 AAC3: 27 02       BEQ   $AAC7
 AAC5: 20 0A       BRA   $AAD1
 
-AAC7: B6 80 02    LDA   $8002
-AACA: B1 80 D7    CMPA  $80D7
+AAC7: B6 80 02    LDA   fdctrk
+AACA: B1 80 D7    CMPA  vlasttrk
 AACD: 10 23 FF 88 LBLS  $AA59
 AAD1: 39          RTS   
 
-AAD2: B6 80 E3    LDA   $80E3
-AAD5: 81 00       CMPA  #$00
-AAD7: 26 05       BNE   $AADE
-AAD9: B6 80 D1    LDA   $80D1
-AADC: 20 05       BRA   $AAE3
+* called with address of table in Y
+* looks like if $80E3 is 0, we look at $80D1 for an offset
+* otherwise if $80E3 is 2, zero it and continue
+* or use $80E3 as the offset
+AAD2: B6 80 E3    LDA   $80E3	* some variable
+AAD5: 81 00       CMPA  #$00	
+AAD7: 26 05       BNE   $AADE	* not zero? skip...
+AAD9: B6 80 D1    LDA   $80D1	* offset into table
+AADC: 20 05       BRA   $AAE3	* branch to
 
-AADE: 81 02       CMPA  #$02
-AAE0: 26 01       BNE   $AAE3
-AAE2: 4F          CLRA  
-AAE3: 30 A6       LEAX  A,Y
-AAE5: A6 80       LDA   ,X+
-AAE7: B7 80 D5    STA   $80D5
-AAEA: B7 80 02    STA   $8002
-AAED: A6 80       LDA   ,X+
-AAEF: B7 80 D6    STA   $80D6
-AAF2: A6 80       LDA   ,X+
-AAF4: B7 80 D7    STA   $80D7
-AAF7: A6 84       LDA   ,X
-AAF9: B7 80 D8    STA   $80D8
-AAFC: BD F4 A4    JSR   gototrack2
+AADE: 81 02       CMPA  #$02	
+AAE0: 26 01       BNE   $AAE3	* not 2? skip...
+AAE2: 4F          CLRA  	* clear A
+AAE3: 30 A6       LEAX  A,Y	* X=A+Y
+AAE5: A6 80       LDA   ,X+	* get track, bump X
+AAE7: B7 80 D5    STA   vfirsttrk	* $80d5 holds first track?
+AAEA: B7 80 02    STA   fdctrk	* fdctrk definitely does for the ROM
+AAED: A6 80       LDA   ,X+	* get sector, bump X
+AAEF: B7 80 D6    STA   vfirstsec	* $80d6 contains first sector?
+AAF2: A6 80       LDA   ,X+	* get last track
+AAF4: B7 80 D7    STA   vlasttrk	* $80d7	
+AAF7: A6 84       LDA   ,X	* get last sector
+AAF9: B7 80 D8    STA   vlastsec	* save in $80d8
+AAFC: BD F4 A4    JSR   gototrack2 * position head
 AAFF: 39          RTS   
 
-AB00: 86 01       LDA   #$01
-AB02: B7 80 07    STA   $8007
-AB05: 86 10       LDA   #$10
-AB07: B5 80 06    BITA  $8006
-AB0A: 27 07       BEQ   $AB13
-AB0C: 86 06       LDA   #$06
-AB0E: B7 80 07    STA   $8007
-AB11: 20 0C       BRA   $AB1F
+* display some kind of error message
+AB00: 86 01       LDA   #$01	* 1
+AB02: B7 80 07    STA   fdcerr	* store in error code
+AB05: 86 10       LDA   #$10	* "record not found"
+AB07: B5 80 06    BITA  fdcstat	* FDC status
+AB0A: 27 07       BEQ   $AB13	* nope, jump
+AB0C: 86 06       LDA   #$06	* error message 6
+AB0E: B7 80 07    STA   fdcerr	* save
+AB11: 20 0C       BRA   $AB1F	* return
 
-AB13: 86 40       LDA   #$40
-AB15: B5 80 06    BITA  $8006
-AB18: 27 05       BEQ   $AB1F
-AB1A: 86 08       LDA   #$08
-AB1C: B7 80 07    STA   $8007
-AB1F: 39          RTS   
+AB13: 86 40       LDA   #$40	* deleted data mark
+AB15: B5 80 06    BITA  fdcstat	* FDC status
+AB18: 27 05       BEQ   $AB1F	* nope, return
+AB1A: 86 08       LDA   #$08	* error message 8
+AB1C: B7 80 07    STA   fdcerr	* save
+AB1F: 39          RTS   	* return
 
+* subtract 1 and multiply by four
+* this would be awfully handy for finding sequences and 
+* samples in the offset tables
 AB20: F7 80 D0    STB   $80D0
 AB23: 5A          DECB  
 AB24: 58          ASLB  
@@ -5229,6 +5276,7 @@ AB29: 39          RTS
 
 AB2A: B7 A2 
 
+* points into sequence memory
 AB2C: FE B8 04    LDU   $B804
 AB2F: A6 C0       LDA   ,U+
 AB31: DF EC       STU   $EC
@@ -5652,29 +5700,37 @@ AE3B: 11 83 B2 BA CMPU  #$B2BA		; done all eight voices?
 AE3F: 25 EE       BCS   zerofilter3	; no, loop
 AE41: 39          RTS   
 
-AE42: AC FF 16 00 CPX   [$1600,S]
-AE46: 2B 7C       BMI   $AEC4
-AE48: 80 03       SUBA  #$03
-AE4A: B6 80 03    LDA   $8003
-AE4D: 81 06       CMPA  #$06
-AE4F: 26 E3       BNE   $AE34
-AE51: 7C 80 02    INC   $8002
-AE54: 7C A2 42    INC   $A242
-AE57: B6 80 02    LDA   $8002
-AE5A: 81 50       CMPA  #$50
+* below are some FDC routines that never seem to be used
+* I suspect they are dead code because some of the jumps make no sense
+* they may have been prototype versions of ROM routines
+* they're certainly very similar.
+* Per Rainer Buchty's suggestion this may be better read from $AE44
+*AE42: AC FF 16 00 CPX   [$1600,S]
+*AE46: 2B 7C       BMI   $AEC4	* jumps into the middle of a loop without setup
+*AE48: 80 03       SUBA  #$03
+AE44: 16 00 2B    LBRA $AE72	* lbra rts, possibly from previous routine
+AE47: 7C 80 03    INC	fdcsect	
+AE4A: B6 80 03    LDA   fdcsect
+AE4D: 81 06       CMPA  #$06	* run out of sectors?
+AE4F: 26 E3       BNE   $AE34	* must be wrong, jumps to the middle of an instruction!
+AE51: 7C 80 02    INC   fdctrk
+AE54: 7C A2 42    INC   $A242	* this is in the middle of code
+AE57: B6 80 02    LDA   fdctrk
+AE5A: 81 50       CMPA  #$50	* run out of tracks?
 AE5C: 24 0D       BCC   $AE6B
-AE5E: BD AE F0    JSR   $AEF0
-AE61: B6 80 06    LDA   $8006
+AE5E: BD AE F0    JSR   $AEF0	* this points to an endless loop
+AE61: B6 80 06    LDA   fdcstat
 AE64: 81 00       CMPA  #$00
 AE66: 27 03       BEQ   $AE6B
 AE68: 16 00 07    LBRA  $AE72
 
 AE6B: B6 A2 42    LDA   $A242
 AE6E: 81 01       CMPA  #$01
-AE70: 26 BF       BNE   $AE31
+AE70: 26 BF       BNE   $AE31	* jumps to the middle of an instruction
 AE72: 39          RTS   
 
-AE73: B6 80 03    LDA   $8003
+* read sector, indentical to ROM code at $f000
+AE73: B6 80 03    LDA   fdcsect
 AE76: 97 02       STA   $02
 AE78: 86 88       LDA   #$88
 AE7A: B7 80 00    STA   $8000
@@ -5684,7 +5740,9 @@ AE80: 96 03       LDA   $03
 AE82: A7 80       STA   ,X+
 AE84: 20 F9       BRA   $AE7F
 
-AE86: B6 80 03    LDA   $8003
+* read sector returning last byte in A
+* identical to ROM code at $f013
+AE86: B6 80 03    LDA   fdcsect
 AE89: 97 02       STA   $02
 AE8B: 86 88       LDA   #$88
 AE8D: B7 80 00    STA   $8000
@@ -5693,7 +5751,9 @@ AE92: 13          SYNC
 AE93: 96 03       LDA   $03
 AE95: 20 FB       BRA   $AE92
 
-AE97: B6 80 03    LDA   $8003
+* write sector
+* identical to code at $f024
+AE97: B6 80 03    LDA   fdcsect
 AE9A: 97 02       STA   $02
 AE9C: 86 A8       LDA   #$A8
 AE9E: B7 80 00    STA   $8000
@@ -5703,7 +5763,9 @@ AEA4: A6 80       LDA   ,X+
 AEA6: 97 03       STA   $03
 AEA8: 20 F9       BRA   $AEA3
 
-AEAA: B6 80 03    LDA   $8003
+* write directory sector
+* identical to code at $f037
+AEAA: B6 80 03    LDA   fdcsect
 AEAD: 97 02       STA   $02
 AEAF: 86 A8       LDA   #$A8
 AEB1: B7 80 00    STA   $8000
@@ -5713,6 +5775,8 @@ AEB7: A6 84       LDA   ,X
 AEB9: 97 03       STA   $03
 AEBB: 20 F9       BRA   $AEB6
 
+* read whole track
+* identical to code at $f04a
 AEBD: 86 E8       LDA   #$E8
 AEBF: B7 80 00    STA   $8000
 AEC2: 97 00       STA   $00
@@ -5721,6 +5785,8 @@ AEC5: 96 03       LDA   $03
 AEC7: A7 80       STA   ,X+
 AEC9: 20 F9       BRA   $AEC4
 
+* write whole track
+* identical to code at $f058
 AECB: 86 F8       LDA   #$F8
 AECD: B7 80 00    STA   $8000
 AED0: 97 00       STA   $00
@@ -5729,39 +5795,51 @@ AED3: A6 80       LDA   ,X+
 AED5: 97 03       STA   $03
 AED7: 20 F9       BRA   $AED2
 
+* seek track 0
+* identical to code at $f066
 AED9: 86 0C       LDA   #$0C
 AEDB: B7 80 00    STA   $8000
 AEDE: 97 00       STA   $00
 AEE0: 20 FE       BRA   $AEE0
 
-AEE2: B6 80 02    LDA   $8002
+* seek to track
+* identical to code at $f06f
+AEE2: B6 80 02    LDA   fdctrk
 AEE5: 97 03       STA   $03
 AEE7: 86 1C       LDA   #$1C
 AEE9: B7 80 00    STA   $8000
 AEEC: 97 00       STA   $00
 AEEE: 20 FE       BRA   $AEEE
 
+* step head in
+* identical to code at $f07d
 AEF0: 86 58       LDA   #$58
 AEF2: B7 80 00    STA   $8000
 AEF5: 97 00       STA   $00
 AEF7: 20 FE       BRA   $AEF7
 
+* step head out
+* identical to code at $f086
 AEF9: 86 78       LDA   #$78
 AEFB: B7 80 00    STA   $8000
 AEFE: 97 00       STA   $00
 AF00: 20 FE       BRA   $AF00
 
+* reset FDC, force interrupt
+* identical to code at $f08f
 AF02: 86 D0       LDA   #$D0
 AF04: B7 80 00    STA   $8000
 AF07: 97 00       STA   $00
 AF09: D6 00       LDB   $00
 AF0B: C5 01       BITB  #$01
 AF0D: 26 FA       BNE   $AF09
-AF0F: F7 80 06    STB   $8006
+AF0F: F7 80 06    STB   fdcstat
 AF12: 10 8E 00 01 LDY   #$0001
 AF16: 17 00 01    LBSR  $AF1A
 AF19: 39          RTS   
 
+* delay loop
+* identical to code at $f0a7
 AF1A: 12          NOP   
 AF1B: 12          NOP   
 AF1C: 12          NOP   
@@ -5770,18 +5848,20 @@ AF1E: 31 3F       LEAY  $FFFF,Y
 AF20: 26 F8       BNE   $AF1A
 AF22: 39          RTS   
 
+* FDC interrupt handler
+* identical to code at $f0b0
 AF23: 32 6C       LEAS  $000C,S
 AF25: D6 00       LDB   $00
-AF27: F7 80 06    STB   $8006
+AF27: F7 80 06    STB   fdcstat
 AF2A: B6 80 00    LDA   $8000
 AF2D: 81 88       CMPA  #$88
 AF2F: 27 07       BEQ   $AF38
 AF31: B6 80 00    LDA   $8000
 AF34: 81 E8       CMPA  #$E8
 AF36: 26 0A       BNE   $AF42
-AF38: F6 80 06    LDB   $8006
+AF38: F6 80 06    LDB   fdcstat
 AF3B: C4 5C       ANDB  #$5C
-AF3D: F7 80 06    STB   $8006
+AF3D: F7 80 06    STB   fdcstat
 AF40: 20 20       BRA   $AF62
 
 AF42: B6 80 00    LDA   $8000
@@ -5790,15 +5870,17 @@ AF47: 27 07       BEQ   $AF50
 AF49: B6 80 00    LDA   $8000
 AF4C: 81 F8       CMPA  #$F8
 AF4E: 26 0A       BNE   $AF5A
-AF50: F6 80 06    LDB   $8006
+AF50: F6 80 06    LDB   fdcstat
 AF53: C4 5C       ANDB  #$5C
-AF55: F7 80 06    STB   $8006
+AF55: F7 80 06    STB   fdcstat
 AF58: 20 08       BRA   $AF62
 
-AF5A: F6 80 06    LDB   $8006
+AF5A: F6 80 06    LDB   fdcstat
 AF5D: C4 18       ANDB  #$18
-AF5F: F7 80 06    STB   $8006
+AF5F: F7 80 06    STB   fdcstat
 AF62: 39          RTS   
+* end of "ghost" disk routines
+
 
 AF63: FF FF FF FF FF FF FF FF FF FF FF FF FF 
 
