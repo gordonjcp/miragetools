@@ -2468,22 +2468,22 @@ resetkybd:
 94D2: BD 9F 60    JSR   $9F60
 94D5: BD 97 00    JSR   $9700
 94D8: BD 97 4E    JSR   $974E
-94DB: C6 1F       LDB   #$1F
-94DD: F7 E2 01    STB   $E201
+94DB: C6 1F       LDB   #$1F	* all LEDs off
+94DD: F7 E2 01    STB   $E201	* set IORA
 94E0: 1E 89       EXG   A,B
 94E2: 1E 89       EXG   A,B
-94E4: F6 E2 01    LDB   $E201
-94E7: C4 C0       ANDB  #$C0
-94E9: C1 40       CMPB  #$40
-94EB: 26 06       BNE   $94F3
-94ED: 86 02       LDA   #$02
-94EF: 97 93       STA   $93
-94F1: 20 0E       BRA   $9501
+94E4: F6 E2 01    LDB   $E201	* read IORA
+94E7: C4 C0       ANDB  #$C0	* mask off two of three rows?
+94E9: C1 40       CMPB  #$40	* is it row 1?
+94EB: 26 06       BNE   $94F3	* skip
+94ED: 86 02       LDA   #$02	
+94EF: 97 93       STA   $93	* store $02 into $8093?
+94F1: 20 0E       BRA   $9501	* continue
 
-94F3: C1 80       CMPB  #$80
-94F5: 27 05       BEQ   $94FC
-94F7: B7 E2 01    STA   $E201
-94FA: 20 DC       BRA   $94D8
+94F3: C1 80       CMPB  #$80	* row 2?
+94F5: 27 05       BEQ   $94FC	* yes, continue
+94F7: B7 E2 01    STA   $E201	* probably still holds $1f, write it
+94FA: 20 DC       BRA   $94D8	* loop
 
 94FC: BD 97 95    JSR   $9795
 94FF: 97 93       STA   $93
@@ -2790,9 +2790,11 @@ resetkybd:
 973F: 8D 01       BSR   $9742
 9741: 39          RTS   
 
-9742: FC 96 FE    LDD   $96FE
-9745: E7 84       STB   ,X
-9747: E7 10       STB   $FFF0,X
+* the idiom here looks like it sets a filter
+* what with the writing A and B to two things 8 bytes apart, three times
+9742: FC 96 FE    LDD   $96FE	* what's here and what does X hold?
+9745: E7 84       STB   ,X	* stick the lower byte in
+9747: E7 10       STB   $FFF0,X	
 9749: A7 84       STA   ,X
 974B: A7 18       STA   $FFF8,X
 974D: 39          RTS   
