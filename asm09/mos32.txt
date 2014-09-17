@@ -3125,14 +3125,14 @@ resetkybd:
 9996: C4 3F       ANDB  #$3F	* b &= $3f
 9998: 84 80       ANDA  #$80	* a &= $80
 999A: 97 AB       STA   $AB	* some variable
-999C: 0F A1       CLR   $A1	* some variable
+999C: 0F A1       CLR   $A1	* minimum param value
 999E: 0F A3       CLR   $A3	* some variable
 99A0: 86 01       LDA   #$01
 99A2: 97 A2       STA   $A2	* some variable
 99A4: 96 8B       LDA   $8B	* some variable
-99A6: 81 1E       CMPA  #$1E	* 30?
+99A6: 81 1E       CMPA  #$1E	* 30 local on/off
 99A8: 26 06       BNE   $99B0	* no, skip
-99AA: 8E 80 1C    LDX   #$801C	* some config variable?
+99AA: 8E 80 1C    LDX   #$801C	* local on/off in config
 99AD: 7E 9C C1    JMP   $9CC1	* thing that takes X and some variables
 
 99B0: 96 8B       LDA   $8B
@@ -3251,12 +3251,13 @@ resetkybd:
 9A9E: 1F 12       TFR   X,Y	* return with new value in Y
 9AA0: 39          RTS   
 
+* decode params?
 9AA1: 30 85       LEAX  B,X
 9AA3: 9F 9D       STX   $9D
 9AA5: 96 8B       LDA   $8B
-9AA7: 81 3C       CMPA  #$3C
+9AA7: 81 3C       CMPA  #$3C	* 60 wavesample start
 9AA9: 25 1C       BCS   $9AC7
-9AAB: 81 40       CMPA  #$40
+9AAB: 81 40       CMPA  #$40	* 64 loop fine
 9AAD: 22 18       BHI   $9AC7
 9AAF: 0D 84       TST   $84
 9AB1: 27 0D       BEQ   $9AC0
@@ -3273,7 +3274,7 @@ resetkybd:
 9AC4: 7E 9D 15    JMP   $9D15
 
 9AC7: 96 8B       LDA   $8B
-9AC9: 81 41       CMPA  #$41
+9AC9: 81 41       CMPA  #$41	* 65 loop on/off
 9ACB: 26 15       BNE   $9AE2
 9ACD: 0D 84       TST   $84
 9ACF: 27 0C       BEQ   $9ADD
@@ -3288,7 +3289,7 @@ resetkybd:
 9ADF: 7E 9C D3    JMP   $9CD3
 
 9AE2: 96 8B       LDA   $8B
-9AE4: 81 42       CMPA  #$42
+9AE4: 81 42       CMPA  #$42	* 66 wavesample rotate
 9AE6: 26 1A       BNE   $9B02
 9AE8: 8E 80 9F    LDX   #$809F
 9AEB: 0D 84       TST   $84
@@ -3304,13 +3305,13 @@ resetkybd:
 9AFF: 16 02 13    LBRA  $9D15
 
 9B02: 96 8B       LDA   $8B
-9B04: 81 46       CMPA  #$46
+9B04: 81 46       CMPA  #$46	* 70 relative filter freq
 9B06: 27 04       BEQ   $9B0C
-9B08: 81 47       CMPA  #$47
+9B08: 81 47       CMPA  #$47	* 71 max filter freq
 9B0A: 26 03       BNE   $9B0F
 9B0C: BD 9D 38    JSR   $9D38
 9B0F: 96 8B       LDA   $8B
-9B11: 81 48       CMPA  #$48
+9B11: 81 48       CMPA  #$48	* 72 top key
 9B13: 26 0E       BNE   $9B23
 9B15: 86 01       LDA   #$01
 9B17: 97 A3       STA   $A3
@@ -3327,45 +3328,45 @@ resetkybd:
 9B2C: 7E 9C C1    JMP   $9CC1
 
 9B2F: 96 8B       LDA   $8B
-9B31: 81 51       CMPA  #$51
+9B31: 81 51       CMPA  #$51	* 81 omni on/off
 9B33: 25 60       BCS   $9B95
-9B35: 81 58       CMPA  #$58
+9B35: 81 58       CMPA  #$58	* 88 seq loop
 9B37: 22 5C       BHI   $9B95
-9B39: 81 51       CMPA  #$51
+9B39: 81 51       CMPA  #$51	* 81 omni on/off
 9B3B: 26 05       BNE   $9B42
 9B3D: 8E 80 20    LDX   #$8020
 9B40: 20 50       BRA   $9B92
 
-9B42: 81 52       CMPA  #$52
+9B42: 81 52       CMPA  #$52	* 82 MIDI channel
 9B44: 26 0B       BNE   $9B51
 9B46: 86 01       LDA   #$01
 9B48: 97 A3       STA   $A3
 9B4A: D7 A0       STB   $A0
-9B4C: 8E 80 21    LDX   #$8021
+9B4C: 8E 80 21    LDX   #$8021	* MIDI channel
 9B4F: 20 41       BRA   $9B92
 
-9B51: 81 53       CMPA  #$53
+9B51: 81 53       CMPA  #$53	* 83 MIDI Through
 9B53: 26 05       BNE   $9B5A
 9B55: 8E 80 22    LDX   #$8022
 9B58: 20 38       BRA   $9B92
 
-9B5A: 81 54       CMPA  #$54
+9B5A: 81 54       CMPA  #$54	* 84 MIDI message filter
 9B5C: 26 07       BNE   $9B65
 9B5E: 8E 80 23    LDX   #$8023
 9B61: D7 A0       STB   $A0
 9B63: 20 2D       BRA   $9B92
 
-9B65: 81 55       CMPA  #$55
+9B65: 81 55       CMPA  #$55	* 85 ext clock on/off
 9B67: 26 05       BNE   $9B6E
 9B69: 8E 80 24    LDX   #$8024
 9B6C: 20 24       BRA   $9B92
 
-9B6E: 81 56       CMPA  #$56
+9B6E: 81 56       CMPA  #$56	* 86 ext clock jack on/off
 9B70: 26 05       BNE   $9B77
 9B72: 8E 80 25    LDX   #$8025
 9B75: 20 1B       BRA   $9B92
 
-9B77: 81 57       CMPA  #$57
+9B77: 81 57       CMPA  #$57	* 87 seq speed
 9B79: 26 10       BNE   $9B8B
 9B7B: BD 9D 38    JSR   $9D38
 9B7E: 86 C6       LDA   #$C6
@@ -3375,13 +3376,13 @@ resetkybd:
 9B86: 8E 80 26    LDX   #$8026
 9B89: 20 07       BRA   $9B92
 
-9B8B: 81 58       CMPA  #$58
+9B8B: 81 58       CMPA  #$58	* seq loop switch
 9B8D: 26 03       BNE   $9B92
 9B8F: 8E 80 27    LDX   #$8027
 9B92: 7E 9C C1    JMP   $9CC1
 
 9B95: 96 8B       LDA   $8B
-9B97: 81 18       CMPA  #$18
+9B97: 81 18       CMPA  #$18 	* 24 keyboard balance
 9B99: 26 0D       BNE   $9BA8
 9B9B: 8E 80 15    LDX   #$8015
 9B9E: BD 9D 38    JSR   $9D38
@@ -3389,12 +3390,12 @@ resetkybd:
 9BA3: 97 A0       STA   $A0
 9BA5: 7E 9C C1    JMP   $9CC1
 
-9BA8: 81 19       CMPA  #$19
+9BA8: 81 19       CMPA  #$19	* 25 link upper/lower
 9BAA: 26 06       BNE   $9BB2
 9BAC: 8E 80 16    LDX   #$8016
 9BAF: 7E 9C C1    JMP   $9CC1
 
-9BB2: 81 1A       CMPA  #$1A
+9BB2: 81 1A       CMPA  #$1A	* 26 wavesample select
 9BB4: 26 14       BNE   $9BCA
 9BB6: 0F 9F       CLR   $9F
 9BB8: 0D A4       TST   $A4
@@ -3511,10 +3512,10 @@ resetkybd:
 9C93: 7F E2 06    CLR   $E206
 9C96: 20 29       BRA   $9CC1
 
-9C98: 81 61       CMPA  #$61	* 97
+9C98: 81 61       CMPA  #$61	* 97 Software Version
 9C9A: 26 07       BNE   $9CA3
 9C9C: 0F 84       CLR   $84
-9C9E: 8E 80 2B    LDX   #$802B
+9C9E: 8E 80 2B    LDX   #$802B	* points to $32 in RAM
 9CA1: 20 1E       BRA   $9CC1
 
 9CA3: 81 62       CMPA  #$62	* 98 show last FDC error
@@ -3534,64 +3535,69 @@ resetkybd:
 9CBF: 20 62       BRA   $9D23
 
 * unknown
+* called to display X
 9CC1: 0D AB       TST   $AB	* some variable
 9CC3: 27 1A       BEQ   $9CDF	* 0? jump
-9CC5: 0D 84       TST   $84	* some variable
-9CC7: 27 0A       BEQ   $9CD3	* 0? jump
-9CC9: 2B 06       BMI   $9CD1	* bit 8 set, jump elsewhere
+9CC5: 0D 84       TST   $84	* Editable?
+9CC7: 27 0A       BEQ   $9CD3	* not editable
+9CC9: 2B 06       BMI   $9CD1	* bit 7 set, jump elsewhere
 9CCB: 86 01       LDA   #$01
 9CCD: A7 84       STA   ,X	* (x)=1
 9CCF: 20 02       BRA   $9CD3	* skip
 
 9CD1: 6F 84       CLR   ,X	* (x)=0
-9CD3: CC 12 11    LDD   #$1211
+9CD3: CC 12 11    LDD   #$1211	* value to display?
 9CD6: 6D 84       TST   ,X
 9CD8: 26 02       BNE   $9CDC
 9CDA: C6 0F       LDB   #$0F
 9CDC: 7E 9D 23    JMP   $9D23	* jump to thing that calculates LED patterns
 
-9CDF: 0D 84       TST   $84
-9CE1: 27 18       BEQ   $9CFB
-9CE3: 2B 0C       BMI   $9CF1
-9CE5: E6 84       LDB   ,X
-9CE7: D1 A0       CMPB  $A0
-9CE9: 24 10       BCC   $9CFB
-9CEB: DB A2       ADDB  $A2
-9CED: E7 84       STB   ,X
-9CEF: 20 0A       BRA   $9CFB
+9CDF: 0D 84       TST   $84	* Editable?
+9CE1: 27 18       BEQ   $9CFB	* no
+9CE3: 2B 0C       BMI   $9CF1	* bit 7?
+9CE5: E6 84       LDB   ,X	* get value we specify
+9CE7: D1 A0       CMPB  $A0	* higher than max value?
+9CE9: 24 10       BCC   $9CFB	* yes, jump
+9CEB: DB A2       ADDB  $A2	* add some variable
+9CED: E7 84       STB   ,X	* save it back
+9CEF: 20 0A       BRA   $9CFB	* continue
 
-9CF1: E6 84       LDB   ,X
-9CF3: D1 A1       CMPB  $A1
-9CF5: 23 04       BLS   $9CFB
-9CF7: D0 A2       SUBB  $A2
-9CF9: E7 84       STB   ,X
-9CFB: E6 84       LDB   ,X
-9CFD: 96 A3       LDA   $A3
-9CFF: 27 0E       BEQ   $9D0F
-9D01: 2B 03       BMI   $9D06
+9CF1: E6 84       LDB   ,X	* bit 7 was set
+9CF3: D1 A1       CMPB  $A1	* min value?
+9CF5: 23 04       BLS   $9CFB	* lower
+9CF7: D0 A2       SUBB  $A2	* subtract some variable
+9CF9: E7 84       STB   ,X	* save it
+9CFB: E6 84       LDB   ,X	* get it back
+9CFD: 96 A3       LDA   $A3	* some variable
+9CFF: 27 0E       BEQ   $9D0F	* zero? skip
+9D01: 2B 03       BMI   $9D06	* 7 set, skip
 9D03: 5C          INCB  
-9D04: 20 09       BRA   $9D0F
+9D04: 20 09       BRA   $9D0F	* jump
 
-9D06: 81 81       CMPA  #$81
-9D08: 26 03       BNE   $9D0D
-9D0A: 54          LSRB  
-9D0B: 20 02       BRA   $9D0F
+9D06: 81 81       CMPA  #$81	* some variable
+9D08: 26 03       BNE   $9D0D	* 
+9D0A: 54          LSRB  	* *2?
+9D0B: 20 02       BRA   $9D0F	* jump
 
+* somewhere around here we can show hex values
 9D0D: 54          LSRB  
-9D0E: 54          LSRB  
-9D0F: 96 AC       LDA   $AC
-9D11: 84 40       ANDA  #$40
-9D13: 27 0C       BEQ   $9D21
-9D15: 1F 98       TFR   B,A
-9D17: 44          LSRA  
+9D0E: 54          LSRB 		* *4? 
+
+* show digit
+
+9D0F: 96 AC       LDA   $AC	* some variable
+9D11: 84 40       ANDA  #$40	* if bit 6 is clear... 
+9D13: 27 0C       BEQ   $9D21	* jump ahead and show it as decimal
+9D15: 1F 98       TFR   B,A	* a=b
+9D17: 44          LSRA  	
 9D18: 44          LSRA  
 9D19: 44          LSRA  
-9D1A: 44          LSRA  
-9D1B: 84 0F       ANDA  #$0F
-9D1D: C4 0F       ANDB  #$0F
-9D1F: 20 02       BRA   $9D23
+9D1A: 44          LSRA  	* a= upper nybble of b
+9D1B: 84 0F       ANDA  #$0F	* mask upper bits
+9D1D: C4 0F       ANDB  #$0F	* mask upper bits
+9D1F: 20 02       BRA   $9D23	* jump to LED patterns
 
-9D21: 8D 0A       BSR   $9D2D
+9D21: 8D 0A       BSR   $9D2D	* call /10
 9D23: CE FB 4D    LDU   #$FB4D	* LED patterns
 9D26: A6 C6       LDA   A,U
 9D28: E6 C5       LDB   B,U	* D now contains bit patters

@@ -1,26 +1,34 @@
 $8012 - master tune
 $8013 - pitch bend range
 $8014 - velocity sensitivity
-$8015 - 
-$8016 - 
+$8015 - keyboard balance
+$8016 - link upper/lower
 $8017 - sample time adjust
 $8018 - sample filter freq
 $8019 - mike/line setting
 $801a - sampling threshold
 $801b - user multisampling
+$801c - local on/off
 $801d - lfo mod source
 $801e - mix mod source
 $801f - aftertouch
-$8021 - param 82, MIDI channel?
-$8022 - param 83, MIDI through? if non-zero, prevents $A138 from TXing to MIDI
+$8021 - param 82, MIDI channel
+$8022 - param 83, MIDI through
 $8023 - param 84, MIDI message filter
-$8026
+$8024 - param 85, seq clock
+$8025 - param 86, ext clock jack
+$8026 - param 87, seq speed
+$8027 - param 88, seq loop on/off
+$8028
+$8029
 $8031
 $8036
+$8081
 $8082
 $8083
+$8084 - value editable? cleared for 97, 98, 99
 $808a
-$808b
+$808b - parameter being examined?
 $809b - something to do with bank selecting
 $809b - something to do with bank selecting
 $80a0 - max value for param?
@@ -29,7 +37,7 @@ $80a2
 $80a3
 $80a4 - might be upper/lower bank select for editing?
 $80ab
-$80ac
+$80ac - variable to be displayed?
 $80ad
 $80af
 $80b3 - LED bit patterns?
