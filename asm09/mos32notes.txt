@@ -1,11 +1,40 @@
-$8022 - if non-zero, prevents $A138 from TXing to MIDI
+$8012 - master tune
+$8013 - pitch bend range
+$8014 - velocity sensitivity
+$8015 - 
+$8016 - 
+$8017 - sample time adjust
+$8018 - sample filter freq
+$8019 - mike/line setting
+$801a - sampling threshold
+$801b - user multisampling
+$801d - lfo mod source
+$801e - mix mod source
+$801f - aftertouch
+$8021 - param 82, MIDI channel?
+$8022 - param 83, MIDI through? if non-zero, prevents $A138 from TXing to MIDI
+$8023 - param 84, MIDI message filter
 $8026
+$8031
 $8036
+$8082
 $8083
+$808a
+$808b
 $809b - something to do with bank selecting
 $809b - something to do with bank selecting
+$80a0 - max value for param?
+$80a1 - min value for param?
+$80a2 
+$80a3
 $80a4 - might be upper/lower bank select for editing?
-$80b3 - 
+$80ab
+$80ac
+$80ad
+$80af
+$80b3 - LED bit patterns?
+$80ba - 
+$80bb - MIDI message to be sent?
 $80bc - ring buffer store pointer
 $80be - ring buffer read pointer?
 $80cf - sequence or sample to load?  can be 1, 2 or 3 for loading samples
@@ -73,14 +102,14 @@ $9f6f - (4) reset a bunch of stuff including some variables
 $9876 - (4) gets byte from sample RAM, unknown variables
 $875e - (4) called during startup?
 $8722 - (4) unknown, swaps some values pointed at by U and X around
-$ADBC - (3) unknown, involves ringbuffer
-$ADB6 - (3) sets A to 3 and calls $ADBC
-$ADB2 - (3) sets A to 1 and calls $ADBC
-$ADAF - (3) sets A to 0 and calls $ADBC
-$AB60 - (3) unknown, clears some vars and sets others then jumps off to ADBC and friends
-$AA2F - (3) get directory bytes
-$A53A - (3) save sample?
-$A4D4 - (3) load sample?
+$adbc - (3) unknown, involves ringbuffer
+$adb6 - (3) sets A to 3 and calls $ADBC
+$adb2 - (3) sets A to 1 and calls $ADBC
+$adaf - (3) sets A to 0 and calls $ADBC
+$ab60 - (3) unknown, clears some vars and sets others then jumps off to ADBC and friends
+$aa2f - (3) get directory bytes
+$a53a - (3) save sample?
+$a4d4 - (3) load sample?
 $a116 - (3) put MIDI clock pulse in buffer?
 $a0da - (3) unknown, something to do with MIDI
 $9f60 - (3) seems to be called before sampling?
@@ -90,4 +119,26 @@ $9858 - (3) something to do with selecting banks
 $96f4 - (3) unknown, points $80B3 to a strange offset in param table
 $8f11 - (3) unknown, handles editing loop values
 $adba - (2) ors A with $80, continues with ADBC
-$aceb - (2) unknown, 
+$aceb - (2) unknown, lots of weird compares and writes 
+$aca3 - (2) unknown, lots of weird compares and jumps
+$ab4e - (2) sets $80e7 to 4
+$ab2c - (2) gets pointer from bottom of seq, gets value, saves
+$aa0b - (2) load sequence directory?
+$a97c - (2) called after saving samples
+$a8b9 - (2) unknown, something to do with loading
+$a847 - (2) read or write sequence
+$a7ae - (2) read or write sectors following lookup table
+$a78b - (2) save parameter block
+$a736 - (2) load parameter block and copy into place
+$a6e8 - (2) load/save upper sounds
+$a69c - (2) load/save lower sounds
+$a5fc - (2) load/save sequence?
+$a5a1 - (2) load/save sequence?
+$a0f2 - (2) send MIDI program change?
+$a0e2 - (2) send MIDI control change?
+$a0cf - (2) send MIDI pitchbend message
+$a0c5 - (2) send MIDI note off
+$9f9a - (2) sets up some variables
+$9d4b - (2) unknown
+$9cc1 - (2) unknown, takes X and some variables
+$998b - (2) unknown
