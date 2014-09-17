@@ -4014,12 +4014,12 @@ A110: 10 93 BE    CMPD  $BE
 A113: 26 F9       BNE   $A10E
 A115: 39          RTS   
 
-A116: 34 01       PSHS  CC
-A118: 1A 50       ORCC  #$50
-A11A: C6 F8       LDB   #$F8
-A11C: D7 BB       STB   $BB
-A11E: 8D 18       BSR   $A138
-A120: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
+A116: 34 01       PSHS  CC	* save status register
+A118: 1A 50       ORCC  #$50	* mask off IRQ and FIRQ
+A11A: C6 F8       LDB   #$F8	
+A11C: D7 BB       STB   $BB	* $80bb, what's here
+A11E: 8D 18       BSR   $A138	
+A120: 35 81       PULS  CC,PC	* restore status and return
 
 A122: DA 21       ORB   $21
 A124: D1 BB       CMPB  $BB
@@ -4033,18 +4033,18 @@ A132: 8D 04       BSR   $A138
 A134: DC C2       LDD   $C2
 A136: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-A138: 96 22       LDA   $22
+A138: 96 22       LDA   $22	* $8022, what's here?
 A13A: 27 01       BEQ   $A13D
 A13C: 39          RTS   
 
-A13D: 9E BC       LDX   $BC
-A13F: E7 80       STB   ,X+
-A141: 8C 82 35    CMPX  #$8235
-A144: 25 03       BCS   $A149
-A146: 8E 82 25    LDX   #$8225
-A149: 9F BC       STX   $BC
-A14B: 86 B5       LDA   #$B5
-A14D: B7 E1 00    STA   $E100
+A13D: 9E BC       LDX   $BC	* serial buffer routine?
+A13F: E7 80       STB   ,X+	
+A141: 8C 82 35    CMPX  #$8235	* end of buffer?
+A144: 25 03       BCS   $A149	* no, continue
+A146: 8E 82 25    LDX   #$8225	* 16 bytes between these values, significant?
+A149: 9F BC       STX   $BC	* reset pointer to buffer?
+A14B: 86 B5       LDA   #$B5	* not sure what we're sending to the
+A14D: B7 E1 00    STA   $E100	* ACIA control register
 A150: 39          RTS   
 
 firqentry:

@@ -1,72 +1,3 @@
-**************************************************
-*                                                *
-*               forth for the 6809               *
-*                                                *
-*    this version of forth was written to be     *
-*    used as a rom-able bare bones operating     *
-*    system for a 6809 based micro-controller.   *
-*    the high level defintions are based on      *
-*    thomas newman's 8086/88 implementation of   *
-*    the forth interest group's model in order   *
-*    to insure the portability of existing       *
-*    code. all of the primitives were written    *
-*    during july 1990 by:                        *
-*                                                *
-*                    mike pashea                 *
-*          southern illinois university          *
-*          dept. of engineering box 1801         *
-*          edwardsville, il. 62026-1801          *
-*                  (618)-692-2391                *
-*                                                *
-*    this forth is direct threaded for speed,    *
-*    however none of the assembly routines       *
-*    have been optimized yet. it appears that    *
-*    all of the bugs have been worked out        *
-*    though.                                     *
-*                                                *
-*    the forth interest group's publications     *
-*    are public domain and may be obtained       *
-*    from:                                       *
-*                                                *
-*            the forth interest group            *
-*            p.o. box 1105                       *
-*            san carlos, ca. 94070               *
-*                                                *
-*    the goal of this project has been to get    *
-*    a small system up and running as quickly    *
-*    as possible. the following source code      *
-*    will assemble using the motorola freeware   *
-*    6809 assembler, with the number of          *
-*    primitives being kept at a minimum.         *
-*    hopefully this will encourage translation   *
-*    to similar motorola processors, such as     *
-*    the 68hc11. i've also commented the         *
-*    primatives as much as possible to aid in    *
-*    the translation.                            *
-*                                                *
-*    the target system for which this forth      *
-*    was written has the following memory map:   *
-*                                                *
-*    0000-0400  a 2k eeprom  (for saving code)   *
-*    9800-9801  6850 acia    (serial port)       *
-*    c000-dfff  an 8k ram    (forth dictionary,  *
-*                             tib and stacks)    *
-*    e000-ffff  an 8k rom    (romable forth)     *
-*                                                *
-*    the current target system is being used     *
-*    to develop other micro-controller systems   *
-*    with eeprom. later hardware versions will   *
-*    contain some parallel ports for doing data  *
-*    aquisition and control.                     *
-*                                                *
-*    for the moment, there is no editor. in the  *
-*    current system additional definitions are   *
-*    written on an ibm pc and saved as an ascii  *
-*    file. the definitions are then uploaded     *
-*    through the serial port using kermit. i     *
-*    have written an assembler however, and      *
-*    i'll give it out as soon as the bugs are    *
-*    fixed.                                      *
 *                                                *
 *    forth register assignments                  *
 *                                                *
@@ -114,34 +45,52 @@ ff      equ   $00c0          ; a form feed
 *               memory allocation                *
 *                                                *
 **************************************************
-rams    equ   $c000          ; start of ram
-em      equ   $e000          ; end of ram + 1
+osram	equ   $8000          ; start of ram
+em      equ   $c000          ; end of ram + 1
 nscr    equ   $0000          ; number of 1024 byte screens
 kbbuf   equ   $0080          ; data bytes per disk buffer
 us      equ   $0040          ; user variable space
 rts     equ   $00a0          ; return stack and terminal buffer
 co      equ   $0084          ; data bytes per buffer plus 4
 nbuf    equ   $0000          ; number of buffers
-buf1    equ   $e000          ; first disk buffer
+buf1    equ   $c000          ; first disk buffer
 initr0  equ   buf1-us        ; base of return stack
 inits0  equ   initr0-rts     ; base of parameter stack
 
-aciac   equ   $9800          ; acia control
-aciad   equ   $9801          ; acia data
+aciac   equ   $e100          ; acia control
+aciad   equ   $e101          ; acia data
 
 **************************************************
 *                                                *
 *             start of romable forth             *
 *                                                *
 **************************************************
-        org   $e000
-orig    lda   #$03           ; configure the acia
+        org   $8000
+
+fdccmd	fcb 0			store FDC command byte
+fdcrtry	fcb $09			FDC retries
+fdctrak	fcb $0b			FDC track
+fdcsect	fcb $05			FDC sector
+fdcldad	fdb $0000		used for OS loader address?
+fdcstat	fcb $00			fdc status
+fdcerr	fcb $00			error message for ROM routine	
+
+* jump table, IRQs point to this
+irqj	jmp irqhandler
+firqj	jmp firqhandler
+osj	jmp start
+
+irqhandler
+firqhandler
+	rti
+
+start   lda   #$03           ; configure the acia
         sta   aciac
         lda   #$16
         sta   aciac
         ldy   #entry
-        lds   #$dfa0         ; initial stack pointers
-        ldu   #$df20
+        lds   #buf1-1        ; initial stack pointers
+        ldu   #buf1-129
         ldx   ,y++           ; set up is done, now do forth
         jmp   [,x++]
 entry   fdb   cold
@@ -170,7 +119,7 @@ rpp     fdb   initr0         ; initial return stack pointer
 **************************************************
 dp0     fcb   $83
         fcc   'li'
-        fcb   $d4            ; 't'+$80
+        fcb   $f4            ; 't'+$80
         fdb   $0000          ; lfa of zero indicates start of dictionary
 lit     fdb   *+2
         ldd   ,y++           ; get literal
@@ -180,7 +129,7 @@ lit     fdb   *+2
 
         fcb   $87
         fcc   'execut'
-        fcb   $c5
+        fcb   $e5
         fdb   lit-6
 exec    fdb   *+2
         pulu  x              ; get cfa from parameter stack
@@ -188,7 +137,7 @@ exec    fdb   *+2
 
         fcb   $86
         fcc   'branc'
-        fcb   $c8
+        fcb   $e8
         fdb   exec-10
 bran    fdb   *+2
 bran1   ldd   ,y             ; get offset value
@@ -198,7 +147,7 @@ bran1   ldd   ,y             ; get offset value
 
         fcb   $87
         fcc   '0branc'
-        fcb   $c8
+        fcb   $e8
         fdb   bran-9
 zbran   fdb   *+2
         pulu  d
@@ -252,7 +201,7 @@ ido     fdb   *+2
 
         fcb   $85
         fcc   'digi'
-        fcb   $d4
+        fcb   $f4
         fdb   ido-4
 digit   fdb   *+2
         clra                 ; clear high byte
@@ -321,7 +270,7 @@ pfin7   ldx   0,x            ; get lfa
 
         fcb   $87
         fcc   'enclos'
-        fcb   $c5
+        fcb   $e5
         fdb   pfind-9
 encl    fdb   *+2
         pshs  y              ; save the ip
@@ -356,7 +305,7 @@ encl5   pshu  y,x            ; do the push
 
         fcb   $84
         fcc   'emi'
-        fcb   $d4
+        fcb   $f4
         fdb   encl-10
 emit    fdb   docol
         fdb   pemit
@@ -367,7 +316,7 @@ emit    fdb   docol
 
         fcb   $83
         fcc   'ke'
-        fcb   $d9
+        fcb   $f9
         fdb   emit-7
 key     fdb   docol
         fdb   pkey
@@ -375,7 +324,7 @@ key     fdb   docol
 
         fcb   $89
         fcc   '?termina'
-        fcb   $cc
+        fcb   $ec
         fdb   key-6
 qterm   fdb   docol
         fdb   pqter
@@ -383,7 +332,7 @@ qterm   fdb   docol
 
         fcb   $82
         fcc   'c'
-        fcb   $d2
+        fcb   $f2
         fdb   qterm-12
 cr      fdb   docol
         fdb   lit
@@ -396,7 +345,7 @@ cr      fdb   docol
 
         fcb   $85
         fcc   'cmov'
-        fcb   $c5
+        fcb   $e5
         fdb   cr-5
 cmove   fdb   *+2
         pshs  y              ; save the instruction pointer
@@ -981,7 +930,7 @@ bscr    fdb   docon
         fdb   bscr-8
 porig   fdb   docol
         fdb   lit
-        fdb   orig
+        fdb   start
         fdb   plus
         fdb   semis
 
@@ -2309,31 +2258,32 @@ warm    fdb   docol
         fdb   warm-7
 cold    fdb   docol
         fdb   lit
-        fdb   utable
+        fdb   utable	; user data table
         fdb   lit
-        fdb   up
-        fdb   at
+        fdb   up	; initial user area pointer
+        fdb   at	; fetch (contains value of initr0 to begin with)
         fdb   lit
         fdb   6
-        fdb   plus
-        fdb   lit
-        fdb   16
-        fdb   cmove
-        fdb   spsto
-        fdb   lit
-        fdb   forths
-        fdb   lit
-        fdb   rams
-        fdb   lit
-        fdb   taske-forths
-        fdb   cmove
-        fdb   lit
-        fdb   top
-        fdb   at
-        fdb   lit
-        fdb   rforth+6
-        fdb   store
-        fdb   cr
+        fdb   plus	; add 6
+        fdb   lit	
+        fdb   16	; 16 bytes
+        fdb   cmove	; copy them
+        fdb   spsto	; set user stack pointer
+*        fdb   lit
+*        fdb   forths	; start of the forth vocabulary
+*        fdb   lit
+*        fdb   osram	; start of RAM (this is where stuff goes wrong)
+*        fdb   lit
+*        fdb   taske-forths	; very end of task
+*        fdb   cmove	; copies it to start of RAM, causing mayhem
+        fdb   lit	
+        fdb   top	; top word in forth vocab
+        fdb   at	; fetch
+        fdb   lit	
+*        fdb   rforth+6	; address of task in RAM?
+	fdb	forth+6	; forth as we assemble it
+        fdb   store	; save it in top
+        fdb   cr	; start printing the banner message
         fdb   dotcpu
         fdb   pdotq
         fcb   14
@@ -2608,12 +2558,22 @@ pqter2  ldx   ,y++           ; next
         jmp   [,x++]
 
 pemit   fdb   *+2
-        pulu  d              ; character in b register
-        andb  #$7f           ; mask off the highest bit
+*       	*; pulu  d              ; character in b register
+*        *; andb  #$7f           ; mask off the highest bit
 pemit1  lda   aciac          ; get acia status
         asra                 ; check if ready to transmit
         asra
         bcc   pemit1         ; loop if not ready
+        ldb   #$f1		; midi quarter frame
+        stb   aciad
+        
+        pulu  d
+        andb  #$7f		; get char, mask off top bit
+pemit2	lda	aciac
+	asra
+	asra
+	bcc	pemit2
+        
         stb   aciad          ; transmit character
         ldx   ,y++           ; next
         jmp   [,x++]
@@ -3274,6 +3234,6 @@ task    fdb   docol          ; last word in vocabulary
         fdb   semis
 taske   equ   *              ; the end of the romable dictionary
 
-rforth  equ   rams+forth-forths        ; location of forth in ram
-rtask   equ   rams+task-forths         ; location of task in ram
-initdp  equ   rams+taske-forths        ; initial dp in ram
+rforth  equ   osram+forth-forths        ; location of forth in ram
+rtask   equ   osram+task-forths         ; location of task in ram
+initdp  equ   osram+taske-forths        ; initial dp in ram
