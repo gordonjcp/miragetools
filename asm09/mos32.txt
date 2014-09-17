@@ -688,19 +688,21 @@ osvec:
 86F2: BD 87 38    JSR   $8738
 86F5: 39          RTS   
 
-86F6: 34 40       PSHS  U
-86F8: 33 42       LEAU  $0002,U
-86FA: 34 40       PSHS  U
-86FC: EE 02       LDU   $0002,X
-86FE: 27 10       BEQ   $8710
-8700: 10 AE 84    LDY   ,X
-8703: 10 AF C4    STY   ,U
-8706: 26 04       BNE   $870C
-8708: EF F4       STU   [,S]
-870A: 20 02       BRA   $870E
+* unknown
+86F6: 34 40       PSHS  U	* save U
+86F8: 33 42       LEAU  $0002,U	* add 2
+86FA: 34 40       PSHS  U	* save U
+86FC: EE 02       LDU   $0002,X	* load u with X+2
+86FE: 27 10       BEQ   $8710	* jump
+8700: 10 AE 84    LDY   ,X	* get value at X in Y
+8703: 10 AF C4    STY   ,U	* save Y in address at U
+8706: 26 04       BNE   $870C	* skip if zero
+8708: EF F4       STU   [,S]	* save U in address pointed to address at S
 
-870C: EF 22       STU   $0002,Y
-870E: 20 0F       BRA   $871F
+870A: 20 02       BRA   $870E	* skip
+
+870C: EF 22       STU   $0002,Y	* store U at Y+2
+870E: 20 0F       BRA   $871F	* finish
 
 8710: 10 AE 84    LDY   ,X
 8713: 10 AF F8 02 STY   [$02,S]
@@ -709,38 +711,40 @@ osvec:
 871B: 20 02       BRA   $871F
 
 871D: EF F4       STU   [,S]
-871F: 32 64       LEAS  $0004,S
+871F: 32 64       LEAS  $0004,S	* unwind stack
 8721: 39          RTS   
 
-8722: 10 AE C4    LDY   ,U
-8725: 26 04       BNE   $872B
-8727: AF 5E       STX   $FFFE,U
-8729: 20 02       BRA   $872D
+* unknown
+8722: 10 AE C4    LDY   ,U	* Y = (U)
+8725: 26 04       BNE   $872B	* skip if not 0
+8727: AF 5E       STX   $FFFE,U	* (U-2)=X
+8729: 20 02       BRA   $872D	* skip
 
-872B: AF A4       STX   ,Y
-872D: AF C4       STX   ,U
-872F: 10 AF 02    STY   $0002,X
-8732: CE 00 00    LDU   #$0000
+872B: AF A4       STX   ,Y	* (Y)=X
+872D: AF C4       STX   ,U	* (U)=X (aren't these the same?)
+872F: 10 AF 02    STY   $0002,X	* (X+2) = Y
+8732: CE 00 00    LDU   #$0000	* (X)=0
 8735: EF 84       STU   ,X
 8737: 39          RTS   
 
-8738: 1A 50       ORCC  #$50
-873A: 34 02       PSHS  A
-873C: B6 82 07    LDA   $8207
-873F: 26 19       BNE   $875A
-8741: DE 57       LDU   $57
-8743: 10 9F 57    STY   $57
-8746: EF A4       STU   ,Y
-8748: 96 5D       LDA   $5D
+* not sure, called from 9 places
+8738: 1A 50       ORCC  #$50	* disable interrupts
+873A: 34 02       PSHS  A	* save A
+873C: B6 82 07    LDA   $8207	* some variable
+873F: 26 19       BNE   $875A	* not zero? finish
+8741: DE 57       LDU   $57	* some variable
+8743: 10 9F 57    STY   $57	* set it to what's in Y
+8746: EF A4       STU   ,Y	* save U to address in Y
+8748: 96 5D       LDA   $5D	* some variable
 874A: 4C          INCA  
 874B: 97 5D       STA   $5D
-874D: 81 04       CMPA  #$04
-874F: 23 09       BLS   $875A
-8751: 96 64       LDA   $64
-8753: 27 05       BEQ   $875A
-8755: 0F 64       CLR   $64
-8757: BD 89 76    JSR   $8976
-875A: 1C AF       ANDCC #$AF
+874D: 81 04       CMPA  #$04	* is it 4?
+874F: 23 09       BLS   $875A	* <= 4, finish
+8751: 96 64       LDA   $64	* some variable
+8753: 27 05       BEQ   $875A	* zero? finish
+8755: 0F 64       CLR   $64	* zero it
+8757: BD 89 76    JSR   $8976	* call
+875A: 1C AF       ANDCC #$AF	* finish, enable ints
 875C: 35 82       PULS  A,PC ;(PUL? PC=RTS)
 
 startup875e:
@@ -813,7 +817,7 @@ startup875e2:
 87DB: 20 F6       BRA   $87D3
 
 ; called from FIRQ ISR
-87DD: CE 86 7B    LDU   #$867B
+87DD: CE 86 7B    LDU   #$867B	* point at a function
 87E0: 20 15       BRA   $87F7
 
 ; called from lots of places including FIRQ ISR
@@ -829,25 +833,25 @@ startup875e2:
 87F4: A6 88 19    LDA   $19,X
 
 ; called from further back
-87F7: 34 01       PSHS  CC
+87F7: 34 01       PSHS  CC	* save state
 87F9: 1A 50       ORCC  #$50	; mask FIRQ, IRQ
-87FB: BD 88 1F    JSR   $881F
-87FE: 9E 5B       LDX   $5B
-8800: 27 05       BEQ   $8807
-8802: 10 AF 84    STY   ,X
-8805: 20 03       BRA   $880A
+87FB: BD 88 1F    JSR   $881F	* call
+87FE: 9E 5B       LDX   $5B	* some variable
+8800: 27 05       BEQ   $8807	* skip
+8802: 10 AF 84    STY   ,X	* save Y into value at X
+8805: 20 03       BRA   $880A	* skip
 
-8807: 10 9F 59    STY   $59
-880A: 10 9F 5B    STY   $5B
+8807: 10 9F 59    STY   $59	* save Y into some variable
+880A: 10 9F 5B    STY   $5B	* save Y into some variable
 880D: CC 00 00    LDD   #$0000
-8810: ED A4       STD   ,Y
-8812: 96 38       LDA   $38
-8814: 27 02       BEQ   $8818
+8810: ED A4       STD   ,Y	* clear whatever was at Y
+8812: 96 38       LDA   $38	* some variable
+8814: 27 02       BEQ   $8818	* return if not zero
 8816: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-8818: 0A 38       DEC   $38
-881A: 1C AF       ANDCC #$AF
-881C: 7E 82 90    JMP   $8290
+8818: 0A 38       DEC   $38	* some variable
+881A: 1C AF       ANDCC #$AF	* enable interrupts
+881C: 7E 82 90    JMP   $8290	* jump to some routine
 
 881F: 10 9E 57    LDY   $57
 8822: 26 10       BNE   $8834
@@ -880,6 +884,7 @@ startup875e2:
 885A: A7 A8 24    STA   $24,Y	$ECA3 initially
 885D: 39          RTS   
 
+* task list?
 885E: 9E 5E       LDX   $5E
 8860: 10 EF 81    STS   ,X++
 8863: 8C B2 C6    CMPX  #$B2C6
@@ -1589,18 +1594,21 @@ resetkybd:
 8E02: EC C6       LDD   A,U
 8E04: 39          RTS   
 
+* unknown
+* Y might have address of parameter block?
+* in which case X contains fine tune and amplitude, makes little sense
 8E05: AE 2A       LDX   $000A,Y
-8E07: CE F7 FD    LDU   #$F7FD
-8E0A: CC 8A C7    LDD   #$8AC7
-8E0D: ED A8 1C    STD   $1C,Y
-8E10: CC 8B 49    LDD   #$8B49
-8E13: ED A8 2B    STD   $2B,Y
-8E16: E6 29       LDB   $0009,Y
+8E07: CE F7 FD    LDU   #$F7FD	* points to top of table in ROM
+8E0A: CC 8A C7    LDD   #$8AC7	* points to some routine
+8E0D: ED A8 1C    STD   $1C,Y	* store
+8E10: CC 8B 49    LDD   #$8B49	* points to some routine
+8E13: ED A8 2B    STD   $2B,Y	* store
+8E16: E6 29       LDB   $0009,Y	
 8E18: A6 88 15    LDA   $15,X
 8E1B: 3D          MUL   
 8E1C: 40          NEGA  
 8E1D: AB 88 10    ADDA  $10,X
-8E20: 8D D4       BSR   $8DF6
+8E20: 8D D4       BSR   $8DF6	* call
 8E22: ED A8 24    STD   $24,Y
 8E25: E6 29       LDB   $0009,Y
 8E27: A6 88 1F    LDA   $1F,X
@@ -1649,16 +1657,15 @@ resetkybd:
 8E90: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 8EA0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 
 
-8EAF: B3 
+8EAF: B3 1E B3 36 B3 4E B3 66 B3 7E B3 96 B3 AE B3 C6
+8EBF: B5 8F B5 A7 B5 BF B5 D7 B5 EF B6 07 B6 1F B6 37 
 
-8EB0: 1E B3 36 B3 4E B3 66 B3 7E B3 96 B3 AE B3 C6 B5 
-8EC0: 8F B5 A7 B5 BF B5 D7 B5 EF B6 07 B6 1F B6 37 
-
-8ECF: 10 9E A7    LDY   $A7
-8ED2: 8E 8E AF    LDX   #$8EAF
-8ED5: CE 8E 71    LDU   #$8E71
+* unknown
+8ECF: 10 9E A7    LDY   $A7	* some variable
+8ED2: 8E 8E AF    LDX   #$8EAF	* unknown
+8ED5: CE 8E 71    LDU   #$8E71	* unknown
 8ED8: 4F          CLRA  
-8ED9: 8D 11       BSR   $8EEC
+8ED9: 8D 11       BSR   $8EEC	* call
 8EDB: 34 02       PSHS  A
 8EDD: 10 9E A5    LDY   $A5
 8EE0: 8E 8E BF    LDX   #$8EBF
@@ -1689,122 +1696,129 @@ resetkybd:
 8F0E: 23 E1       BLS   $8EF1
 8F10: 39          RTS   
 
-8F11: 34 26       PSHS  Y,B,A
-8F13: 4F          CLRA  
-8F14: 10 8C B5 8F CMPY  #$B58F
-8F18: 25 02       BCS   $8F1C
+* unknown, something to do with loop values
+* a contains value?
+* b might be parameter to edit?
+* looks up something
+* 8FF9: 00 01 03 07 0F 1F 3F 
+8F11: 34 26       PSHS  Y,B,A	* save regs
+8F13: 4F          CLRA
+8F14: 10 8C B5 8F CMPY  #$B58F	* Y points to upper params?
+8F18: 25 02       BCS   $8F1C	* lower, jump
 8F1A: 86 40       LDA   #$40
-8F1C: 97 7E       STA   $7E
-8F1E: BD 98 EB    JSR   $98EB
-8F21: 35 26       PULS  A,B,Y
-8F23: 8E 8F F9    LDX   #$8FF9
+8F1C: 97 7E       STA   $7E	* some variable
+8F1E: BD 98 EB    JSR   $98EB	* call
+8F21: 35 26       PULS  A,B,Y	* restore regs
+8F23: 8E 8F F9    LDX   #$8FF9	* points to a table
 8F26: EE A4       LDU   ,Y
-8F28: C1 08       CMPB  #$08
-8F2A: 26 02       BNE   $8F2E
-8F2C: A7 A5       STA   B,Y
-8F2E: C1 0F       CMPB  #$0F
-8F30: 26 09       BNE   $8F3B
-8F32: A1 A8 10    CMPA  $10,Y
-8F35: 22 21       BHI   $8F58
-8F37: A7 A5       STA   B,Y
-8F39: 20 0A       BRA   $8F45
+8F28: C1 08       CMPB  #$08	* loop switch?
+8F2A: 26 02       BNE   $8F2E	* no, skip
+8F2C: A7 A5       STA   B,Y	* if (b=8) (Y+b)=a
+8F2E: C1 0F       CMPB  #$0F	* wavesample start?
+8F30: 26 09       BNE   $8F3B	* no, skip
+8F32: A1 A8 10    CMPA  $10,Y	
+8F35: 22 21       BHI   $8F58	* a>(y+16)? (ws end?)
+8F37: A7 A5       STA   B,Y	* (y+b)=a 
+8F39: 20 0A       BRA   $8F45	* jump
 
-8F3B: C1 10       CMPB  #$10
-8F3D: 26 1D       BNE   $8F5C
-8F3F: A1 2F       CMPA  $000F,Y
-8F41: 23 15       BLS   $8F58
-8F43: A7 A5       STA   B,Y
-8F45: 6F 28       CLR   $0008,Y
+8F3B: C1 10       CMPB  #$10	* wavesample end?
+8F3D: 26 1D       BNE   $8F5C	* no, jump
+8F3F: A1 2F       CMPA  $000F,Y * a=ws start?
+8F41: 23 15       BLS   $8F58	* a<(y+15) (ws start?)
+8F43: A7 A5       STA   B,Y	* (b+y)=a
+8F45: 6F 28       CLR   $0008,Y * loop switch off
 8F47: 86 FF       LDA   #$FF
-8F49: A7 A8 13    STA   $13,Y
-8F4C: A6 A8 10    LDA   $10,Y
-8F4F: 4A          DECA  
-8F50: A7 A8 11    STA   $11,Y
-8F53: A7 A8 12    STA   $12,Y
-8F56: 20 2F       BRA   $8F87
+8F49: A7 A8 13    STA   $13,Y	* loop end fine = $ff
+8F4C: A6 A8 10    LDA   $10,Y	* a=ws end
+8F4F: 4A          DECA  	* a--
+8F50: A7 A8 11    STA   $11,Y	* loop start
+8F53: A7 A8 12    STA   $12,Y	* loop end
+8F56: 20 2F       BRA   $8F87	* jump
 
-8F58: BD 99 41    JSR   $9941
+8F58: BD 99 41    JSR   $9941	* call thing that sorts loop params
 8F5B: 39          RTS   
 
-8F5C: C1 11       CMPB  #$11
-8F5E: 26 0B       BNE   $8F6B
-8F60: A1 2F       CMPA  $000F,Y
-8F62: 25 F4       BCS   $8F58
-8F64: A1 A8 12    CMPA  $12,Y
-8F67: 22 EF       BHI   $8F58
-8F69: A7 A5       STA   B,Y
-8F6B: C1 12       CMPB  #$12
-8F6D: 26 11       BNE   $8F80
-8F6F: A1 A8 11    CMPA  $11,Y
-8F72: 25 E4       BCS   $8F58
-8F74: A1 A8 10    CMPA  $10,Y
-8F77: 22 DF       BHI   $8F58
-8F79: A7 A5       STA   B,Y
-8F7B: 86 FF       LDA   #$FF
-8F7D: A7 A8 13    STA   $13,Y
-8F80: C1 13       CMPB  #$13
-8F82: 26 03       BNE   $8F87
-8F84: A7 A8 13    STA   $13,Y
-8F87: A6 2F       LDA   $000F,Y
-8F89: 0F 81       CLR   $81
-8F8B: 6D 28       TST   $0008,Y
-8F8D: 27 1B       BEQ   $8FAA
-8F8F: A1 A8 11    CMPA  $11,Y
-8F92: 27 0A       BEQ   $8F9E
-8F94: 97 7F       STA   $7F
-8F96: A6 A8 12    LDA   $12,Y
-8F99: 97 80       STA   $80
-8F9B: BD 8F C8    JSR   $8FC8
-8F9E: 0C 81       INC   $81
-8FA0: EF 24       STU   $0004,Y
-8FA2: A6 A8 11    LDA   $11,Y
-8FA5: E6 A8 12    LDB   $12,Y
-8FA8: 20 03       BRA   $8FAD
-
-8FAA: E6 A8 10    LDB   $10,Y
-8FAD: 97 7F       STA   $7F
-8FAF: D7 80       STB   $80
-8FB1: BD 8F C8    JSR   $8FC8
-8FB4: EF 26       STU   $0006,Y
-8FB6: EF 22       STU   $0002,Y
-8FB8: 96 81       LDA   $81
-8FBA: E6 A8 13    LDB   $13,Y
-8FBD: 5C          INCB  
-8FBE: 27 01       BEQ   $8FC1
+8F5C: C1 11       CMPB  #$11	* loop start
+8F5E: 26 0B       BNE   $8F6B	* no, skip
+8F60: A1 2F       CMPA  $000F,Y	* higher or same than ws start?
+8F62: 25 F4       BCS   $8F58	* yes, sort it
+8F64: A1 A8 12    CMPA  $12,Y	* loop end? 
+8F67: 22 EF       BHI   $8F58	* a>loop end?
+8F69: A7 A5       STA   B,Y	* no, set it
+8F6B: C1 12       CMPB  #$12	* loop end?
+8F6D: 26 11       BNE   $8F80	* no, skip
+8F6F: A1 A8 11    CMPA  $11,Y	* loop start
+8F72: 25 E4       BCS   $8F58	* a<loop start? sort it
+8F74: A1 A8 10    CMPA  $10,Y	* ws end
+8F77: 22 DF       BHI   $8F58	* higher? sort it
+8F79: A7 A5       STA   B,Y	* set loop end
+8F7B: 86 FF       LDA   #$FF	
+8F7D: A7 A8 13    STA   $13,Y	* set loop end fine to $ff
+8F80: C1 13       CMPB  #$13	* loop end fine?
+8F82: 26 03       BNE   $8F87	* no, skip
+8F84: A7 A8 13    STA   $13,Y	* just save it
+8F87: A6 2F       LDA   $000F,Y	* a=ws start
+8F89: 0F 81       CLR   $81	* some variable
+8F8B: 6D 28       TST   $0008,Y	* loop switch?
+8F8D: 27 1B       BEQ   $8FAA	* off, jump
+8F8F: A1 A8 11    CMPA  $11,Y	
+8F92: 27 0A       BEQ   $8F9E	* loop start = ws start? jump
+8F94: 97 7F       STA   $7F	* some variable
+8F96: A6 A8 12    LDA   $12,Y	* a=loop end
+8F99: 97 80       STA   $80	* some variable
+8F9B: BD 8F C8    JSR   $8FC8	* call
+8F9E: 0C 81       INC   $81	* some variable
+8FA0: EF 24       STU   $0004,Y	* loop start pointer = u?
+8FA2: A6 A8 11    LDA   $11,Y	* loop start
+8FA5: E6 A8 12    LDB   $12,Y	* loop end
+8FA8: 20 03       BRA   $8FAD	* jump
+* loop is off
+8FAA: E6 A8 10    LDB   $10,Y	* b=ws end
+8FAD: 97 7F       STA   $7F	* some variable
+8FAF: D7 80       STB   $80	* some variable
+8FB1: BD 8F C8    JSR   $8FC8	* call
+8FB4: EF 26       STU   $0006,Y * loop end pointer = u
+8FB6: EF 22       STU   $0002,Y	* sample end pointer = u
+8FB8: 96 81       LDA   $81	* some variable
+8FBA: E6 A8 13    LDB   $13,Y	* loop end fine
+8FBD: 5C          INCB
+8FBE: 27 01       BEQ   $8FC1	* call
 8FC0: 4F          CLRA  
-8FC1: A7 A8 14    STA   $14,Y
-8FC4: BD 99 41    JSR   $9941
+8FC1: A7 A8 14    STA   $14,Y	* free run flag
+
+8FC4: BD 99 41    JSR   $9941	* fix loop params?
 8FC7: 39          RTS   
 
-8FC8: 96 7F       LDA   $7F
-8FCA: A7 C0       STA   ,U+
-8FCC: 8A 80       ORA   #$80
-8FCE: 5F          CLRB  
-8FCF: 44          LSRA  
-8FD0: 25 04       BCS   $8FD6
-8FD2: 5C          INCB  
-8FD3: 44          LSRA  
-8FD4: 20 FA       BRA   $8FD0
+* called while setting loop params
+8FC8: 96 7F       LDA   $7F	* some variable
+8FCA: A7 C0       STA   ,U+	* (u++)=a
+8FCC: 8A 80       ORA   #$80	* ensure this terminates
+8FCE: 5F          CLRB		* b=0
+8FCF: 44          LSRA  	* shift a left into carry
+8FD0: 25 04       BCS   $8FD6	* if we've shifted all 0s out jump
+8FD2: 5C          INCB  	* b++
+8FD3: 44          LSRA  	* shift a left into carry
+8FD4: 20 FA       BRA   $8FD0	* loop
 
-8FD6: 96 7F       LDA   $7F
-8FD8: AB 85       ADDA  B,X
-8FDA: 0D 81       TST   $81
-8FDC: 27 07       BEQ   $8FE5
-8FDE: 91 80       CMPA  $80
-8FE0: 23 03       BLS   $8FE5
-8FE2: 5A          DECB  
-8FE3: 20 F1       BRA   $8FD6
+8FD6: 96 7F       LDA   $7F	* some variable
+8FD8: AB 85       ADDA  B,X	* a += (x+b)
+8FDA: 0D 81       TST   $81	* some variable
+8FDC: 27 07       BEQ   $8FE5	* 0? jump
+8FDE: 91 80       CMPA  $80	* some variable
+8FE0: 23 03       BLS   $8FE5	* less? Jump
+8FE2: 5A          DECB  	* b--
+8FE3: 20 F1       BRA   $8FD6	* loop
 
-8FE5: CB 08       ADDB  #$08
-8FE7: E6 85       LDB   B,X
-8FE9: DA 7E       ORB   $7E
-8FEB: E7 C0       STB   ,U+
+8FE5: CB 08       ADDB  #$08	* a+=8
+8FE7: E6 85       LDB   B,X	* b=(x+b)
+8FE9: DA 7E       ORB   $7E	* some variable
+8FEB: E7 C0       STB   ,U+	* (u++)=b
 8FED: 91 80       CMPA  $80
-8FEF: 24 07       BCC   $8FF8
-8FF1: 4C          INCA  
-8FF2: 97 7F       STA   $7F
-8FF4: 0F 81       CLR   $81
-8FF6: 20 D2       BRA   $8FCA
+8FEF: 24 07       BCC   $8FF8	* a>=$80? end
+8FF1: 4C          INCA  	* a++
+8FF2: 97 7F       STA   $7F	* some variable
+8FF4: 0F 81       CLR   $81	* some variable
+8FF6: 20 D2       BRA   $8FCA	* loop right back
 
 8FF8: 39          RTS   
 
@@ -1953,22 +1967,23 @@ resetkybd:
 9113: 27 D4       BEQ   $90E9
 9115: 39          RTS   
 
-9116: 96 AE       LDA   $AE
-9118: 81 0B       CMPA  #$0B
-911A: 26 08       BNE   $9124
-911C: BD AB 90    JSR   $AB90
-911F: BD 92 49    JSR   $9249
-9122: 20 07       BRA   $912B
+* unknown, seems to get bit pattern for LEDs?
+9116: 96 AE       LDA   $AE	* some variable
+9118: 81 0B       CMPA  #$0B	* 11?
+911A: 26 08       BNE   $9124	* no, skip
+911C: BD AB 90    JSR   $AB90	* call thing called from sampling setup
+911F: BD 92 49    JSR   $9249	* clear a bunch of variables to zero
+9122: 20 07       BRA   $912B	* skip
 
-9124: 81 0C       CMPA  #$0C
-9126: 26 13       BNE   $913B
-9128: BD 92 49    JSR   $9249
-912B: D6 8B       LDB   $8B
-912D: BD 9D 2D    JSR   $9D2D
-9130: CE FB 4D    LDU   #$FB4D
-9133: A6 C6       LDA   A,U
+9124: 81 0C       CMPA  #$0C	* 12?
+9126: 26 13       BNE   $913B	* no, skip
+9128: BD 92 49    JSR   $9249	* clear a bunch of variables to zero
+912B: D6 8B       LDB   $8B	* some variable
+912D: BD 9D 2D    JSR   $9D2D	* call
+9130: CE FB 4D    LDU   #$FB4D	* LED patterns for 0-F
+9133: A6 C6       LDA   A,U	* get the values
 9135: E6 C5       LDB   B,U
-9137: DD B3       STD   $B3
+9137: DD B3       STD   $B3	* save the bit pattern to display
 9139: 4F          CLRA  
 913A: 39          RTS   
 
@@ -2113,6 +2128,7 @@ resetkybd:
 9247: 4F          CLRA  
 9248: 39          RTS   
 
+* clear a bunch of variables to zero
 9249: 0F 82       CLR   $82
 924B: 0F 85       CLR   $85
 924D: 0F 83       CLR   $83
@@ -2379,11 +2395,13 @@ resetkybd:
 942E: 0F 89       CLR   $89
 9430: 39          RTS   
 
+* second-most frequently called
+* 12 places
 9431: CC 01 80    LDD   #$0180
-9434: 97 8A       STA   $8A
-9436: 97 89       STA   $89
-9438: D7 83       STB   $83
-943A: 39          RTS   
+9434: 97 8A       STA   $8A	* $808a = 1
+9436: 97 89       STA   $89	* $8089 = 1
+9438: D7 83       STB   $83	* $8083 = 80
+943A: 39          RTS
 
 943B: CE FB 4D    LDU   #$FB4D
 943E: 96 AE       LDA   $AE
@@ -2465,9 +2483,10 @@ resetkybd:
 94CE: 27 02       BEQ   $94D2
 94D0: 20 F7       BRA   $94C9
 
+* possibly the bit that does the bargraph for sampling?
 94D2: BD 9F 60    JSR   $9F60
 94D5: BD 97 00    JSR   $9700
-94D8: BD 97 4E    JSR   $974E
+94D8: BD 97 4E    JSR   $974E   * seems to sample something
 94DB: C6 1F       LDB   #$1F	* all LEDs off
 94DD: F7 E2 01    STB   $E201	* set IORA
 94E0: 1E 89       EXG   A,B
@@ -2609,12 +2628,13 @@ resetkybd:
 95DD: BD 94 31    JSR   $9431
 95E0: 39          RTS   
 
-95E1: BD AB 43    JSR   $AB43
-95E4: 86 57       LDA   #$57
-95E6: 97 8B       STA   $8B
-95E8: 86 0D       LDA   #$0D
-95EA: 97 AE       STA   $AE
-95EC: BD 91 16    JSR   $9116
+* unknown
+95E1: BD AB 43    JSR   $AB43	* call
+95E4: 86 57       LDA   #$57	* 87?
+95E6: 97 8B       STA   $8B	* some variable
+95E8: 86 0D       LDA   #$0D	* 13?
+95EA: 97 AE       STA   $AE	* some variable
+95EC: BD 91 16    JSR   $9116	* call
 95EF: 39          RTS   
 
 95F0: 96 AE       LDA   $AE
@@ -2754,10 +2774,11 @@ resetkybd:
 96F1: 97 16       STA   $16
 96F3: 39          RTS   
 
-96F4: CC B6 0A    LDD   #$B60A
-96F7: DD B3       STD   $B3
-96F9: 86 80       LDA   #$80
-96FB: 97 83       STA   $83
+* unknown
+96F4: CC B6 0A    LDD   #$B60A	* parameter table, strange offset
+96F7: DD B3       STD   $B3	* some variable
+96F9: 86 80       LDA   #$80	
+96FB: 97 83       STA   $83	* some variable
 96FD: 39          RTS   
 
 96FE: FF 18 1A    STU   $181A
@@ -2792,53 +2813,53 @@ resetkybd:
 
 * the idiom here looks like it sets a filter
 * what with the writing A and B to two things 8 bytes apart, three times
-9742: FC 96 FE    LDD   $96FE	* what's here and what does X hold?
-9745: E7 84       STB   ,X	* stick the lower byte in
-9747: E7 10       STB   $FFF0,X	
-9749: A7 84       STA   ,X
-974B: A7 18       STA   $FFF8,X
+9742: FC 96 FE    LDD   $96FE	* would contain resonance in B, cutoff in A
+9745: E7 84       STB   ,X	* stick the cutoff into the DAC (settling?)
+9747: E7 10       STB   $FFF0,X	* set the cutoff
+9749: A7 84       STA   ,X      * again, settle the DAC?
+974B: A7 18       STA   $FFF8,X * set the resonance
 974D: 39          RTS   
 
-974E: 8D F2       BSR   $9742
-9750: CE EC E2    LDU   #$ECE2
-9753: E6 C4       LDB   ,U
-9755: 86 14       LDA   #$14
-9757: 0F 98       CLR   $98
-9759: 0F 99       CLR   $99
-975B: 0F 9A       CLR   $9A
-975D: 8D 1C       BSR   $977B
-975F: 4A          DECA  
-9760: 26 FB       BNE   $975D
-9762: C6 03       LDB   #$03
-9764: D1 9A       CMPB  $9A
-9766: 23 12       BLS   $977A
-9768: D1 99       CMPB  $99
-976A: 23 0C       BLS   $9778
-976C: D1 98       CMPB  $98
-976E: 23 04       BLS   $9774
-9770: 86 07       LDA   #$07
-9772: 20 02       BRA   $9776
-
-9774: 86 03       LDA   #$03
-9776: 20 02       BRA   $977A
-
-9778: 86 06       LDA   #$06
+974E: 8D F2       BSR   $9742   * set the filter
+9750: CE EC E2    LDU   #$ECE2  * ADC register
+9753: E6 C4       LDB   ,U      * read ADC
+9755: 86 14       LDA   #$14    * why 20?
+9757: 0F 98       CLR   $98     * some variable
+9759: 0F 99       CLR   $99     * some variable
+975B: 0F 9A       CLR   $9A     * some variable
+975D: 8D 1C       BSR   $977B   * call
+975F: 4A          DECA          * count down
+9760: 26 FB       BNE   $975D   * loop
+9762: C6 03       LDB   #$03    * start at 3?
+9764: D1 9A       CMPB  $9A     * some variable
+9766: 23 12       BLS   $977A   * jump to rts
+9768: D1 99       CMPB  $99     * some variable
+976A: 23 0C       BLS   $9778   * jump forward
+976C: D1 98       CMPB  $98     * some variable
+976E: 23 04       BLS   $9774   * jump forward
+9770: 86 07       LDA   #$07    * set it to 7
+9772: 20 02       BRA   $9776   * continue
+9774: 86 03       LDA   #$03    * if $8097 == 3, set A to 3?
+9776: 20 02       BRA   $977A   * bra rts
+9778: 86 06       LDA   #$06    * if $8098 == 3, set A to 6?
 977A: 39          RTS   
 
 ; does stuff to some counters
-977B: E6 C4       LDB   ,U	; top of user stack
+* seems to measure values from the ADC?
+* sets counters based on three levels, maybe it's for the sampling level routine?
+977B: E6 C4       LDB   ,U	; previous routine set U to $ECE2, ADC reg
 977D: CB 80       ADDB  #$80	; will this little bit take the ABS value? 
 977F: 2A 01       BPL   $9782	;
 9781: 50          NEGB  	;
 9782: C1 7F       CMPB  #$7F	
-9784: 25 02       BCS   $9788	; FIXME less? can't remember
-9786: 0C 9A       INC   $9A	; FIXME would help if I knew where DR was
+9784: 25 02       BCS   $9788	; B<$7f?
+9786: 0C 9A       INC   $9A	; increment $809a
 9788: D1 1A       CMPB  $1A	; 26, in decimal - can't think of the significance
-978A: 25 02       BCS   $978E	
-978C: 0C 99       INC   $99	; inc next byte down from last
-978E: C1 08       CMPB  #$08
-9790: 25 02       BCS   $9794	; not 8 yet, end
-9792: 0C 98       INC   $98	; inc next byte down
+978A: 25 02       BCS   $978E   ; B<$1a?	
+978C: 0C 99       INC   $99	; increment $8099
+978E: C1 08       CMPB  #$08    ; B<$08?
+9790: 25 02       BCS   $9794	; jump to end
+9792: 0C 98       INC   $98	; increment $8098
 9794: 39          RTS   
 
 9795: 96 1B       LDA   $1B	
@@ -2938,6 +2959,8 @@ resetkybd:
 9856: 4F          CLRA  
 9857: 39          RTS   
 
+* unknown
+* fiddles with bank selects
 9858: B6 E2 00    LDA   $E200	* VIA IORB
 985B: 84 FC       ANDA  #$FC	* mask off all but bank selects
 985D: D6 A4       LDB   $A4	* variable in $80a4
@@ -2949,37 +2972,42 @@ resetkybd:
 9868: B7 E2 00    STA   $E200	* select the bank
 986B: 39          RTS   
 
-986C: BD 9A 85    JSR   $9A85
-986F: EC 0F       LDD   $000F,X
-9871: D7 96       STB   $96
-9873: 97 94       STA   $94
-9875: 39          RTS   
+* unknown
+* look up wavesample start and end?
+986C: BD 9A 85    JSR   $9A85	* look up parameter table
+986F: EC 0F       LDD   $000F,X	* wavesample start/end?
+9871: D7 96       STB   $96	* some variable
+9873: 97 94       STA   $94	* some variable
+9875: 39          RTS
 
+* get byte from sample RAM
+* takes address in U, returns value in B
+* increments U
 9876: 1F 31       TFR   U,X
 9878: 8C 80 00    CMPX  #$8000
-987B: 24 04       BCC   $9881
-987D: 96 9B       LDA   $9B
-987F: 20 06       BRA   $9887
+987B: 24 04       BCC   $9881	* X>= $8000?
+987D: 96 9B       LDA   $9B	* some variable
+987F: 20 06       BRA   $9887	* skip
 
-9881: 30 89 80 00 LEAX  $8000,X
-9885: 96 9C       LDA   $9C
-9887: B7 E2 00    STA   $E200		* bank select
-988A: 33 41       LEAU  $0001,U
-988C: E6 84       LDB   ,X
+9881: 30 89 80 00 LEAX  $8000,X	* X=X-$8000
+9885: 96 9C       LDA   $9C	* some variable
+9887: B7 E2 00    STA   $E200	* bank select
+988A: 33 41       LEAU  $0001,U	* U++
+988C: E6 84       LDB   ,X	* B=(X)
 988E: 39          RTS   
 
-988F: 1F 21       TFR   Y,X
-9891: B6 E2 00    LDA   $E200		* bank fiddling
-9894: 8C 80 00    CMPX  #$8000
-9897: 24 04       BCC   $989D
-9899: 96 9B       LDA   $9B
-989B: 20 06       BRA   $98A3
+988F: 1F 21       TFR   Y,X	* X=Y
+9891: B6 E2 00    LDA   $E200	* VIA IORB (bank?)
+9894: 8C 80 00    CMPX  #$8000	
+9897: 24 04       BCC   $989D	* x>=$8000
+9899: 96 9B       LDA   $9B	* some variable
+989B: 20 06       BRA   $98A3	* skip
 
-989D: 96 9C       LDA   $9C
-989F: 30 89 80 00 LEAX  $8000,X
-98A3: B7 E2 00    STA   $E200		* bank fiddling
-98A6: 31 21       LEAY  $0001,Y
-98A8: E7 84       STB   ,X
+989D: 96 9C       LDA   $9C	* some variable
+989F: 30 89 80 00 LEAX  $8000,X	* x-=$8000
+98A3: B7 E2 00    STA   $E200	* bank fiddling
+98A6: 31 21       LEAY  $0001,Y * y++
+98A8: E7 84       STB   ,X	* (x)=b
 98AA: 39          RTS   
 
 98AB: 8D 3E       BSR   $98EB
@@ -3053,37 +3081,40 @@ resetkybd:
 993E: 32 62       LEAS  $0002,S
 9940: 39          RTS   
 
-9941: BD 9A 85    JSR   $9A85
-9944: A6 28       LDA   $0008,Y
-9946: 27 42       BEQ   $998A
-9948: BD 98 58    JSR   $9858
-994B: BD 98 6C    JSR   $986C
-994E: EE 26       LDU   $0006,Y
-9950: EC A8 12    LDD   $12,Y
-9953: A1 5E       CMPA  $FFFE,U
-9955: 26 06       BNE   $995D
-9957: C1 80       CMPB  #$80
-9959: 24 02       BCC   $995D
-995B: C6 FF       LDB   #$FF
-995D: A1 A8 10    CMPA  $10,Y
-9960: 26 09       BNE   $996B
+* unknown
+* if Y is pointing to a param block, might be to toggle loop?
+* something to do with calculating loop params
+9941: BD 9A 85    JSR   $9A85	* call
+9944: A6 28       LDA   $0008,Y	* a=(y+8) (param[8]=loopsw)
+9946: 27 42       BEQ   $998A	* finish
+9948: BD 98 58    JSR   $9858	* call
+994B: BD 98 6C    JSR   $986C	* call
+994E: EE 26       LDU   $0006,Y	* u=(y+6) (param[6]=loopend)
+9950: EC A8 12    LDD   $12,Y	* D=(y+18) (loop end/fine)
+9953: A1 5E       CMPA  $FFFE,U	* a == (U-2)
+9955: 26 06       BNE   $995D	* no, skip
+9957: C1 80       CMPB  #$80	
+9959: 24 02       BCC   $995D	* B >= $80?	
+995B: C6 FF       LDB   #$FF	* B=$ff
+995D: A1 A8 10    CMPA  $10,Y	* a==(y+16)?
+9960: 26 09       BNE   $996B	* no, skip
 9962: C1 DF       CMPB  #$DF
-9964: 23 05       BLS   $996B
-9966: C6 DF       LDB   #$DF
-9968: 6F A8 14    CLR   $14,Y
-996B: E7 A8 13    STB   $13,Y
-996E: EE A8 12    LDU   $12,Y
-9971: 33 41       LEAU  $0001,U
-9973: 10 9E 96    LDY   $96
-9976: 30 A8 10    LEAX  $10,Y
-9979: 34 10       PSHS  X
-997B: BD 98 76    JSR   $9876
-997E: 6F 84       CLR   ,X
-9980: BD 98 8F    JSR   $988F
-9983: 10 AC E4    CMPY  ,S
-9986: 26 F3       BNE   $997B
-9988: 32 62       LEAS  $0002,S
-998A: 39          RTS   
+9964: 23 05       BLS   $996B	* b<=$df?
+9966: C6 DF       LDB   #$DF	* b=$df
+9968: 6F A8 14    CLR   $14,Y	* (y+20)=0
+996B: E7 A8 13    STB   $13,Y	* (y+19)=b
+996E: EE A8 12    LDU   $12,Y	* u=(y+18)
+9971: 33 41       LEAU  $0001,U	* u++
+9973: 10 9E 96    LDY   $96	* some variable
+9976: 30 A8 10    LEAX  $10,Y	* x=y+16
+9979: 34 10       PSHS  X	* save X
+997B: BD 98 76    JSR   $9876	* get byte from sample RAM
+997E: 6F 84       CLR   ,X	* (X)=0
+9980: BD 98 8F    JSR   $988F	* call
+9983: 10 AC E4    CMPY  ,S	* y=(s)?
+9986: 26 F3       BNE   $997B	* no
+9988: 32 62       LEAS  $0002,S	* drop
+998A: 39          RTS
 
 998B: CE 9F F3    LDU   #$9FF3
 998E: D6 8B       LDB   $8B
@@ -3200,19 +3231,23 @@ resetkybd:
 9A81: 8D 02       BSR   $9A85
 9A83: 20 1C       BRA   $9AA1
 
-9A85: 96 A4       LDA   $A4
-9A87: 27 0A       BEQ   $9A93
-9A89: 10 8E 8E BF LDY   #$8EBF
-9A8D: DE A5       LDU   $A5
-9A8F: 96 A9       LDA   $A9
-9A91: 20 08       BRA   $9A9B
+* look up upper or lower voice params 
+* $80a4 toggles which table we read and which variable we look up
+* sets the user stack and $80a9 points to the value in the table
 
-9A93: 10 8E 8E AF LDY   #$8EAF
-9A97: DE A7       LDU   $A7
-9A99: 96 AA       LDA   $AA
-9A9B: 48          ASLA  
-9A9C: AE A6       LDX   A,Y
-9A9E: 1F 12       TFR   X,Y
+9A85: 96 A4       LDA   $A4	* some variable
+9A87: 27 0A       BEQ   $9A93	* if zero, skip
+9A89: 10 8E 8E BF LDY   #$8EBF	* lookup table pointing to upper params
+9A8D: DE A5       LDU   $A5	* some variable
+9A8F: 96 A9       LDA   $A9	* some variable, selected voice
+9A91: 20 08       BRA   $9A9B	* skip
+
+9A93: 10 8E 8E AF LDY   #$8EAF	* lookup table pointing to lower params
+9A97: DE A7       LDU   $A7	* different variable
+9A99: 96 AA       LDA   $AA	* different variable, selected voice
+9A9B: 48          ASLA  	
+9A9C: AE A6       LDX   A,Y	* fetch value from table
+9A9E: 1F 12       TFR   X,Y	* return with new value in Y
 9AA0: 39          RTS   
 
 9AA1: 30 85       LEAX  B,X
@@ -3570,12 +3605,14 @@ resetkybd:
 
 9D37: 39          RTS   
 
+* unknown, sets two variabls
 9D38: 86 81       LDA   #$81
 9D3A: 97 A3       STA   $A3
 9D3C: 86 02       LDA   #$02
 9D3E: 97 A2       STA   $A2
 9D40: 39          RTS   
 
+* unknown, sets two variables
 9D41: 86 82       LDA   #$82
 9D43: 97 A3       STA   $A3
 9D45: 86 04       LDA   #$04
@@ -3658,17 +3695,18 @@ resetkybd:
 
 9DD4: 16 FF 7B    LBRA  $9D52
 
-9DD7: DC B3       LDD   $B3
-9DD9: 0D 83       TST   $83
-9DDB: 2B 06       BMI   $9DE3
-9DDD: 26 03       BNE   $9DE2
-9DDF: 4C          INCA  
-9DE0: 20 01       BRA   $9DE3
-
-9DE2: 5C          INCB  
-9DE3: 97 B5       STA   $B5
+* unknown
+* ends up doing things to VIA IORA
+9DD7: DC B3       LDD   $B3	* some variable
+9DD9: 0D 83       TST   $83	* bit test
+9DDB: 2B 06       BMI   $9DE3	* bit 7 set, finish
+9DDD: 26 03       BNE   $9DE2	* non-zero? jump
+9DDF: 4C          INCA  	* zero, increment  
+9DE0: 20 01       BRA   $9DE3	* skip
+9DE2: 5C          INCB 		* increase b? 
+9DE3: 97 B5       STA   $B5	* save in $80B5
 9DE5: D7 B6       STB   $B6
-9DE7: 5F          CLRB  
+9DE7: 5F          CLRB
 9DE8: 86 F0       LDA   #$F0
 9DEA: 97 AF       STA   $AF
 9DEC: D7 B2       STB   $B2
@@ -3701,10 +3739,10 @@ resetkybd:
 9E1E: F7 E2 0F    STB   $E20F
 9E21: 1E 12       EXG   X,Y
 9E23: 1E 12       EXG   X,Y
-9E25: F6 E2 0F    LDB   $E20F
-9E28: C4 E0       ANDB  #$E0
-9E2A: C1 E0       CMPB  #$E0
-9E2C: 26 02       BNE   $9E30
+9E25: F6 E2 0F    LDB   $E20F	* VIA IORA
+9E28: C4 E0       ANDB  #$E0	* keyboard lines
+9E2A: C1 E0       CMPB  #$E0	* zero?
+9E2C: 26 02       BNE   $9E30	
 9E2E: C6 0F       LDB   #$0F
 9E30: D7 B1       STB   $B1
 9E32: B7 E2 0F    STA   $E20F
@@ -3868,29 +3906,31 @@ resetkybd:
 
 9F5E: 20 FE       BRA   $9F5E
 
-9F60: 1A 50       ORCC  #$50
-9F62: BD AB 90    JSR   $AB90
+* seems to be called before sampling?
+9F60: 1A 50       ORCC  #$50	* save state
+9F62: BD AB 90    JSR   $AB90	* thing that gets called before sampling
 9F65: BD F1 BB    JSR   qchipsetup
-9F68: BD 8C 80    JSR   $8C80
-9F6B: BD F5 41    JSR   unknown3
+9F68: BD 8C 80    JSR   $8C80	* call
+9F6B: BD F5 41    JSR   unknown3 * call
 9F6E: 39          RTS   
 
 * Oooh, what's this
+* reset a bunch of stuff
 9F6F: 1A 50       ORCC  #$50	* mask interrupts
 9F71: BD F5 41    JSR   unknown3	* reinit via
 9F74: BD F5 2D    JSR   unknown2	* set timer 2
 9F77: BD 87 5E    JSR   $875E	* stop oscillators
 9F7A: BD 89 6B    JSR   $896B	* reset keyboard controller
 9F7D: BD A0 7E    JSR   $A07E	* reset serial port
-9F80: 86 CC       LDA   #$CC
-9F82: B7 E2 0B    STA   $E20B	* no idea
-9F85: 7F E2 06    CLR   $E206
-9F88: 7F E2 07    CLR   $E207
-9F8B: 7F E2 04    CLR   $E204
-9F8E: 7F E2 05    CLR   $E205
-9F91: 0F 79       CLR   $79
-9F93: 0F 6B       CLR   $6B
-9F95: 0F 72       CLR   $72
+9F80: 86 CC       LDA   #$CC	* T1 free-run, out on PB7, shift in ext clk
+9F82: B7 E2 0B    STA   $E20B	* VIA ACR
+9F85: 7F E2 06    CLR   $E206	* VIA timer 1 low
+9F88: 7F E2 07    CLR   $E207	* VIA timer 1 high
+9F8B: 7F E2 04    CLR   $E204	* VIA timer 1 latch
+9F8E: 7F E2 05    CLR   $E205	* VIA timer 1 trigger
+9F91: 0F 79       CLR   $79	* some variable
+9F93: 0F 6B       CLR   $6B	* some variable
+9F95: 0F 72       CLR   $72	* some variable
 9F97: 1C AF       ANDCC #$AF	* re-enable interrupts
 9F99: 39          RTS   
 
@@ -4004,44 +4044,49 @@ A0D4: DD C2       STD   $C2
 A0D6: C6 E0       LDB   #$E0
 A0D8: 20 12       BRA   $A0EC
 
-A0DA: 34 01       PSHS  CC
-A0DC: 1A 50       ORCC  #$50
-A0DE: 86 40       LDA   #$40
-A0E0: 20 06       BRA   $A0E8
+* unknown
+* something to do with MIDI
+A0DA: 34 01       PSHS  CC	* save state
+A0DC: 1A 50       ORCC  #$50	* mask interrupts
+A0DE: 86 40       LDA   #$40	* 64
+A0E0: 20 06       BRA   $A0E8	* skip
 
-A0E2: 34 01       PSHS  CC
-A0E4: 1A 50       ORCC  #$50
-A0E6: 86 01       LDA   #$01
-A0E8: DD C2       STD   $C2
-A0EA: C6 B0       LDB   #$B0
-A0EC: 96 23       LDA   $23
-A0EE: 27 44       BEQ   $A134
-A0F0: 20 30       BRA   $A122
+* unknown
+A0E2: 34 01       PSHS  CC	* save state
+A0E4: 1A 50       ORCC  #$50	* mask interrupts
+A0E6: 86 01       LDA   #$01	* 01
+A0E8: DD C2       STD   $C2	* some variable
+A0EA: C6 B0       LDB   #$B0	
+A0EC: 96 23       LDA   $23	* some variable
+A0EE: 27 44       BEQ   $A134	* zero? jump
+A0F0: 20 30       BRA   $A122	* jump
 
-A0F2: 1A 50       ORCC  #$50
-A0F4: 96 23       LDA   $23
-A0F6: 81 02       CMPA  #$02
-A0F8: 27 04       BEQ   $A0FE
-A0FA: 81 03       CMPA  #$03
-A0FC: 26 0E       BNE   $A10C
-A0FE: 34 04       PSHS  B
+A0F2: 1A 50       ORCC  #$50	* mask interrupts
+A0F4: 96 23       LDA   $23	* some variable
+A0F6: 81 02       CMPA  #$02	* 2?
+A0F8: 27 04       BEQ   $A0FE	* yes, skip
+A0FA: 81 03       CMPA  #$03	* 3?
+A0FC: 26 0E       BNE   $A10C	* no, skip
+A0FE: 34 04       PSHS  B	* save B
 A100: C6 C0       LDB   #$C0
-A102: D7 BB       STB   $BB
-A104: DA 21       ORB   $21
-A106: 8D 30       BSR   $A138
-A108: 35 04       PULS  B
-A10A: 8D 2C       BSR   $A138
-A10C: 1C AF       ANDCC #$AF
-A10E: DC BC       LDD   $BC
-A110: 10 93 BE    CMPD  $BE
-A113: 26 F9       BNE   $A10E
+A102: D7 BB       STB   $BB	* some variable
+A104: DA 21       ORB   $21	* some variable
+A106: 8D 30       BSR   $A138	* call
+A108: 35 04       PULS  B	* get B
+A10A: 8D 2C       BSR   $A138	* call
+A10C: 1C AF       ANDCC #$AF	* unmask ints
+A10E: DC BC       LDD   $BC	* TX ringbuffer store pointer
+A110: 10 93 BE    CMPD  $BE	* some variable? TX read pointer
+A113: 26 F9       BNE   $A10E	* not the same, hang around until all sent
 A115: 39          RTS   
 
-A116: 34 01       PSHS  CC
-A118: 1A 50       ORCC  #$50
-A11A: C6 F8       LDB   #$F8
-A11C: D7 BB       STB   $BB
-A11E: 8D 18       BSR   $A138
+* unknown-ish
+* seems to transmit MIDI clock?
+A116: 34 01       PSHS  CC	* save state
+A118: 1A 50       ORCC  #$50	* mask interrupts
+A11A: C6 F8       LDB   #$F8	* MIDI clock!
+A11C: D7 BB       STB   $BB	* some variable
+A11E: 8D 18       BSR   $A138	* puts B in ringbuffer
 A120: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
 A122: DA 21       ORB   $21
@@ -4056,18 +4101,19 @@ A132: 8D 04       BSR   $A138
 A134: DC C2       LDD   $C2
 A136: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-A138: 96 22       LDA   $22
-A13A: 27 01       BEQ   $A13D
+A138: 96 22       LDA   $22	* some variable
+A13A: 27 01       BEQ   $A13D	* zero?
 A13C: 39          RTS   
 
-A13D: 9E BC       LDX   $BC
-A13F: E7 80       STB   ,X+
-A141: 8C 82 35    CMPX  #$8235
-A144: 25 03       BCS   $A149
-A146: 8E 82 25    LDX   #$8225
-A149: 9F BC       STX   $BC
-A14B: 86 B5       LDA   #$B5
-A14D: B7 E1 00    STA   $E100
+* put B in ringbuffer and enable TX interrupt
+A13D: 9E BC       LDX   $BC	* some variable
+A13F: E7 80       STB   ,X+	* (X++)=B
+A141: 8C 82 35    CMPX  #$8235	* end of buffer?
+A144: 25 03       BCS   $A149	* nope
+A146: 8E 82 25    LDX   #$8225	* yes, reset
+A149: 9F BC       STX   $BC	* save X
+A14B: 86 B5       LDA   #$B5	* TX and RX int on, 8n1, /16
+A14D: B7 E1 00    STA   $E100	* ACIA control
 A150: 39          RTS   
 
 firqentry:
@@ -4117,6 +4163,10 @@ A1A7: 26 0D       BNE   $A1B6		; yes, branch
 A1A9: 35 76       PULS  A,B,X,Y,U	; unstack registers
 A1AB: 3B          RTI   		; return
 
+* might be something to do with the task scheduler?
+* pops address off return stack
+* stores it in $80c0
+* returns to the call before last
 A1AC: 35 06       PULS  A,B
 A1AE: DD C0       STD   $C0
 A1B0: 39          RTS   
@@ -4420,15 +4470,15 @@ A3F0: A2 47 A2 47 A3 B0 A2 47 A3 BE A3 C6 A3 C2 A2 47
 A400: A3 D3 A3 D3 
 
 * ring buffer, stores A in memory pointed to by $8278
-A404: 34 01       PSHS  CC
-A406: 1A 10       ORCC  #$10
-A408: BE 82 78    LDX   $8278
-A40B: A7 80       STA   ,X+
-A40D: 8C 82 8C    CMPX  #$828C
-A410: 25 03       BCS   $A415
-A412: 8E 82 7C    LDX   #$827C
-A415: BF 82 78    STX   $8278
-A418: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
+A404: 34 01       PSHS  CC	* save state
+A406: 1A 10       ORCC  #$10	* mask /INT
+A408: BE 82 78    LDX   $8278	* pointer
+A40B: A7 80       STA   ,X+	* store byte
+A40D: 8C 82 8C    CMPX  #$828C	* reached end?
+A410: 25 03       BCS   $A415	* no
+A412: 8E 82 7C    LDX   #$827C	* wrap around
+A415: BF 82 78    STX   $8278	* save pointer back
+A418: 35 81       PULS  CC,PC ;(PUL? PC=RTS)	* return
 
 * get byte from ring buffer 
 A41A: BE 82 7A    LDX   $827A
@@ -5249,7 +5299,7 @@ AAF9: B7 80 D8    STA   vlastsec	* save in $80d8
 AAFC: BD F4 A4    JSR   gototrack2 * position head
 AAFF: 39          RTS   
 
-* display some kind of error message
+* work out which disk error to show
 AB00: 86 01       LDA   #$01	* 1
 AB02: B7 80 07    STA   fdcerr	* store in error code
 AB05: 86 10       LDA   #$10	* "record not found"
@@ -5311,6 +5361,8 @@ AB5B: C6 06       LDB   #$06
 AB5D: D7 E7       STB   $E7
 AB5F: 39          RTS   
 
+* unknown
+* clears some variables, increments others
 AB60: 0F 36       CLR   $36
 AB62: 0F E9       CLR   $E9
 AB64: 0C EB       INC   $EB
@@ -5319,12 +5371,12 @@ AB68: 86 60       LDA   #$60
 AB6A: 97 26       STA   $26
 AB6C: 86 08       LDA   #$08
 AB6E: 97 E7       STA   $E7
-AB70: F6 90 09    LDB   $9009
-AB73: BD AD AF    JSR   $ADAF
-AB76: D6 6C       LDB   $6C
-AB78: BD AD B2    JSR   $ADB2
-AB7B: D6 6B       LDB   $6B
-AB7D: 7E AD B6    JMP   $ADB6
+AB70: F6 90 09    LDB   $9009	* initially $4000
+AB73: BD AD AF    JSR   $ADAF	* call some routine
+AB76: D6 6C       LDB   $6C	* some variable
+AB78: BD AD B2    JSR   $ADB2	* call some routine
+AB7B: D6 6B       LDB   $6B	* some variable
+AB7D: 7E AD B6    JMP   $ADB6	* some routine
 
 AB80: 0F 36       CLR   $36
 AB82: 0F E9       CLR   $E9
@@ -5335,14 +5387,16 @@ AB8B: C6 0A       LDB   #$0A
 AB8D: D7 E7       STB   $E7
 AB8F: 39          RTS   
 
-AB90: 96 E7       LDA   $E7
-AB92: 27 7B       BEQ   $AC0F
-AB94: 0F E7       CLR   $E7
-AB96: DE EE       LDU   $EE
-AB98: 81 06       CMPA  #$06
-AB9A: 26 06       BNE   $ABA2
-AB9C: 86 FF       LDA   #$FF
-AB9E: 20 32       BRA   $ABD2
+* called from a few places
+* called from routine that sets up sampling?
+AB90: 96 E7       LDA   $E7     * some variable
+AB92: 27 7B       BEQ   $AC0F   * jump
+AB94: 0F E7       CLR   $E7     * some variable
+AB96: DE EE       LDU   $EE     * some variable
+AB98: 81 06       CMPA  #$06    * is it 6, what does this even mean
+AB9A: 26 06       BNE   $ABA2   * no, jump
+AB9C: 86 FF       LDA   #$FF    
+AB9E: 20 32       BRA   $ABD2   * jump
 
 ABA0: 20 49       BRA   $ABEB
 
@@ -5377,7 +5431,7 @@ ABD4: 86 80       LDA   #$80
 ABD6: A7 C0       STA   ,U+
 ABD8: A7 C0       STA   ,U+
 ABDA: A7 C0       STA   ,U+
-ABDC: FF B8 06    STU   $B806
+ABDC: FF B8 06    STU   $B806   * this is in sequence memory
 ABDF: BD AB 2C    JSR   $AB2C
 ABE2: 20 07       BRA   $ABEB
 
@@ -5521,86 +5575,88 @@ ACE6: 0C F0       INC   $F0
 ACE8: 1C AF       ANDCC #$AF
 ACEA: 39          RTS   
 
-ACEB: DE EC       LDU   $EC
-ACED: A6 42       LDA   $0002,U
-ACEF: 97 F1       STA   $F1
-ACF1: EC C4       LDD   ,U
-ACF3: 33 43       LEAU  $0003,U
-ACF5: DF EC       STU   $EC
-ACF7: DD F2       STD   $F2
-ACF9: 2A 56       BPL   $AD51
-ACFB: 84 7F       ANDA  #$7F
+* unknown
+ACEB: DE EC       LDU   $EC	* some variable
+ACED: A6 42       LDA   $0002,U * a=(u+2)
+ACEF: 97 F1       STA   $F1	* some variable
+ACF1: EC C4       LDD   ,U	* d=(u)
+ACF3: 33 43       LEAU  $0003,U	* u += 3
+ACF5: DF EC       STU   $EC	* save it in some variable
+ACF7: DD F2       STD   $F2	* save D too
+ACF9: 2A 56       BPL   $AD51	* positive value?
+ACFB: 84 7F       ANDA  #$7F	* mask top bit
 ACFD: 81 02       CMPA  #$02
-ACFF: 2F 17       BLE   $AD18
-AD01: BD A0 B7    JSR   $A0B7
-AD04: 10 8E 8E 4D LDY   #$8E4D
-AD08: E6 A6       LDB   A,Y
-AD0A: CA 80       ORB   #$80
-AD0C: E7 A6       STB   A,Y
-AD0E: D6 F3       LDB   $F3
-AD10: 8E 80 6F    LDX   #$806F
-AD13: BD 87 C4    JSR   $87C4
-AD16: 20 37       BRA   $AD4F
+ACFF: 2F 17       BLE   $AD18	* a<=2, jump
+AD01: BD A0 B7    JSR   $A0B7	* call
 
-AD18: 4D          TSTA  
-AD19: 27 08       BEQ   $AD23
-AD1B: D7 F1       STB   $F1
-AD1D: 33 5F       LEAU  $FFFF,U
-AD1F: DF EC       STU   $EC
-AD21: 20 2C       BRA   $AD4F
+AD04: 10 8E 8E 4D LDY   #$8E4D	* middle of a routine?
+AD08: E6 A6       LDB   A,Y	* b = (a+y)
+AD0A: CA 80       ORB   #$80	* b |= $80
+AD0C: E7 A6       STB   A,Y	* write it back
+AD0E: D6 F3       LDB   $F3	* some variable
+AD10: 8E 80 6F    LDX   #$806F	* OS param?
+AD13: BD 87 C4    JSR   $87C4	* call
+AD16: 20 37       BRA   $AD4F	* jump rts
 
-AD23: 96 27       LDA   $27
-AD25: 27 1C       BEQ   $AD43
-AD27: 0F F1       CLR   $F1
-AD29: 96 E7       LDA   $E7
-AD2B: 81 0A       CMPA  #$0A
-AD2D: 26 0C       BNE   $AD3B
-AD2F: 33 5D       LEAU  $FFFD,U
-AD31: DF EC       STU   $EC
-AD33: BD AB 90    JSR   $AB90
-AD36: BD AB 84    JSR   $AB84
-AD39: 20 06       BRA   $AD41
+AD18: 4D          TSTA		* a?  
+AD19: 27 08       BEQ   $AD23	* a=0? jump
+AD1B: D7 F1       STB   $F1	* some variable
+AD1D: 33 5F       LEAU  $FFFF,U	* u--
+AD1F: DF EC       STU   $EC	* save it
+AD21: 20 2C       BRA   $AD4F	* jump rts
 
-AD3B: BD AB F2    JSR   $ABF2
-AD3E: BD AB 2C    JSR   $AB2C
-AD41: 20 0C       BRA   $AD4F
+AD23: 96 27       LDA   $27	* some variable
+AD25: 27 1C       BEQ   $AD43	* 0? jump
+AD27: 0F F1       CLR   $F1	* some variable
+AD29: 96 E7       LDA   $E7	* some variable
+AD2B: 81 0A       CMPA  #$0A	* a=10?
+AD2D: 26 0C       BNE   $AD3B	* no, jump
+AD2F: 33 5D       LEAU  $FFFD,U	* u-=3
+AD31: DF EC       STU   $EC	* save
+AD33: BD AB 90    JSR   $AB90	* sampling? no
+AD36: BD AB 84    JSR   $AB84	* call
+AD39: 20 06       BRA   $AD41	* skip
 
-AD43: 33 5D       LEAU  $FFFD,U
-AD45: DF EC       STU   $EC
-AD47: BD AB 90    JSR   $AB90
-AD4A: 86 1A       LDA   #$1A
-AD4C: BD A4 04    JSR   $A404
-AD4F: 20 3D       BRA   $AD8E
+AD3B: BD AB F2    JSR   $ABF2	* call
+AD3E: BD AB 2C    JSR   $AB2C	* call
 
-AD51: 81 03       CMPA  #$03
-AD53: 23 17       BLS   $AD6C
-AD55: BD A0 C5    JSR   $A0C5
-AD58: 10 8E 8E 4D LDY   #$8E4D
-AD5C: E6 A6       LDB   A,Y
+AD41: 20 0C       BRA   $AD4F	* jump rts
+
+AD43: 33 5D       LEAU  $FFFD,U	* u-=3
+AD45: DF EC       STU   $EC	* save
+AD47: BD AB 90    JSR   $AB90	* sampling? no
+AD4A: 86 1A       LDA   #$1A	* 26?
+AD4C: BD A4 04    JSR   $A404	* put value in ringbuffer
+AD4F: 20 3D       BRA   $AD8E	* jump rts
+AD51: 81 03       CMPA  #$03	
+AD53: 23 17       BLS   $AD6C	* a<3, jump
+AD55: BD A0 C5    JSR   $A0C5	* call
+AD58: 10 8E 8E 4D LDY   #$8E4D	* middle of a routine
+AD5C: E6 A6       LDB   A,Y	
 AD5E: C4 7F       ANDB  #$7F
 AD60: E7 A6       STB   A,Y
-AD62: D6 F3       LDB   $F3
-AD64: 8E 80 6F    LDX   #$806F
-AD67: BD 87 BF    JSR   $87BF
-AD6A: 20 22       BRA   $AD8E
+AD62: D6 F3       LDB   $F3	* some variable
+AD64: 8E 80 6F    LDX   #$806F	* os params?
+AD67: BD 87 BF    JSR   $87BF	* call
+AD6A: 20 22       BRA   $AD8E	* jump rts
 
-AD6C: 81 00       CMPA  #$00
-AD6E: 26 0A       BNE   $AD7A
-AD70: BD A0 CF    JSR   $A0CF
-AD73: BD 90 C0    JSR   $90C0
-AD76: DD 70       STD   $70
-AD78: 20 14       BRA   $AD8E
+AD6C: 81 00       CMPA  #$00	
+AD6E: 26 0A       BNE   $AD7A	* a!=0? jump
+AD70: BD A0 CF    JSR   $A0CF	* call
+AD73: BD 90 C0    JSR   $90C0	* call
+AD76: DD 70       STD   $70	* some variable
+AD78: 20 14       BRA   $AD8E	* jump rts
 
-AD7A: 81 01       CMPA  #$01
-AD7C: 26 09       BNE   $AD87
-AD7E: D7 73       STB   $73
-AD80: D7 6F       STB   $6F
-AD82: BD A0 E2    JSR   $A0E2
-AD85: 20 07       BRA   $AD8E
+AD7A: 81 01       CMPA  #$01	* =1
+AD7C: 26 09       BNE   $AD87	* no, jump
+AD7E: D7 73       STB   $73	* some variable
+AD80: D7 6F       STB   $6F	* some variable
+AD82: BD A0 E2    JSR   $A0E2	* call
+AD85: 20 07       BRA   $AD8E	* jump rts
 
-AD87: 81 03       CMPA  #$03
-AD89: 26 03       BNE   $AD8E
-AD8B: BD AC 40    JSR   $AC40
+AD87: 81 03       CMPA  #$03	* =3?
+AD89: 26 03       BNE   $AD8E	* jump rts
+AD8B: BD AC 40    JSR   $AC40	* call
 AD8E: 39          RTS   
 
 AD8F: 81 81       CMPA  #$81
@@ -5630,55 +5686,60 @@ ADB0: 20 0A       BRA   $ADBC
 ADB2: 86 01       LDA   #$01
 ADB4: 20 06       BRA   $ADBC
 
+* unknown
 ADB6: 86 03       LDA   #$03
 ADB8: 20 02       BRA   $ADBC
 
+* unknown
 ADBA: 8A 80       ORA   #$80
-ADBC: 34 01       PSHS  CC
-ADBE: 1A 50       ORCC  #$50
-ADC0: DE EE       LDU   $EE
-ADC2: 11 93 EC    CMPU  $EC
-ADC5: 25 0E       BCS   $ADD5
-ADC7: 35 01       PULS  CC
-ADC9: 34 04       PSHS  B
-ADCB: BD AB 90    JSR   $AB90
-ADCE: 86 1A       LDA   #$1A
-ADD0: BD A4 04    JSR   $A404
+
+* unknown
+ADBC: 34 01       PSHS  CC	* save state
+ADBE: 1A 50       ORCC  #$50	* mask interrupts
+ADC0: DE EE       LDU   $EE	* some variable
+ADC2: 11 93 EC    CMPU  $EC	* some variable
+ADC5: 25 0E       BCS   $ADD5	* $80EC<$80EE?
+ADC7: 35 01       PULS  CC	* restore state
+ADC9: 34 04       PSHS  B	* save B
+ADCB: BD AB 90    JSR   $AB90	* set up sampling?
+ADCE: 86 1A       LDA   #$1A	* 26
+ADD0: BD A4 04    JSR   $A404	* stuff it in ringbuffer
 ADD3: 35 84       PULS  B,PC ;(PUL? PC=RTS)
 
-ADD5: ED C4       STD   ,U
-ADD7: 96 E7       LDA   $E7
-ADD9: 81 08       CMPA  #$08
-ADDB: 26 0C       BNE   $ADE9
-ADDD: 96 F0       LDA   $F0
-ADDF: A7 5F       STA   $FFFF,U
-ADE1: 33 43       LEAU  $0003,U
-ADE3: DF EE       STU   $EE
-ADE5: 0F F0       CLR   $F0
-ADE7: 20 2C       BRA   $AE15
+ADD5: ED C4       STD   ,U	* (U)=A,B
+ADD7: 96 E7       LDA   $E7	* some variable
 
-ADE9: 81 0A       CMPA  #$0A
-ADEB: 26 0C       BNE   $ADF9
-ADED: 96 F0       LDA   $F0
-ADEF: A7 5F       STA   $FFFF,U
-ADF1: 33 43       LEAU  $0003,U
-ADF3: DF EE       STU   $EE
-ADF5: 0F F0       CLR   $F0
+ADD9: 81 08       CMPA  #$08	* 8?
+ADDB: 26 0C       BNE   $ADE9	* no, skip
+ADDD: 96 F0       LDA   $F0	* some variable
+ADDF: A7 5F       STA   $FFFF,U	* (U-1)=A
+ADE1: 33 43       LEAU  $0003,U * U+=3
+ADE3: DF EE       STU   $EE	* some variable
+ADE5: 0F F0       CLR   $F0	* some variable
+ADE7: 20 2C       BRA   $AE15	* finish
+
+ADE9: 81 0A       CMPA  #$0A	* 10?
+ADEB: 26 0C       BNE   $ADF9	* no, skip
+ADED: 96 F0       LDA   $F0	* some variable
+ADEF: A7 5F       STA   $FFFF,U	* (U-1)=A
+ADF1: 33 43       LEAU  $0003,U	* U+=3
+ADF3: DF EE       STU   $EE	* some variable
+ADF5: 0F F0       CLR   $F0	* some variable
 ADF7: 20 1C       BRA   $AE15
 
-ADF9: 81 06       CMPA  #$06
-ADFB: 26 18       BNE   $AE15
-ADFD: A6 C4       LDA   ,U
-ADFF: 81 83       CMPA  #$83
-AE01: 25 12       BCS   $AE15
-AE03: 6F 5F       CLR   $FFFF,U
-AE05: 33 43       LEAU  $0003,U
-AE07: DF EE       STU   $EE
-AE09: 34 04       PSHS  B
-AE0B: BD AB 60    JSR   $AB60
-AE0E: 86 19       LDA   #$19
-AE10: BD A4 04    JSR   $A404
-AE13: 35 04       PULS  B
+ADF9: 81 06       CMPA  #$06	* 6?
+ADFB: 26 18       BNE   $AE15	* no, finish
+ADFD: A6 C4       LDA   ,U	* A=(U)
+ADFF: 81 83       CMPA  #$83	* 131?
+AE01: 25 12       BCS   $AE15	* lower, finish
+AE03: 6F 5F       CLR   $FFFF,U	* (u-1)=0
+AE05: 33 43       LEAU  $0003,U * U+=3
+AE07: DF EE       STU   $EE	* some variable
+AE09: 34 04       PSHS  B	* save B
+AE0B: BD AB 60    JSR   $AB60	* call
+AE0E: 86 19       LDA   #$19	* 25
+AE10: BD A4 04    JSR   $A404	* put it in ringbuffer
+AE13: 35 04       PULS  B	* restore B
 AE15: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
 *** loops around the filters setting resonance and cutoff to zero

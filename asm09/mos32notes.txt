@@ -1,3 +1,13 @@
+$8022 - if non-zero, prevents $A138 from TXing to MIDI
+$8026
+$8036
+$8083
+$809b - something to do with bank selecting
+$809b - something to do with bank selecting
+$80a4 - might be upper/lower bank select for editing?
+$80b3 - 
+$80bc - ring buffer store pointer
+$80be - ring buffer read pointer?
 $80cf - sequence or sample to load?  can be 1, 2 or 3 for loading samples
 * maybe command?
 4, 5, 6 seems to be used for saving samples
@@ -16,8 +26,68 @@ $80e0 - upper/lower sample = 0/2?
 $80e1 - load/save in disk routines
 $80e2 - load/save directory sector?
 $80e3 - used in sector finder, offset?
+$80e7
+$80e9
+$80eb
+$80ec
+$80ee - unknown
+$80f0
 
+$8207 - unknown
+$8225 - start of ring buffer
+$8234 - end of ring buffer
+$8235 - something to do with FIRQ?
 $8278 - address to store in ringbuffer
 $827A - address to fetch in ringbuffer
 $827C - $10 bytes for ringbuffer
 $828C - start of code?
+
+$b800 - sequence memory
+$b804 - contains $b80a
+$b806 - contains $b835
+$b808 - contains $b80a
+$b80a - contains $00c9
+
+# possible subroutines (at least, stuff that JSRs point to)
+$ab00 - (15) displays disk error message
+$9431 - (12) reset some variables
+$ab90 - (10) called from routine that sets up sampling?  Lots of other places
+$9249 - (10) clear a bunch of variables to zero
+$a1ac - (9) weird, pops return address into $80c0 and rts
+$885e - (9) task list?
+$8738 - (9) mashes variables about, task list?
+$a404 - (7) writes values to ringbuffer between $827c and $828c
+$9d38 - (7) unknown, sets two variables
+$86f6 - (7) unknown, looks task list-y
+$aad2 - (6) something to do with setting up trk/sect for load/save
+$95e1 - (6) unknown, calls a routine, sets two vars, calls another
+$8ecf - (6) unknown
+$9dd7 - (5) unknown, messes with keypad lines?
+$9d41 - (5) unknown, sets two variables, similar to $9d38
+$9a85 - (5) table lookup, voice parameters?
+$986c - (5) possibly gets wavesample start and end into vars?
+$9116 - (5) seems to get bit pattern for LEDs?
+$8e05 - (5) unknown, looks up something in ROM, does various calculations
+$87dd - (5) unknown, called from FIRQ ISR, sets U to $867B
+$9f6f - (4) reset a bunch of stuff including some variables
+$9876 - (4) gets byte from sample RAM, unknown variables
+$875e - (4) called during startup?
+$8722 - (4) unknown, swaps some values pointed at by U and X around
+$ADBC - (3) unknown, involves ringbuffer
+$ADB6 - (3) sets A to 3 and calls $ADBC
+$ADB2 - (3) sets A to 1 and calls $ADBC
+$ADAF - (3) sets A to 0 and calls $ADBC
+$AB60 - (3) unknown, clears some vars and sets others then jumps off to ADBC and friends
+$AA2F - (3) get directory bytes
+$A53A - (3) save sample?
+$A4D4 - (3) load sample?
+$a116 - (3) put MIDI clock pulse in buffer?
+$a0da - (3) unknown, something to do with MIDI
+$9f60 - (3) seems to be called before sampling?
+$9941 - (3) unknownish, loop params?
+$988f - (3) store byte in sample RAM, similar to $9876
+$9858 - (3) something to do with selecting banks
+$96f4 - (3) unknown, points $80B3 to a strange offset in param table
+$8f11 - (3) unknown, handles editing loop values
+$adba - (2) ors A with $80, continues with ADBC
+$aceb - (2) unknown, 
