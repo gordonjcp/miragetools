@@ -21,8 +21,16 @@ $8026 - param 87, seq speed
 $8027 - param 88, seq loop on/off
 $8028
 $8029
+$802b - software version
 $8031
 $8036
+$803d
+$8057
+$8061
+$8065 - key velocity
+$8066
+$806b
+$807f
 $8081
 $8082
 $8083
@@ -39,6 +47,7 @@ $80a4 - might be upper/lower bank select for editing?
 $80ab
 $80ac - variable to be displayed?
 $80ad
+$80ae
 $80af
 $80b3 - LED bit patterns?
 $80ba - 
@@ -69,6 +78,8 @@ $80eb
 $80ec
 $80ee - unknown
 $80f0
+$8105
+$8106
 
 $8207 - unknown
 $8225 - start of ring buffer
@@ -78,6 +89,11 @@ $8278 - address to store in ringbuffer
 $827A - address to fetch in ringbuffer
 $827C - $10 bytes for ringbuffer
 $828C - start of code?
+
+$900a - pitch wheel offset?
+$900c
+$900d
+$900e
 
 $b800 - sequence memory
 $b804 - contains $b80a
@@ -148,5 +164,21 @@ $a0cf - (2) send MIDI pitchbend message
 $a0c5 - (2) send MIDI note off
 $9f9a - (2) sets up some variables
 $9d4b - (2) unknown
-$9cc1 - (2) unknown, takes X and some variables
-$998b - (2) unknown
+$9cc1 - (2) unknown, display value pointed to by x
+$998b - (2) unknown, something to do with editing values?
+$90e9 - (2) unknown, jumps depending on value of $AE
+$90c0 - (2) unknown, something to do with pitch bend
+$8fc8 - called while setting loop params
+$8da1 - calculate filter envelope
+$8c34 - calculate LFO response?
+$8bcd - calculate tuning word from note number 
+$896b - unknown, might parse kybd commands?
+$8844 - setup oscillator modes
+$87e2 - unknown
+$b96e - tune filters
+$b935 - calibration value for pitch wheel?
+$aef0 - step head in, unused disk code
+$ad9a - unknown
+$ad8f - unknown
+$ac27 - copy some byte?
+

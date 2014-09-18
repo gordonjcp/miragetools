@@ -622,6 +622,8 @@ osvec:
 8663: B7 81 05    STA   $8105
 8666: 39          RTS   
 
+* unknown
+* zeros out seven bytes at $804f
 8667: CE 80 4F    LDU   #$804F
 866A: 6F C0       CLR   ,U+
 866C: 11 83 80 56 CMPU  #$8056
@@ -650,6 +652,7 @@ osvec:
 
 869F: 39          RTS   
 
+* unknown
 86A0: AE 24       LDX   $0004,Y
 86A2: 34 30       PSHS  Y,X
 86A4: 10 9E 3D    LDY   $3D
@@ -853,6 +856,7 @@ startup875e2:
 881A: 1C AF       ANDCC #$AF	* enable interrupts
 881C: 7E 82 90    JMP   $8290	* jump to some routine
 
+* unknown
 881F: 10 9E 57    LDY   $57
 8822: 26 10       BNE   $8834
 8824: 34 56       PSHS  U,X,B,A
@@ -1037,43 +1041,45 @@ resetkybd:
 899E: 0A 64       DEC   $64
 89A0: 3B          RTI   
 
-89A1: C1 90       CMPB  #$90
-89A3: 26 07       BNE   $89AC
-89A5: CC 8A 25    LDD   #$8A25
-89A8: DD 61       STD   $61
-89AA: 20 3F       BRA   $89EB
+* unknown
+* parse MIDI?
+89A1: C1 90       CMPB  #$90	* note on?
+89A3: 26 07       BNE   $89AC	* no, next
+89A5: CC 8A 25    LDD   #$8A25	* 
+89A8: DD 61       STD   $61	* some variable
+89AA: 20 3F       BRA   $89EB	* bra rts
 
-89AC: C1 80       CMPB  #$80
-89AE: 26 07       BNE   $89B7
-89B0: CC 89 EC    LDD   #$89EC
-89B3: DD 61       STD   $61
-89B5: 20 34       BRA   $89EB
+89AC: C1 80       CMPB  #$80	* note off?
+89AE: 26 07       BNE   $89B7	* no, next
+89B0: CC 89 EC    LDD   #$89EC	
+89B3: DD 61       STD   $61	* some variable
+89B5: 20 34       BRA   $89EB	* bra rts
 
-89B7: C1 B8       CMPB  #$B8
-89B9: 26 19       BNE   $89D4
-89BB: 96 28       LDA   $28
-89BD: 26 0E       BNE   $89CD
-89BF: 86 01       LDA   #$01
-89C1: 97 6B       STA   $6B
+89B7: C1 B8       CMPB  #$B8	* not sure 
+89B9: 26 19       BNE   $89D4	* no, skip
+89BB: 96 28       LDA   $28	* some variable
+89BD: 26 0E       BNE   $89CD	* non-zero
+89BF: 86 01       LDA   #$01	
+89C1: 97 6B       STA   $6B	* some variable
 89C3: C6 7F       LDB   #$7F
-89C5: BD A0 DA    JSR   $A0DA
-89C8: BD AD B6    JSR   $ADB6
-89CB: 20 05       BRA   $89D2
+89C5: BD A0 DA    JSR   $A0DA	* call
+89C8: BD AD B6    JSR   $ADB6	* call
+89CB: 20 05       BRA   $89D2	* bra rts
 
-89CD: 86 1B       LDA   #$1B
-89CF: BD A4 04    JSR   $A404
-89D2: 20 17       BRA   $89EB
+89CD: 86 1B       LDA   #$1B	
+89CF: BD A4 04    JSR   $A404	* place byte in ringbuffer
+89D2: 20 17       BRA   $89EB	* bra rts
 
-89D4: C1 B9       CMPB  #$B9
-89D6: 26 13       BNE   $89EB
-89D8: 96 28       LDA   $28
-89DA: 26 0F       BNE   $89EB
-89DC: 0F 6B       CLR   $6B
+89D4: C1 B9       CMPB  #$B9	
+89D6: 26 13       BNE   $89EB	* no, jump rts
+89D8: 96 28       LDA   $28	* some variable
+89DA: 26 0F       BNE   $89EB	* non-zero, rts
+89DC: 0F 6B       CLR   $6B	* some variable
 89DE: 5F          CLRB  
-89DF: BD A0 DA    JSR   $A0DA
-89E2: BD AD B6    JSR   $ADB6
-89E5: 8E 80 68    LDX   #$8068
-89E8: BD 87 DD    JSR   $87DD
+89DF: BD A0 DA    JSR   $A0DA	* some kind of MIDI routine
+89E2: BD AD B6    JSR   $ADB6	* call
+89E5: 8E 80 68    LDX   #$8068	
+89E8: BD 87 DD    JSR   $87DD	* call
 89EB: 39          RTS   
 
 89EC: CB 24       ADDB  #$24
@@ -1312,7 +1318,8 @@ resetkybd:
 8BCC: 39          RTS   
 
 * calculate tuning from note number
-8BCD: E6 26       LDB   $0006,Y
+* Y points to voice param block
+8BCD: E6 26       LDB   $0006,Y	* note
 8BCF: D1 7D       CMPB  $7D	* max note = 125?
 8BD1: 25 02       BCS   $8BD5	* lower?
 8BD3: C0 18       SUBB  #$18	* no, subtract 24
@@ -1356,17 +1363,19 @@ resetkybd:
 8C31: 25 DF       BCS   $8C12
 8C33: 39          RTS   
 
+* unknown
+* lfo?
 8C34: EE 24       LDU   $0004,Y
 8C36: E6 A8 14    LDB   $14,Y
 8C39: 26 14       BNE   $8C4F
-8C3B: 96 1D       LDA   $1D
-8C3D: 81 09       CMPA  #$09
+8C3B: 96 1D       LDA   $1D	* lfo mod source
+8C3D: 81 09       CMPA  #$09	* poly aftertouch
 8C3F: 26 05       BNE   $8C46
-8C41: E6 A8 18    LDB   $18,Y
+8C41: E6 A8 18    LDB   $18,Y	* filter offset?
 8C44: 20 02       BRA   $8C48
 
 8C46: E6 44       LDB   $0004,U
-8C48: 8E F7 7D    LDX   #$F77D
+8C48: 8E F7 7D    LDX   #$F77D	* points to a curve lookup table
 8C4B: E6 85       LDB   B,X
 8C4D: 20 01       BRA   $8C50
 
@@ -1536,51 +1545,54 @@ resetkybd:
 8D9D: A7 A8 32    STA   $32,Y
 8DA0: 39          RTS   
 
-8DA1: A6 88 11    LDA   $11,X
-8DA4: D6 65       LDB   $65
+* calculate filter envelope?
+* assume X is program param block
+* and Y is voice param block
+8DA1: A6 88 11    LDA   $11,X	* attack vel sense
+8DA4: D6 65       LDB   $65	* note velocity
 8DA6: 3D          MUL   
-8DA7: 40          NEGA  
-8DA8: AB 0C       ADDA  $000C,X
-8DAA: 8D 4A       BSR   $8DF6
-8DAC: ED A8 1E    STD   $1E,Y
-8DAF: A6 88 12    LDA   $12,X
-8DB2: D6 65       LDB   $65
+8DA7: 40          NEGA 		* because the harder the note, the faster 
+8DA8: AB 0C       ADDA  $000C,X	* add attack rate
+8DAA: 8D 4A       BSR   $8DF6	* call
+8DAC: ED A8 1E    STD   $1E,Y	* attack time
+8DAF: A6 88 12    LDA   $12,X	* Peak vel sense
+8DB2: D6 65       LDB   $65	* note velocity
 8DB4: 3D          MUL   
-8DB5: AB 0D       ADDA  $000D,X
-8DB7: 2A 01       BPL   $8DBA
-8DB9: 4F          CLRA  
-8DBA: 81 1F       CMPA  #$1F
-8DBC: 23 02       BLS   $8DC0
-8DBE: 86 1F       LDA   #$1F
-8DC0: 34 02       PSHS  A
-8DC2: 48          ASLA  
+8DB5: AB 0D       ADDA  $000D,X	* Peak level
+8DB7: 2A 01       BPL   $8DBA	* gone negative?
+8DB9: 4F          CLRA  	* clamp to zero
+8DBA: 81 1F       CMPA  #$1F	* offscale?
+8DBC: 23 02       BLS   $8DC0	* no
+8DBE: 86 1F       LDA   #$1F	* yes, clamp
+8DC0: 34 02       PSHS  A	* save a
+8DC2: 48          ASLA  	* multiply by 8?
 8DC3: 48          ASLA  
 8DC4: 48          ASLA  
-8DC5: A7 A8 20    STA   $20,Y
-8DC8: A6 88 13    LDA   $13,X
-8DCB: D6 66       LDB   $66
+8DC5: A7 A8 20    STA   $20,Y	* save in parameter block
+8DC8: A6 88 13    LDA   $13,X	* decay keyscale
+8DCB: D6 66       LDB   $66	* note number?
 8DCD: 3D          MUL   
-8DCE: 40          NEGA  
-8DCF: 67 E4       ASR   ,S
+8DCE: 40          NEGA 		* shortens note 
+8DCF: 67 E4       ASR   ,S	* divide top of stack by 4
 8DD1: 67 E4       ASR   ,S
-8DD3: A0 E0       SUBA  ,S+
-8DD5: 8B 08       ADDA  #$08
-8DD7: AB 0E       ADDA  $000E,X
-8DD9: 8D 1B       BSR   $8DF6
-8DDB: ED A8 21    STD   $21,Y
-8DDE: A6 88 14    LDA   $14,X
-8DE1: D6 65       LDB   $65
+8DD3: A0 E0       SUBA  ,S+	* subtract and discard
+8DD5: 8B 08       ADDA  #$08	* add 8
+8DD7: AB 0E       ADDA  $000E,X	* decay time
+8DD9: 8D 1B       BSR   $8DF6	* call
+8DDB: ED A8 21    STD   $21,Y	* save in parameter block
+8DDE: A6 88 14    LDA   $14,X	* sustain velocity
+8DE1: D6 65       LDB   $65	* velocity
 8DE3: 3D          MUL   
-8DE4: AB 0F       ADDA  $000F,X
-8DE6: 2A 01       BPL   $8DE9
+8DE4: AB 0F       ADDA  $000F,X	* sustain level
+8DE6: 2A 01       BPL   $8DE9	* clamp
 8DE8: 4F          CLRA  
-8DE9: 81 1F       CMPA  #$1F
-8DEB: 23 02       BLS   $8DEF
+8DE9: 81 1F       CMPA  #$1F	* offscale?
+8DEB: 23 02       BLS   $8DEF	* clamp
 8DED: 86 1F       LDA   #$1F
 8DEF: 48          ASLA  
 8DF0: 48          ASLA  
 8DF1: 48          ASLA  
-8DF2: A7 A8 23    STA   $23,Y
+8DF2: A7 A8 23    STA   $23,Y	* save in parameter block
 8DF5: 39          RTS   
 
 8DF6: 2A 03       BPL   $8DFB
@@ -1910,48 +1922,50 @@ resetkybd:
 90BC: BD AD B2    JSR   $ADB2
 90BF: 39          RTS   
 
-90C0: 86 AB       LDA   #$AB
-90C2: C0 40       SUBB  #$40
-90C4: 2A 05       BPL   $90CB
-90C6: 3D          MUL   
-90C7: 80 2B       SUBA  #$2B
-90C9: 20 06       BRA   $90D1
+* unknown
+90C0: 86 AB       LDA   #$AB	* some variable
+90C2: C0 40       SUBB  #$40	* b-=64
+90C4: 2A 05       BPL   $90CB	* >0? jump
+90C6: 3D          MUL
+90C7: 80 2B       SUBA  #$2B	* subtract 43, why?
+90C9: 20 06       BRA   $90D1	* jump
 
-90CB: C1 3F       CMPB  #$3F
-90CD: 26 01       BNE   $90D0
-90CF: 5C          INCB  
-90D0: 3D          MUL   
-90D1: 58          ASLB  
-90D2: D6 13       LDB   $13
+90CB: C1 3F       CMPB  #$3F	* 63?	
+90CD: 26 01       BNE   $90D0	* no, jump
+90CF: 5C          INCB 		* b++
+90D0: 3D          MUL  		* d=a*b
+90D1: 58          ASLB  	* b*2
+90D2: D6 13       LDB   $13	* pitch bend range?
 90D4: 49          ROLA  
-90D5: 2A 05       BPL   $90DC
+90D5: 2A 05       BPL   $90DC	* bit 7 set, jump
 90D7: 3D          MUL   
-90D8: 90 13       SUBA  $13
+90D8: 90 13       SUBA  $13	* subtract bendrange
 90DA: 20 01       BRA   $90DD
 
-90DC: 3D          MUL   
-90DD: 47          ASRA  
-90DE: 56          RORB  
-90DF: 47          ASRA  
-90E0: 56          RORB  
+90DC: 3D          MUL  		* must admit I don't get this 16-bit /4?
+90DD: 47          ASRA 		* A/2 
+90DE: 56          RORB  	* B/2 shifting in carry
+90DF: 47          ASRA  	* A/2
+90E0: 56          RORB  	* B/2 shifting in carry
 90E1: 39          RTS   
 
 90E2: BD 9D 4B    JSR   $9D4B
 90E5: 8D 02       BSR   $90E9
 90E7: 20 F9       BRA   $90E2
 
-90E9: 96 AE       LDA   $AE
-90EB: 81 0A       CMPA  #$0A
-90ED: 24 04       BCC   $90F3
-90EF: BD 92 58    JSR   $9258
+* unknown
+90E9: 96 AE       LDA   $AE	*  some variable
+90EB: 81 0A       CMPA  #$0A	* 10?
+90ED: 24 04       BCC   $90F3	* >=, jump
+90EF: BD 92 58    JSR   $9258	* call
 90F2: 39          RTS   
 
-90F3: 96 AE       LDA   $AE
-90F5: 81 10       CMPA  #$10
-90F7: 25 08       BCS   $9101
-90F9: 81 17       CMPA  #$17
-90FB: 22 04       BHI   $9101
-90FD: BD 94 3B    JSR   $943B
+90F3: 96 AE       LDA   $AE	* some variable
+90F5: 81 10       CMPA  #$10	* 16?
+90F7: 25 08       BCS   $9101	* <, jump
+90F9: 81 17       CMPA  #$17	* 23?
+90FB: 22 04       BHI   $9101	* >, jump
+90FD: BD 94 3B    JSR   $943B	* call
 9100: 39          RTS   
 
 9101: 96 AE       LDA   $AE
@@ -3918,11 +3932,11 @@ resetkybd:
 9F5E: 20 FE       BRA   $9F5E
 
 * seems to be called before sampling?
-9F60: 1A 50       ORCC  #$50	* save state
+9F60: 1A 50       ORCC  #$50	* mask interrupts
 9F62: BD AB 90    JSR   $AB90	* thing that gets called before sampling
 9F65: BD F1 BB    JSR   qchipsetup
 9F68: BD 8C 80    JSR   $8C80	* call
-9F6B: BD F5 41    JSR   unknown3 * call
+9F6B: BD F5 41    JSR   unknown3 * call to reset ACIA and VIA
 9F6E: 39          RTS   
 
 * Oooh, what's this
@@ -5684,6 +5698,7 @@ AD89: 26 03       BNE   $AD8E	* jump rts
 AD8B: BD AC 40    JSR   $AC40	* call
 AD8E: 39          RTS   
 
+* unknown
 AD8F: 81 81       CMPA  #$81
 AD91: 26 1A       BNE   $ADAD
 AD93: D6 F0       LDB   $F0
@@ -5691,9 +5706,10 @@ AD95: DB F1       ADDB  $F1
 AD97: 25 01       BCS   $AD9A
 AD99: 39          RTS   
 
+* unknown
 AD9A: DE EE       LDU   $EE
 AD9C: 11 93 EC    CMPU  $EC
-AD9F: 25 01       BCS   $ADA2
+AD9F: 25 01       BCS   $ADA2	* if $80EC is less than $80EE, continue
 ADA1: 39          RTS   
 
 ADA2: A7 C1       STA   ,U++
@@ -5806,7 +5822,7 @@ AE54: 7C A2 42    INC   $A242	* this is in the middle of code
 AE57: B6 80 02    LDA   fdctrk
 AE5A: 81 50       CMPA  #$50	* run out of tracks?
 AE5C: 24 0D       BCC   $AE6B
-AE5E: BD AE F0    JSR   $AEF0	* this points to an endless loop
+AE5E: BD AE F0    JSR   $AEF0	* step head in
 AE61: B6 80 06    LDA   fdcstat
 AE64: 81 00       CMPA  #$00
 AE66: 27 03       BEQ   $AE6B
