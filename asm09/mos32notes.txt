@@ -24,9 +24,17 @@ $8029
 $802b - software version
 $8031
 $8036
+$8038
 $803d
+$804d
+$804e
+$804f - 7-byte table of values
+$8056 - end of table
 $8057
-$8061
+$8059
+$805d
+$8061 - note in
+$8062 - velocity in
 $8065 - key velocity
 $8066
 $8067
@@ -45,6 +53,10 @@ $80a1 - min value for param?
 $80a2 
 $80a3
 $80a4 - might be upper/lower bank select for editing?
+$80a5 - upper program
+$80a7 - lower program
+$80a9 - selected upper wavesample
+$80aa - selected lower wavesample
 $80ab
 $80ac - variable to be displayed?
 $80ad
@@ -115,7 +127,7 @@ $9d38 - (7) unknown, sets two variables
 $86f6 - (7) unknown, looks task list-y
 $aad2 - (6) something to do with setting up trk/sect for load/save
 $95e1 - (6) unknown, calls a routine, sets two vars, calls another
-$8ecf - (6) unknown
+$8ecf - (6) unknown - called from "initial wavesample" param setter
 $9dd7 - (5) unknown, messes with keypad lines?
 $9d41 - (5) unknown, sets two variables, similar to $9d38
 $9a85 - (5) table lookup, voice parameters?
@@ -166,6 +178,7 @@ $a0c5 - (2) send MIDI note off
 $9f9a - (2) sets up some variables
 $9d4b - (2) unknown
 $9cc1 - (2) unknown, display value pointed to by x
+$9cc5 -     unknown, display on/oF?
 $998b - (2) unknown, something to do with editing values?
 $90e9 - (2) unknown, jumps depending on value of $AE
 $90c0 - (2) unknown, something to do with pitch bend
@@ -182,4 +195,5 @@ $aef0 - step head in, unused disk code
 $ad9a - unknown
 $ad8f - unknown
 $ac27 - copy some byte?
+$99ce - select through edit parameters
 

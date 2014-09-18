@@ -141,26 +141,30 @@ osvec:
 82A9: AD B8 02    JSR   [$02,Y]	* jump to next task in list?
 82AC: 20 E2       BRA   $8290	* and loop
 
-82AE: E6 24       LDB   $0004,Y
-82B0: C0 24       SUBB  #$24
-82B2: CE 80 4F    LDU   #$804F
-82B5: 1F 98       TFR   B,A
-82B7: 44          LSRA  
+* unknown
+* $80fc is a table of values that runs
+* FE FD FB F7 EF DF BF 7F
+* bit set
+82AE: E6 24       LDB   $0004,Y	* get a value (voice params?)
+82B0: C0 24       SUBB  #$24	* subtract 36 (three octaves?)
+82B2: CE 80 4F    LDU   #$804F	* some variable
+82B5: 1F 98       TFR   B,A	* copy B
+82B7: 44          LSRA  	
 82B8: 44          LSRA  
-82B9: 44          LSRA  
-82BA: C4 07       ANDB  #$07
-82BC: 8E 80 FC    LDX   #$80FC
-82BF: E6 85       LDB   B,X
-82C1: E4 C6       ANDB  A,U
-82C3: E7 C6       STB   A,U
-82C5: A6 25       LDA   $0005,Y
-82C7: 97 4D       STA   $4D
+82B9: 44          LSRA  	* *8
+82BA: C4 07       ANDB  #$07	* mask lower 3 bits of A
+82BC: 8E 80 FC    LDX   #$80FC	
+82BF: E6 85       LDB   B,X	* b now contains 255-(2^b)
+82C1: E4 C6       ANDB  A,U	* mask that bit off
+82C3: E7 C6       STB   A,U	* save it
+82C5: A6 25       LDA   $0005,Y	
+82C7: 97 4D       STA   $4D	* some variable
 82C9: E6 24       LDB   $0004,Y
 82CB: A6 27       LDA   $0007,Y
-82CD: BD 87 38    JSR   $8738
-82D0: 9E 45       LDX   $45
-82D2: 27 21       BEQ   $82F5
-82D4: D1 7D       CMPB  $7D
+82CD: BD 87 38    JSR   $8738	* call
+82D0: 9E 45       LDX   $45	* some variable
+82D2: 27 21       BEQ   $82F5	* 
+82D4: D1 7D       CMPB  $7D	* some variable
 82D6: 25 1D       BCS   $82F5
 82D8: A7 05       STA   $0005,X
 82DA: E7 06       STB   $0006,X
@@ -341,6 +345,7 @@ osvec:
 
 842F: 7E 83 EF    JMP   $83EF
 
+* unknown
 8432: EC 24       LDD   $0004,Y
 8434: A7 06       STA   $0006,X
 8436: E7 08       STB   $0008,X
@@ -802,9 +807,11 @@ startup875e2:
 87BC: ED C4       STD   ,U
 87BE: 39          RTS   
 
+* unknown
 87BF: CE 82 AE    LDU   #$82AE
 87C2: 20 0F       BRA   $87D3
 
+* unknown
 87C4: 34 02       PSHS  A
 87C6: 96 5D       LDA   $5D
 87C8: 81 04       CMPA  #$04
@@ -1200,9 +1207,9 @@ resetkybd:
 
 *** something to do with setting the filter
 8AD7: 1C AF       ANDCC #$AF		; unmask IRQ and FIRQ
-8AD9: A1 88 27    CMPA  $27,X		; resonance
-8ADC: 23 03       BLS   $8AE1		; less than <something>
-8ADE: A6 88 27    LDA   $27,X		; set it to what we compared with
+8AD9: A1 88 27    CMPA  $27,X		; resonance (max is 40?)
+8ADC: 23 03       BLS   $8AE1		; less than 39
+8ADE: A6 88 27    LDA   $27,X		; clamp
 8AE1: E6 88 28    LDB   $28,X		; cutoff
 8AE4: BD F5 E7    JSR   setfilterdac	; set DAC
 8AE7: 1A 50       ORCC  #$50		; mask interrupts
@@ -3167,23 +3174,24 @@ resetkybd:
 99CA: 10 9E A7    LDY   $A7
 99CD: 39          RTS   
 
-99CE: 96 8B       LDA   $8B
-99D0: 81 1B       CMPA  #$1B
-99D2: 10 26 00 18 LBNE  $99EE
+* selecting edit parameters
+99CE: 96 8B       LDA   $8B	* fetch parameter
+99D0: 81 1B       CMPA  #$1B	* 27 (initial wavesample)
+99D2: 10 26 00 18 LBNE  $99EE	* no, continue
 99D6: 30 2A       LEAX  $000A,Y
-99D8: 86 07       LDA   #$07
-99DA: 97 A0       STA   $A0
-99DC: 0C A3       INC   $A3
-99DE: 0D 84       TST   $84
-99E0: 10 27 02 DD LBEQ  $9CC1
-99E4: BD 9C C1    JSR   $9CC1
-99E7: BD 8E CF    JSR   $8ECF
+99D8: 86 07       LDA   #$07	* 1-8, guess this is max
+99DA: 97 A0       STA   $A0	* param_max
+99DC: 0C A3       INC   $A3	* what's $A3 for?
+99DE: 0D 84       TST   $84	* upper/lower?
+99E0: 10 27 02 DD LBEQ  $9CC1	* jump
+99E4: BD 9C C1    JSR   $9CC1	* call
+99E7: BD 8E CF    JSR   $8ECF	* then jump
 99EA: 39          RTS   
 
 99EB: 16 00 5F    LBRA  $9A4D
 
-99EE: 81 1C       CMPA  #$1C
-99F0: 10 26 00 12 LBNE  $9A06
+99EE: 81 1C       CMPA  #$1C	* 28 (mix mode on/off)
+99F0: 10 26 00 12 LBNE  $9A06	* no, continue
 99F4: 30 2B       LEAX  $000B,Y
 99F6: 0D 84       TST   $84
 99F8: 10 27 02 C9 LBEQ  $9CC5
@@ -3194,76 +3202,77 @@ resetkybd:
 9A03: 16 00 47    LBRA  $9A4D
 
 * more parameters?
-9A06: 81 1D       CMPA  #$1D	* 29?
-9A08: 10 26 00 14 LBNE  $9A20
+9A06: 81 1D       CMPA  #$1D	* 29 (mono on/off)
+9A08: 10 26 00 14 LBNE  $9A20	* no, continue
 9A0C: 0D 84       TST   $84
 9A0E: 10 27 00 55 LBEQ  $9A67
 9A12: 34 26       PSHS  Y,B,A
 9A14: 1A 50       ORCC  #$50
-9A16: BD 87 5E    JSR   $875E
+9A16: BD 87 5E    JSR   $875E	* called at startup too?
 9A19: 1C AF       ANDCC #$AF
 9A1B: 35 26       PULS  A,B,Y
 9A1D: 16 00 2D    LBRA  $9A4D
 
-9A20: 81 22       CMPA  #$22
-9A22: 10 26 00 06 LBNE  $9A2C
-9A26: BD 9D 41    JSR   $9D41
-9A29: 16 00 21    LBRA  $9A4D
+9A20: 81 22       CMPA  #$22	* 34 (osc mix)
+9A22: 10 26 00 06 LBNE  $9A2C	* no, continue
+9A26: BD 9D 41    JSR   $9D41	* call routine that sets two variables
+9A29: 16 00 21    LBRA  $9A4D	* continue
 
-9A2C: 81 23       CMPA  #$23
-9A2E: 10 26 00 06 LBNE  $9A38
-9A32: BD 9D 41    JSR   $9D41
-9A35: 16 00 15    LBRA  $9A4D
+9A2C: 81 23       CMPA  #$23	* 35 (osc mix Vs)
+9A2E: 10 26 00 06 LBNE  $9A38	* no, skip
+9A32: BD 9D 41    JSR   $9D41	* "set two variables"
+9A35: 16 00 15    LBRA  $9A4D	* continue
 
 9A38: 81 24       CMPA  #$24	* cutoff?
-9A3A: 10 26 00 06 LBNE  $9A44	* skip
+9A3A: 10 26 00 06 LBNE  $9A44	* no, continue
 9A3E: BD 9D 38    JSR   $9D38	* "set two variables"
-9A41: 16 00 09    LBRA  $9A4D
+9A41: 16 00 09    LBRA  $9A4D	* continue
 
-9A44: 81 25       CMPA  #$25
-9A46: 10 26 00 03 LBNE  $9A4D
-9A4A: BD 9D 41    JSR   $9D41
+9A44: 81 25       CMPA  #$25	* resonance
+9A46: 10 26 00 03 LBNE  $9A4D	* no, continue
+9A4A: BD 9D 41    JSR   $9D41	* "set two variables"
 9A4D: 96 8B       LDA   $8B	* parameter being examined
-9A4F: 81 2D       CMPA  #$2D
-9A51: 25 07       BCS   $9A5A
-9A53: 81 31       CMPA  #$31
-9A55: 22 03       BHI   $9A5A
-9A57: BD 9D 41    JSR   $9D41
-9A5A: 96 8B       LDA   $8B
-9A5C: 81 37       CMPA  #$37
-9A5E: 25 07       BCS   $9A67
-9A60: 81 3B       CMPA  #$3B
-9A62: 22 03       BHI   $9A67
-9A64: BD 9D 41    JSR   $9D41
-9A67: 8E A0 57    LDX   #$A057
-9A6A: A6 85       LDA   B,X
-9A6C: 97 A0       STA   $A0
-9A6E: 30 A5       LEAX  B,Y
-9A70: 7E 9C C1    JMP   $9CC1
+9A4F: 81 2D       CMPA  #$2D	* 45 (VCF Attack Vs)
+9A51: 25 07       BCS   $9A5A	* lower? continue
+9A53: 81 31       CMPA  #$31	* 49 (VCF Release Vs)
+9A55: 22 03       BHI   $9A5A	* higher, continue
+9A57: BD 9D 41    JSR   $9D41	* "set two variables"
+9A5A: 96 8B       LDA   $8B	* get parameter
+9A5C: 81 37       CMPA  #$37	* 55 (DCA Attack Vs)
+9A5E: 25 07       BCS   $9A67	* lower, continue
+9A60: 81 3B       CMPA  #$3B	* 59 (DCA Release Vs)
+9A62: 22 03       BHI   $9A67	* higher, continue
+9A64: BD 9D 41    JSR   $9D41	* "set two variables"
+9A67: 8E A0 57    LDX   #$A057	* table of values
+9A6A: A6 85       LDA   B,X	* b contains ?
+9A6C: 97 A0       STA   $A0	* maximum parameter value
+9A6E: 30 A5       LEAX  B,Y	* b must be parameter offset?
+9A70: 7E 9C C1    JMP   $9CC1	* display
 
-9A73: 96 8B       LDA   $8B
-9A75: 81 3C       CMPA  #$3C
-9A77: 10 25 00 B4 LBCS  $9B2F
-9A7B: 81 48       CMPA  #$48
-9A7D: 10 22 00 AE LBHI  $9B2F
-9A81: 8D 02       BSR   $9A85
-9A83: 20 1C       BRA   $9AA1
+* per-wavesample params?
+9A73: 96 8B       LDA   $8B	* fetch parameter
+9A75: 81 3C       CMPA  #$3C	* 60 (ws start)
+9A77: 10 25 00 B4 LBCS  $9B2F	* no, continue
+9A7B: 81 48       CMPA  #$48	* 72 (top key)
+9A7D: 10 22 00 AE LBHI  $9B2F	* no, continue
+9A81: 8D 02       BSR   $9A85	* get wavesample parameter
+9A83: 20 1C       BRA   $9AA1	* display
 
-* look up upper or lower voice params 
+* look up upper or lower wavesample params 
 * $80a4 toggles which table we read and which variable we look up
 * sets the user stack and $80a9 points to the value in the table
+* returns U = program, Y = wavesample parameter
 
-9A85: 96 A4       LDA   $A4	* some variable
+9A85: 96 A4       LDA   $A4	* upper/lower
 9A87: 27 0A       BEQ   $9A93	* if zero, skip
 9A89: 10 8E 8E BF LDY   #$8EBF	* lookup table pointing to upper params
-9A8D: DE A5       LDU   $A5	* some variable
-9A8F: 96 A9       LDA   $A9	* some variable, selected voice
+9A8D: DE A5       LDU   $A5	* upper program?
+9A8F: 96 A9       LDA   $A9	* upper wavesample
 9A91: 20 08       BRA   $9A9B	* skip
-
 9A93: 10 8E 8E AF LDY   #$8EAF	* lookup table pointing to lower params
-9A97: DE A7       LDU   $A7	* different variable
-9A99: 96 AA       LDA   $AA	* different variable, selected voice
-9A9B: 48          ASLA  	
+9A97: DE A7       LDU   $A7	* lower program?
+9A99: 96 AA       LDA   $AA	* lower wavesample
+9A9B: 48          ASLA  	* multiply by 2
 9A9C: AE A6       LDX   A,Y	* fetch value from table
 9A9E: 1F 12       TFR   X,Y	* return with new value in Y
 9AA0: 39          RTS   
