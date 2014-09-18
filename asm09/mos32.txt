@@ -1682,39 +1682,39 @@ resetkybd:
 8EBF: B5 8F B5 A7 B5 BF B5 D7 B5 EF B6 07 B6 1F B6 37 
 
 * unknown
-8ECF: 10 9E A7    LDY   $A7	* some variable
-8ED2: 8E 8E AF    LDX   #$8EAF	* unknown
-8ED5: CE 8E 71    LDU   #$8E71	* unknown
+8ECF: 10 9E A7    LDY   $A7	* lower program
+8ED2: 8E 8E AF    LDX   #$8EAF	* lower ws addresses
+8ED5: CE 8E 71    LDU   #$8E71	* empty buffer?
 8ED8: 4F          CLRA  
 8ED9: 8D 11       BSR   $8EEC	* call
 8EDB: 34 02       PSHS  A
-8EDD: 10 9E A5    LDY   $A5
-8EE0: 8E 8E BF    LDX   #$8EBF
-8EE3: 8D 07       BSR   $8EEC
+8EDD: 10 9E A5    LDY   $A5	* upper program
+8EE0: 8E 8E BF    LDX   #$8EBF	* upper ws addresses
+8EE3: 8D 07       BSR   $8EEC	* call 
 8EE5: 35 02       PULS  A
-8EE7: 8B 24       ADDA  #$24
-8EE9: 97 7D       STA   $7D
+8EE7: 8B 24       ADDA  #$24	* +36
+8EE9: 97 7D       STA   $7D	* save in some variable
 8EEB: 39          RTS   
 
-8EEC: E6 2A       LDB   $000A,Y
-8EEE: 58          ASLB  
-8EEF: AE 85       LDX   B,X
-8EF1: A1 0E       CMPA  $000E,X
-8EF3: 22 05       BHI   $8EFA
-8EF5: E7 C6       STB   A,U
-8EF7: 4C          INCA  
-8EF8: 20 F7       BRA   $8EF1
+8EEC: E6 2A       LDB   $000A,Y	* initial wavesample
+8EEE: 58          ASLB		* multiply by 2  
+8EEF: AE 85       LDX   B,X	* fetch ws param addr
+8EF1: A1 0E       CMPA  $000E,X * 0?
+8EF3: 22 05       BHI   $8EFA	* higher, skip
+8EF5: E7 C6       STB   A,U	* save B into that empty buffer
+8EF7: 4C          INCA  	* bump a
+8EF8: 20 F7       BRA   $8EF1	* loop
 
-8EFA: 30 88 18    LEAX  $18,X
-8EFD: CB 02       ADDB  #$02
-8EFF: 6D 2B       TST   $000B,Y
-8F01: 27 05       BEQ   $8F08
-8F03: 30 88 18    LEAX  $18,X
-8F06: CB 02       ADDB  #$02
-8F08: 81 3C       CMPA  #$3C
-8F0A: 22 04       BHI   $8F10
-8F0C: C1 0E       CMPB  #$0E
-8F0E: 23 E1       BLS   $8EF1
+8EFA: 30 88 18    LEAX  $18,X	* 36 bytes, next ws buffer
+8EFD: CB 02       ADDB  #$02	* next wavesample addr
+8EFF: 6D 2B       TST   $000B,Y	* mix mode sw?
+8F01: 27 05       BEQ   $8F08	* off?
+8F03: 30 88 18    LEAX  $18,X	* 36 bytes, next buffer
+8F06: CB 02       ADDB  #$02	* next wavesample addr
+8F08: 81 3C       CMPA  #$3C	* 60?
+8F0A: 22 04       BHI   $8F10	* higher, skip
+8F0C: C1 0E       CMPB  #$0E	* last wavesample (14, 0-7*2)
+8F0E: 23 E1       BLS   $8EF1	* lower, loop back
 8F10: 39          RTS   
 
 * unknown, something to do with loop values
@@ -3256,7 +3256,7 @@ resetkybd:
 9A7B: 81 48       CMPA  #$48	* 72 (top key)
 9A7D: 10 22 00 AE LBHI  $9B2F	* no, continue
 9A81: 8D 02       BSR   $9A85	* get wavesample parameter
-9A83: 20 1C       BRA   $9AA1	* display
+9A83: 20 1C       BRA   $9AA1	* decode
 
 * look up upper or lower wavesample params 
 * $80a4 toggles which table we read and which variable we look up
@@ -3274,13 +3274,14 @@ resetkybd:
 9A99: 96 AA       LDA   $AA	* lower wavesample
 9A9B: 48          ASLA  	* multiply by 2
 9A9C: AE A6       LDX   A,Y	* fetch value from table
-9A9E: 1F 12       TFR   X,Y	* return with new value in Y
+9A9E: 1F 12       TFR   X,Y	* return with new value in Y and X
 9AA0: 39          RTS   
 
 * decode params?
+* parameter? in B, wavesample pointer in X
 9AA1: 30 85       LEAX  B,X
-9AA3: 9F 9D       STX   $9D
-9AA5: 96 8B       LDA   $8B
+9AA3: 9F 9D       STX   $9D	* parameter pointer
+9AA5: 96 8B       LDA   $8B	* parameter value
 9AA7: 81 3C       CMPA  #$3C	* 60 wavesample start
 9AA9: 25 1C       BCS   $9AC7
 9AAB: 81 40       CMPA  #$40	* 64 loop fine

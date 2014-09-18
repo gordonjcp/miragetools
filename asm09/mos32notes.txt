@@ -39,6 +39,7 @@ $8065 - key velocity
 $8066
 $8067
 $806b
+$807d
 $807f
 $8081
 $8082
@@ -50,8 +51,8 @@ $809b - something to do with bank selecting
 $809b - something to do with bank selecting
 $80a0 - max value for param?
 $80a1 - min value for param?
-$80a2 
-$80a3
+$80a2 - set by "set two variables" $9d38 = $81, $9d41 = $02
+$80a3 - set by "set two variables" $9d38 = $02, $9d42 = $04
 $80a4 - might be upper/lower bank select for editing?
 $80a5 - upper program
 $80a7 - lower program
@@ -197,3 +198,4 @@ $ad8f - unknown
 $ac27 - copy some byte?
 $99ce - select through edit parameters
 
+wavesample params

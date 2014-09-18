@@ -150,6 +150,14 @@ void fdc_wreg(int reg, tt_u8 val) {
 					fdc_cycles = cycles + 1000000;
 					fdc.sr = 0x01;
 					break;
+				case 5:
+					// step in
+					fdc_cycles = cycles + 100000;
+					fdc.trk_r++;
+				case 6:
+					// step out
+					fdc_cycles = cycles + 100000;
+					fdc.trk_r--;
 				case 8:
 					//printf("cmd %02x: read sector\n", val);
 					fdc_cycles = cycles + 1000;
