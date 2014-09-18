@@ -3149,9 +3149,9 @@ resetkybd:
 9998: 84 80       ANDA  #$80	* a &= $80
 999A: 97 AB       STA   $AB	* some variable
 999C: 0F A1       CLR   $A1	* minimum param value
-999E: 0F A3       CLR   $A3	* some variable
+999E: 0F A3       CLR   $A3	* double/quad value flag
 99A0: 86 01       LDA   #$01
-99A2: 97 A2       STA   $A2	* some variable
+99A2: 97 A2       STA   $A2	* double/quad value scale
 99A4: 96 8B       LDA   $8B	* some variable
 99A6: 81 1E       CMPA  #$1E	* 30 local on/off
 99A8: 26 06       BNE   $99B0	* no, skip
@@ -3181,7 +3181,7 @@ resetkybd:
 99D6: 30 2A       LEAX  $000A,Y
 99D8: 86 07       LDA   #$07	* 1-8, guess this is max
 99DA: 97 A0       STA   $A0	* param_max
-99DC: 0C A3       INC   $A3	* what's $A3 for?
+99DC: 0C A3       INC   $A3	* flag set for "multiplied" values
 99DE: 0D 84       TST   $84	* upper/lower?
 99E0: 10 27 02 DD LBEQ  $9CC1	* jump
 99E4: BD 9C C1    JSR   $9CC1	* call
@@ -3223,12 +3223,12 @@ resetkybd:
 9A32: BD 9D 41    JSR   $9D41	* "set two variables"
 9A35: 16 00 15    LBRA  $9A4D	* continue
 
-9A38: 81 24       CMPA  #$24	* cutoff?
+9A38: 81 24       CMPA  #$24	* 36 cutoff?
 9A3A: 10 26 00 06 LBNE  $9A44	* no, continue
 9A3E: BD 9D 38    JSR   $9D38	* "set two variables"
 9A41: 16 00 09    LBRA  $9A4D	* continue
 
-9A44: 81 25       CMPA  #$25	* resonance
+9A44: 81 25       CMPA  #$25	* 37 resonance
 9A46: 10 26 00 03 LBNE  $9A4D	* no, continue
 9A4A: BD 9D 41    JSR   $9D41	* "set two variables"
 9A4D: 96 8B       LDA   $8B	* parameter being examined
@@ -3579,36 +3579,38 @@ resetkybd:
 9CDA: C6 0F       LDB   #$0F
 9CDC: 7E 9D 23    JMP   $9D23	* jump to thing that calculates LED patterns
 
+* up and down values
+* $8084 might be negative for down, nonzero for up, and zero for uneditable
 9CDF: 0D 84       TST   $84	* Editable?
 9CE1: 27 18       BEQ   $9CFB	* no
-9CE3: 2B 0C       BMI   $9CF1	* bit 7?
-9CE5: E6 84       LDB   ,X	* get value we specify
-9CE7: D1 A0       CMPB  $A0	* higher than max value?
-9CE9: 24 10       BCC   $9CFB	* yes, jump
-9CEB: DB A2       ADDB  $A2	* add some variable
+9CE3: 2B 0C       BMI   $9CF1	* bit 7 set, decrement
+9CE5: E6 84       LDB   ,X	* get parameter
+9CE7: D1 A0       CMPB  $A0
+9CE9: 24 10       BCC   $9CFB	* >= max value
+9CEB: DB A2       ADDB  $A2	* increment by scale size
 9CED: E7 84       STB   ,X	* save it back
 9CEF: 20 0A       BRA   $9CFB	* continue
 
-9CF1: E6 84       LDB   ,X	* bit 7 was set
-9CF3: D1 A1       CMPB  $A1	* min value?
-9CF5: 23 04       BLS   $9CFB	* lower
-9CF7: D0 A2       SUBB  $A2	* subtract some variable
+9CF1: E6 84       LDB   ,X	* get parameter
+9CF3: D1 A1       CMPB  $A1
+9CF5: 23 04       BLS   $9CFB	* <= min value
+9CF7: D0 A2       SUBB  $A2	* subtract scale size
 9CF9: E7 84       STB   ,X	* save it
 9CFB: E6 84       LDB   ,X	* get it back
-9CFD: 96 A3       LDA   $A3	* some variable
-9CFF: 27 0E       BEQ   $9D0F	* zero? skip
+9CFD: 96 A3       LDA   $A3	* multiplied value flag
+9CFF: 27 0E       BEQ   $9D0F	* zero? just show digit
 9D01: 2B 03       BMI   $9D06	* 7 set, skip
-9D03: 5C          INCB  
-9D04: 20 09       BRA   $9D0F	* jump
+9D03: 5C          INCB  	* 7 not set, display 1-based
+9D04: 20 09       BRA   $9D0F	* show digit
 
-9D06: 81 81       CMPA  #$81	* some variable
-9D08: 26 03       BNE   $9D0D	* 
-9D0A: 54          LSRB  	* *2?
-9D0B: 20 02       BRA   $9D0F	* jump
+9D06: 81 81       CMPA  #$81	* Flag is $81?
+9D08: 26 03       BNE   $9D0D	* no, skip
+9D0A: 54          LSRB  	* Yes, divide by 2
+9D0B: 20 02       BRA   $9D0F	* show digit
 
 * somewhere around here we can show hex values
-9D0D: 54          LSRB  
-9D0E: 54          LSRB 		* *4? 
+9D0D: 54          LSRB  	* Flag is $82
+9D0E: 54          LSRB 		* divide by 4
 
 * show digit
 
@@ -3641,14 +3643,14 @@ resetkybd:
 9D35: 20 F7       BRA   $9D2E	* loop
 9D37: 39          RTS   
 
-* unknown, sets two variabls
+* scaling values for "double" params like cutoff
 9D38: 86 81       LDA   #$81
 9D3A: 97 A3       STA   $A3
 9D3C: 86 02       LDA   #$02
 9D3E: 97 A2       STA   $A2
 9D40: 39          RTS   
 
-* unknown, sets two variables
+* scaling values for "quadruple" values like resonance
 9D41: 86 82       LDA   #$82
 9D43: 97 A3       STA   $A3
 9D45: 86 04       LDA   #$04
