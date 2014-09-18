@@ -1466,13 +1466,14 @@ resetkybd:
 8CFF: A7 A8 27    STA   $27,Y
 8D02: 39          RTS   
 
+* voice assigner maybe?
 8D03: AE 2A       LDX   $000A,Y
 8D05: EE 2C       LDU   $000C,Y
-8D07: B6 80 15    LDA   $8015
-8D0A: 8C B7 6F    CMPX  #$B76F
-8D0D: 24 0C       BCC   $8D1B
+8D07: B6 80 15    LDA   $8015	* keyboard balance
+8D0A: 8C B7 6F    CMPX  #$B76F	
+8D0D: 24 0C       BCC   $8D1B	* skip
 8D0F: 48          ASLA  
-8D10: 81 80       CMPA  #$80
+8D10: 81 80       CMPA  #$80	
 8D12: 22 04       BHI   $8D18
 8D14: 86 7F       LDA   #$7F
 8D16: 20 01       BRA   $8D19
@@ -1530,24 +1531,25 @@ resetkybd:
 8D79: CC 8A EF    LDD   #$8AEF
 8D7C: ED A8 2B    STD   $2B,Y
 8D7F: CE F7 FD    LDU   #$F7FD
-8D82: BD 8D A1    JSR   $8DA1
-8D85: 30 0A       LEAX  $000A,X
-8D87: 31 2F       LEAY  $000F,Y
-8D89: BD 8D A1    JSR   $8DA1
-8D8C: 31 31       LEAY  $FFF1,Y
-8D8E: 96 67       LDA   $67
-8D90: E6 A8 2F    LDB   $2F,Y
+8D82: BD 8D A1    JSR   $8DA1 	* calculate filter envelope
+8D85: 30 0A       LEAX  $000A,X	* move X for amplitude
+8D87: 31 2F       LEAY  $000F,Y * move Y
+8D89: BD 8D A1    JSR   $8DA1	* calculate amplitude envelope
+8D8C: 31 31       LEAY  $FFF1,Y	* put Y back
+8D8E: 96 67       LDA   $67	* some variable
+8D90: E6 A8 2F    LDB   $2F,Y	* offset into voice param
 8D93: 3D          MUL   
-8D94: A7 A8 2F    STA   $2F,Y
-8D97: 96 67       LDA   $67
-8D99: E6 A8 32    LDB   $32,Y
+8D94: A7 A8 2F    STA   $2F,Y	* save
+8D97: 96 67       LDA   $67	* some variable
+8D99: E6 A8 32    LDB   $32,Y	* voice param
 8D9C: 3D          MUL   
-8D9D: A7 A8 32    STA   $32,Y
+8D9D: A7 A8 32    STA   $32,Y	* save
 8DA0: 39          RTS   
 
-* calculate filter envelope?
+* calculate envelope?
 * assume X is program param block
 * and Y is voice param block
+* bet this is called from the note on code
 8DA1: A6 88 11    LDA   $11,X	* attack vel sense
 8DA4: D6 65       LDB   $65	* note velocity
 8DA6: 3D          MUL   
@@ -3191,7 +3193,8 @@ resetkybd:
 
 9A03: 16 00 47    LBRA  $9A4D
 
-9A06: 81 1D       CMPA  #$1D
+* more parameters?
+9A06: 81 1D       CMPA  #$1D	* 29?
 9A08: 10 26 00 14 LBNE  $9A20
 9A0C: 0D 84       TST   $84
 9A0E: 10 27 00 55 LBEQ  $9A67
@@ -3212,15 +3215,15 @@ resetkybd:
 9A32: BD 9D 41    JSR   $9D41
 9A35: 16 00 15    LBRA  $9A4D
 
-9A38: 81 24       CMPA  #$24
-9A3A: 10 26 00 06 LBNE  $9A44
-9A3E: BD 9D 38    JSR   $9D38
+9A38: 81 24       CMPA  #$24	* cutoff?
+9A3A: 10 26 00 06 LBNE  $9A44	* skip
+9A3E: BD 9D 38    JSR   $9D38	* "set two variables"
 9A41: 16 00 09    LBRA  $9A4D
 
 9A44: 81 25       CMPA  #$25
 9A46: 10 26 00 03 LBNE  $9A4D
 9A4A: BD 9D 41    JSR   $9D41
-9A4D: 96 8B       LDA   $8B
+9A4D: 96 8B       LDA   $8B	* parameter being examined
 9A4F: 81 2D       CMPA  #$2D
 9A51: 25 07       BCS   $9A5A
 9A53: 81 31       CMPA  #$31
