@@ -578,9 +578,9 @@ osvec:
 
 8609: 86 00       LDA   #$00
 860B: A7 07       STA   $0007,X
-860D: CE 80 3B    LDU   #$803B
-8610: BD 87 22    JSR   $8722
-8613: BD 88 44    JSR   $8844
+860D: CE 80 3B    LDU   #$803B	* start of voice table?
+8610: BD 87 22    JSR   $8722	
+8613: BD 88 44    JSR   $8844	* set values in voice param?
 8616: 39          RTS   
 
 8617: 86 61       LDA   #$61
@@ -779,19 +779,19 @@ startup875e2:
 *** at this point $8107 contains #$810f, $810f contains #$8117 and so on
 
 8786: 86 1F       LDA   #$1F
-8788: 97 5D       STA   $5D
-878A: B7 82 07    STA   $8207
+8788: 97 5D       STA   $5D	* some variable
+878A: B7 82 07    STA   $8207	* some variable
 878D: CC 00 00    LDD   #$0000
 8790: ED 84       STD   ,X	$81ff set to zero
-8792: 8E B0 52    LDX   #$B052	stack pointer again
-8795: 9F 39       STX   $39	stick it in the variables area
-8797: 1F 10       TFR   X,D
-8799: 1F 13       TFR   X,U
-879B: C3 00 4D    ADDD  #$004D	now contains $b09f
-879E: ED 84       STD   ,X	top of user stack now set to $b09f
-87A0: 9F 3B       STX   $3B	stick it in the variables area
-87A2: 34 06       PSHS  B,A	top of system stack holds $b09f
-87A4: BD 88 44    JSR   $8844	
+8792: 8E B0 52    LDX   #$B052	* voice parameter table?
+8795: 9F 39       STX   $39	* some variable
+8797: 1F 10       TFR   X,D	* save X in D
+8799: 1F 13       TFR   X,U	* set User stack pointer
+879B: C3 00 4D    ADDD  #$004D	* 77 bytes per entry
+879E: ED 84       STD   ,X	* save at X
+87A0: 9F 3B       STX   $3B	* some variable
+87A2: 34 06       PSHS  B,A	* stack calculated address
+87A4: BD 88 44    JSR   $8844	* X=$b052, d=$77,x
 87A7: 35 06       PULS  A,B	back into d
 87A9: 1F 01       TFR   D,X	back into f
 87AB: EF 02       STU   $0002,X store?
@@ -808,41 +808,42 @@ startup875e2:
 87BE: 39          RTS   
 
 * unknown
-87BF: CE 82 AE    LDU   #$82AE
+87BF: CE 82 AE    LDU   #$82AE	* points to some routine
 87C2: 20 0F       BRA   $87D3
 
 * unknown
-87C4: 34 02       PSHS  A
-87C6: 96 5D       LDA   $5D
-87C8: 81 04       CMPA  #$04
-87CA: 22 02       BHI   $87CE
+87C4: 34 02       PSHS  A	* save A
+87C6: 96 5D       LDA   $5D	* some variable
+87C8: 81 04       CMPA  #$04	* 4?
+87CA: 22 02       BHI   $87CE	* higher? skipe
 87CC: 35 82       PULS  A,PC ;(PUL? PC=RTS)
 
-87CE: 35 02       PULS  A
-87D0: CE 83 80    LDU   #$8380
-87D3: 1E 10       EXG   X,D
-87D5: 7E 87 F7    JMP   $87F7
+87CE: 35 02       PULS  A	* restore A
+87D0: CE 83 80    LDU   #$8380	* points to some routine
+87D3: 1E 10       EXG   X,D	* not sure what's in either
+87D5: 7E 87 F7    JMP   $87F7	* jump
 
-87D8: CE 85 7F    LDU   #$857F
+87D8: CE 85 7F    LDU   #$857F	* some routine
 87DB: 20 F6       BRA   $87D3
 
 ; called from FIRQ ISR
-87DD: CE 86 7B    LDU   #$867B	* point at a function
+87DD: CE 86 7B    LDU   #$867B	* points to some function
 87E0: 20 15       BRA   $87F7
 
 ; called from lots of places including FIRQ ISR
-87E2: CE 86 A0    LDU   #$86A0
+87E2: CE 86 A0    LDU   #$86A0	* points to some function
 87E5: 20 10       BRA   $87F7
 
-87E7: CE 85 C9    LDU   #$85C9
+87E7: CE 85 C9    LDU   #$85C9	* points to some function
 87EA: 20 08       BRA   $87F4
 
-87EC: 1F 31       TFR   U,X
-87EE: CE 85 B9    LDU   #$85B9
-87F1: 30 88 C9    LEAX  -$37,X
-87F4: A6 88 19    LDA   $19,X
+87EC: 1F 31       TFR   U,X	* keep U in X
+87EE: CE 85 B9    LDU   #$85B9	* points to some function
+87F1: 30 88 C9    LEAX  -$37,X	* subtract 37 from X, why 37?
+87F4: A6 88 19    LDA   $19,X	* 25 bytes further on
 
-; called from further back
+* called from further back
+* handles routine pointed to earlier
 87F7: 34 01       PSHS  CC	* save state
 87F9: 1A 50       ORCC  #$50	; mask FIRQ, IRQ
 87FB: BD 88 1F    JSR   $881F	* call
@@ -864,35 +865,36 @@ startup875e2:
 881C: 7E 82 90    JMP   $8290	* jump to some routine
 
 * unknown
-881F: 10 9E 57    LDY   $57
-8822: 26 10       BNE   $8834
-8824: 34 56       PSHS  U,X,B,A
-8826: BD 9F 60    JSR   $9F60
-8829: BD 9F 6F    JSR   $9F6F
-882C: 1A 50       ORCC  #$50
-882E: 0A 38       DEC   $38
-8830: 35 56       PULS  A,B,X,U
-8832: 20 EB       BRA   $881F
+881F: 10 9E 57    LDY   $57	* some variable
+8822: 26 10       BNE   $8834	* not zero, skip
+8824: 34 56       PSHS  U,X,B,A	* save regs
+8826: BD 9F 60    JSR   $9F60	* call
+8829: BD 9F 6F    JSR   $9F6F	* call
+882C: 1A 50       ORCC  #$50	* mask ints
+882E: 0A 38       DEC   $38	* some variable
+8830: 35 56       PULS  A,B,X,U	* restore regs
+8832: 20 EB       BRA   $881F	* loop
 
-8834: AF 24       STX   $0004,Y
+8834: AF 24       STX   $0004,Y	* pointers in wavesample block?
 8836: ED 26       STD   $0006,Y
 8838: EF 22       STU   $0002,Y
-883A: AE A4       LDX   ,Y
-883C: 9F 57       STX   $57
-883E: 0A 5D       DEC   $5D
-8840: 7F 82 07    CLR   $8207
+883A: AE A4       LDX   ,Y	* x contains address at start
+883C: 9F 57       STX   $57	* save in some variable
+883E: 0A 5D       DEC   $5D	* count down some variable
+8840: 7F 82 07    CLR   $8207	* clear some variable
 8843: 39          RTS   
 
-*** set oscillator modes
-8844: 10 AE 0E    LDY   $000E,X	y now holds $ec7f
+* called from routine that sets up table
+* addresses assume X = $b052
+8844: 10 AE 0E    LDY   $000E,X	* y=($b060)
 8847: 86 03       LDA   #$03
-8849: AA 88 41    ORA   $41,X	initially X is $b052 so is this $b093?
-884C: A7 A8 21    STA   $21,Y	$ECA0 initially, osc ctrl reg
-884F: A7 A8 22    STA   $22,Y	$ECA1 initially
+8849: AA 88 41    ORA   $41,X	* $b093
+884C: A7 A8 21    STA   $21,Y
+884F: A7 A8 22    STA   $22,Y
 8852: 86 03       LDA   #$03
-8854: AA 88 4C    ORA   $4C,X	$b095?
-8857: A7 A8 23    STA   $23,Y	$ECA2 initially
-885A: A7 A8 24    STA   $24,Y	$ECA3 initially
+8854: AA 88 4C    ORA   $4C,X	* $b095
+8857: A7 A8 23    STA   $23,Y
+885A: A7 A8 24    STA   $24,Y
 885D: 39          RTS   
 
 * task list?
@@ -1113,7 +1115,7 @@ ackkybd:
 8A12: BD A0 C5    JSR   $A0C5	* call
 8A15: BD AD BC    JSR   $ADBC	* call
 8A18: 96 63       LDA   $63
-8A1A: 8E 80 68    LDX   #$8068
+8A1A: 8E 80 68    LDX   #$8068	*
 8A1D: 0D 1C       TST   $1C
 8A1F: 27 03       BEQ   $8A24
 8A21: 7E 87 BF    JMP   $87BF

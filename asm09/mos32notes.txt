@@ -25,6 +25,8 @@ $802b - software version
 $8031
 $8036
 $8038
+$803b - stores X while setting up voice table
+$8039 - stores X while setting up voice table
 $803d
 $804d
 $804e
@@ -32,7 +34,7 @@ $804f - 7-byte table of values
 $8056 - end of table
 $8057
 $8059
-$805d
+$805d - set the same as $8207 at $878a
 $8061 - voice task?
 $8063 - computed note?
 $8065 - key velocity
