@@ -755,56 +755,65 @@ osvec:
 875A: 1C AF       ANDCC #$AF	* finish, enable ints
 875C: 35 82       PULS  A,PC ;(PUL? PC=RTS)
 
+* constructs a couple of linked lists
+* there is a list at $8107 with 30 entries of 8 bytes
+* and the voice parameter list at $b052, 8 entries of 77 bytes
 startup875e:
 875E: BD AE 17    JSR   zerofilter
 8761: 8E 80 38    LDX   #$8038
 startup875e1:
-8764: 6F 80       CLR   ,X+	clear 32 bytes
+8764: 6F 80       CLR   ,X+	* clear 32 bytes
 8766: 8C 80 57    CMPX  #$8057
-8769: 25 F9       BCS   $8764 startup875e1 	
+8769: 25 F9       BCS   $8764	* loop
 876B: 86 FF       LDA   #$FF
 876D: B7 81 05    STA   $8105
 8770: B7 81 06    STA   $8106
 8773: CC 81 07    LDD   #$8107
 8776: DD 57       STD   $57
-8778: 1F 01       TFR   D,X
+8778: 1F 01       TFR   D,X	* save D in X
 *** build some sort of linked list?
 
-startup875e2:
-877A: C3 00 08    ADDD  #$0008	loop round 8 bytes at a time
-877D: ED 84       STD   ,X
-877F: 1F 01       TFR   D,X
-8781: 8C 81 FF    CMPX  #$81FF
-8784: 26 F4       BNE   $877A startup875e2
-*** at this point $8107 contains #$810f, $810f contains #$8117 and so on
+* both D and X now contain $8107
 
-8786: 86 1F       LDA   #$1F
+startup875e2:
+877A: C3 00 08    ADDD  #$0008	* X=$8107, D=$810f
+877D: ED 84       STD   ,X	* store	
+877F: 1F 01       TFR   D,X	* move on 8 bytes
+8781: 8C 81 FF    CMPX  #$81FF	* end of table, 30 entries?
+8784: 26 F4       BNE   $877A	* no, loop
+*** at this point $8107 contains #$810f, $810f contains #$8117 and so on
+* it's a list of 30 entries with the first word pointing to the next
+* block of eight bytes
+
+8786: 86 1F       LDA   #$1F	* 
 8788: 97 5D       STA   $5D	* some variable
 878A: B7 82 07    STA   $8207	* some variable
 878D: CC 00 00    LDD   #$0000
-8790: ED 84       STD   ,X	$81ff set to zero
+8790: ED 84       STD   ,X	* $81ff set to zero
 8792: 8E B0 52    LDX   #$B052	* voice parameter table?
 8795: 9F 39       STX   $39	* some variable
 8797: 1F 10       TFR   X,D	* save X in D
-8799: 1F 13       TFR   X,U	* set User stack pointer
+8799: 1F 13       TFR   X,U	* save X in U
 879B: C3 00 4D    ADDD  #$004D	* 77 bytes per entry
 879E: ED 84       STD   ,X	* save at X
 87A0: 9F 3B       STX   $3B	* some variable
-87A2: 34 06       PSHS  B,A	* stack calculated address
-87A4: BD 88 44    JSR   $8844	* X=$b052, d=$77,x
-87A7: 35 06       PULS  A,B	back into d
-87A9: 1F 01       TFR   D,X	back into f
-87AB: EF 02       STU   $0002,X store?
-87AD: 10 83 B2 BA CMPD  #$B2BA
-87B1: 25 E4       BCS   $8797
+87A2: 34 06       PSHS  B,A	* stack address of next entry
+87A4: BD 88 44    JSR   $8844	* X=$b052, d=next entry
+87A7: 35 06       PULS  A,B	* unstack address of next entry
+87A9: 1F 01       TFR   D,X	* save in X
+87AB: EF 02       STU   $0002,X * second word of table contains $b052
+87AD: 10 83 B2 BA CMPD  #$B2BA	* eight entries yet?
+87B1: 25 E4       BCS   $8797	* loop
+
 *** at startup
 *** by now all 32 osc control registers have been set up
 *** in sets of four, channel from 0 to 15, one-shot, halted
+* really? I don't think so...
 
 87B3: CC 00 00    LDD   #$0000
-87B6: FD B0 54    STD   $B054
+87B6: FD B0 54    STD   $B054	* second word of first entry zeroed
 87B9: CC 00 00    LDD   #$0000
-87BC: ED C4       STD   ,U
+87BC: ED C4       STD   ,U	* first word of last entry zeroed
 87BE: 39          RTS   
 
 * unknown
@@ -1019,10 +1028,13 @@ irqentryend:
 896A: 3B          RTI   
 
 *** called just after startup
-896B: 8D 09       BSR   $8976	ackkybd
-896D: CC 89 A1    LDD   #$89A1	appears to be the entry point of a routine
-8970: DD 61       STD   $61
-8972: B6 E2 0A    LDA   $E20A	get shift register
+* acknowledges keyboard controller
+* sets up "voice task" to message parser
+* loads A with the shift register value
+896B: 8D 09       BSR   $8976	* ackkybd
+896D: CC 89 A1    LDD   #$89A1	* note parser
+8970: DD 61       STD   $61	* voice task
+8972: B6 E2 0A    LDA   $E20A	* get shift register
 8975: 39          RTS   
 
 *** disable interrupts, pulse CA2 low
@@ -1037,17 +1049,18 @@ ackkybd:
 8984: B7 E2 0C    STA   $E20C		write reg
 8987: 35 81       PULS  CC,PC 		sneaky trick to return
 
-8989: F6 E2 0A    LDB   $E20A
-898C: 1C BF       ANDCC #$BF
-898E: AD 9F 80 61 JSR   [$8061,X]
-8992: 1A 50       ORCC  #$50
-8994: 96 5D       LDA   $5D
+* handle kybd shift register?
+8989: F6 E2 0A    LDB   $E20A	* fetch shift register
+898C: 1C BF       ANDCC #$BF	* enable interrupts
+898E: AD 9F 80 61 JSR   [$8061,X]	* jump to stored voice task
+8992: 1A 50       ORCC  #$50	* disable interrupts
+8994: 96 5D       LDA   $5D	* some variable
 8996: 81 04       CMPA  #$04
-8998: 25 04       BCS   $899E
-899A: 8D DA       BSR   $8976
-899C: 20 02       BRA   $89A0
+8998: 25 04       BCS   $899E	* lower than 4?
+899A: 8D DA       BSR   $8976	* ackkybd
+899C: 20 02       BRA   $89A0	* bra rti
 
-899E: 0A 64       DEC   $64
+899E: 0A 64       DEC   $64	* some variable
 89A0: 3B          RTI   
 
 * unknown
@@ -1110,7 +1123,7 @@ ackkybd:
 8A07: 2E 02       BGT   $8A0B	* underflow?
 8A09: C6 01       LDB   #$01	* clamp
 8A0B: 96 63       LDA   $63	* note? velocity?
-8A0D: CE 89 A1    LDU   #$89A1	* next task
+8A0D: CE 89 A1    LDU   #$89A1	* note parser
 8A10: DF 61       STU   $61	* save it
 8A12: BD A0 C5    JSR   $A0C5	* call
 8A15: BD AD BC    JSR   $ADBC	* call
@@ -1140,7 +1153,7 @@ ackkybd:
 8A40: 2E 02       BGT   $8A44
 8A42: C6 01       LDB   #$01
 8A44: 96 63       LDA   $63
-8A46: CE 89 A1    LDU   #$89A1
+8A46: CE 89 A1    LDU   #$89A1	* note parser
 8A49: DF 61       STU   $61
 8A4B: BD A0 B9    JSR   $A0B9
 8A4E: BD AD BA    JSR   $ADBA
@@ -1153,16 +1166,16 @@ ackkybd:
 8A5D: 39          RTS   
 
 * voice routing, suggested by Rainer Buchty
-8A5E: 8E B0 52    LDX   #$B052
-8A61: 10 8E EC 7F LDY   #$EC7F
-8A65: CE E4 18    LDU   #$E418
-8A68: 8D 23       BSR   $8A8D
-8A6A: 30 88 4D    LEAX  $4D,X
-8A6D: 31 24       LEAY  $0004,Y
-8A6F: 8C B2 BA    CMPX  #$B2BA
-8A72: 25 F4       BCS   $8A68
+8A5E: 8E B0 52    LDX   #$B052	* points to voice table
+8A61: 10 8E EC 7F LDY   #$EC7F	* points at top of DOC
+8A65: CE E4 18    LDU   #$E418	* points at first filter
+8A68: 8D 23       BSR   $8A8D	* call
+8A6A: 30 88 4D    LEAX  $4D,X	* add 77
+8A6D: 31 24       LEAY  $0004,Y	* add 4
+8A6F: 8C B2 BA    CMPX  #$B2BA	* funny table
+8A72: 25 F4       BCS   $8A68	* less, loop
 8A74: 4F          CLRA  
-8A75: A7 5F       STA   $FFFF,U
+8A75: A7 5F       STA   $FFFF,U	* set DAC to zero
 8A77: 39          RTS   
 
 8A78: 34 60       PSHS  U,Y
@@ -2391,7 +2404,7 @@ ackkybd:
 93EE: DD A7       STD   $A7
 93F0: BD 8E CF    JSR   $8ECF
 93F3: 1A 50       ORCC  #$50
-93F5: BD 87 5E    JSR   $875E
+93F5: BD 87 5E    JSR   $875E	* build linked list for voices
 93F8: 1C AF       ANDCC #$AF
 93FA: D6 AE       LDB   $AE
 93FC: 5A          DECB  
@@ -3214,7 +3227,7 @@ ackkybd:
 9A0E: 10 27 00 55 LBEQ  $9A67
 9A12: 34 26       PSHS  Y,B,A
 9A14: 1A 50       ORCC  #$50
-9A16: BD 87 5E    JSR   $875E	* called at startup too?
+9A16: BD 87 5E    JSR   $875E	* build linked list for voices
 9A19: 1C AF       ANDCC #$AF
 9A1B: 35 26       PULS  A,B,Y
 9A1D: 16 00 2D    LBRA  $9A4D
@@ -3965,8 +3978,8 @@ ackkybd:
 9F6F: 1A 50       ORCC  #$50	* mask interrupts
 9F71: BD F5 41    JSR   unknown3	* reinit via
 9F74: BD F5 2D    JSR   unknown2	* set timer 2
-9F77: BD 87 5E    JSR   $875E	* stop oscillators
-9F7A: BD 89 6B    JSR   $896B	* reset keyboard controller
+9F77: BD 87 5E    JSR   $875E	* build linked list for voices
+9F7A: BD 89 6B    JSR   $896B	* handle keyboard controller
 9F7D: BD A0 7E    JSR   $A07E	* reset serial port
 9F80: 86 CC       LDA   #$CC	* T1 free-run, out on PB7, shift in ext clk
 9F82: B7 E2 0B    STA   $E20B	* VIA ACR
@@ -5807,15 +5820,15 @@ AE15: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 *** loops around the filters setting resonance and cutoff to zero
 
 zerofilter:
-AE17: CE E4 18    LDU   #$E418		; DAC multiplexer, outputs off
-AE1A: CC 00 00    LDD   #$0000
+AE17: CE E4 18    LDU   #$E418		; first filter, multiplexer
+AE1A: CC 00 00    LDD   #$0000	* cutoff 0, resonance 0
 zerofilter2:
-AE1D: BD F5 E7    JSR   setfilterdac
+AE1D: BD F5 E7    JSR   setfilterdac	* set filter (increments U)
 AE20: 11 83 E4 20 CMPU  #$E420		; done all filters?
 AE24: 26 F7       BNE   zerofilter2	; no, continue
-AE26: CE B0 52    LDU   #$B052		; in a block of data, variable storage?
-AE29: CC 8A D7    LDD   #$8AD7		; possibly filter update routine
-AE2C: 8E 8B BE    LDX   #$8BBE		; unmask IRQ and FIRQ
+AE26: CE B0 52    LDU   #$B052		* voice table
+AE29: CC 8A D7    LDD   #$8AD7		; "update filter for voice"
+AE2C: 8E 8B BE    LDX   #$8BBE		; "unmask IRQ and FIRQ and return"
 zerofilter3:
 AE2F: ED C8 1C    STD   $1C,U		; store address of filter routine
 AE32: AF C8 2B    STX   $2B,U		; store address of unmask routine
@@ -6175,26 +6188,33 @@ B8E4: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF
 B8F4: FF FF FF FF FF FF FF FF FF FF FF 00 
 
 *** put some values in memory
+* loops around the list below
+* much fun stack juggling
+
+* list at $b987 = ae b9 90 0f af 31 90 1f af d1 90 e2 b0 51 ac 4f
+* last value points to upper byte of stack
 B900: CC 80 38    LDD   #$8038	// once again set up dp
 B903: 1F 8B       TFR   A,DP
 B905: 10 8E B2 BE LDY   #$B2BE	// $b2be is in that big block of data
 B909: 8E B9 87    LDX   #$B987	// points to a table of values
-B90C: 10 EE 81    LDS   ,X++	// top of S contains $AEB9, first value in list
-B90F: EC 81       LDD   ,X++	// D contains second value from list
-B911: 34 06       PSHS  B,A
-B913: 10 EF A1    STS   ,Y++
-B916: 8C B9 97    CMPX  #$B997
-B919: 25 F1       BCS   $B90C
+B90C: 10 EE 81    LDS   ,X++	// S = $aeb9
+B90F: EC 81       LDD   ,X++	// D = $900f
+B911: 34 06       PSHS  B,A	// save value in $aeb8!
+* this will save B first, move S down one, then save A
+* why do it this way?
+B913: 10 EF A1    STS   ,Y++	// save $aeb7 at $b2be
+B916: 8C B9 97    CMPX  #$B997	// end of list?
+B919: 25 F1       BCS   $B90C	// no, continue
 B91B: 1C AF       ANDCC #$AF
-B91D: 7E 88 68    JMP   $8868
+B91D: 7E 88 68    JMP   $8868	// start?
 
 osentry:
-B920: 10 CE B0 52 LDS   #$B052		// set stack pointer
-B924: CC 80 38    LDD   #$8038		// not sure what b is for
-B927: 1F 8B       TFR   A,DP		// but A is $80, DP is variable area
-B929: BD 87 5E    JSR   $875E		// set up oscs, halted, one-shot
-B92C: BD B9 6E    JSR   $B96E		// sweep filters?
-B92F: BD 89 6B    JSR   $896B		// reset keyboard
+B920: 10 CE B0 52 LDS   #$B052	* system stack just below voice table
+B924: CC 80 38    LDD   #$8038	* not sure why B is set
+B927: 1F 8B       TFR   A,DP	* set DP to variables area
+B929: BD 87 5E    JSR   $875E	* build linked list for voices
+B92C: BD B9 6E    JSR   $B96E	* sweep filters
+B92F: BD 89 6B    JSR   $896B	* handle keyboard controller
 B932: 7E B9 00    JMP   $B900
 
 *** after filter tuning

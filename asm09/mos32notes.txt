@@ -24,17 +24,18 @@ $8029
 $802b - software version
 $8031
 $8036
-$8038
+$8038 - start of 32 bytes zeroed out
 $803b - stores X while setting up voice table
-$8039 - stores X while setting up voice table
+$8039 - initially holds address of voice parameter table
 $803d
 $804d
 $804e
 $804f - 7-byte table of values
 $8056 - end of table
-$8057
+$8057 - set to $8107 by routine at $875e
 $8059
-$805d - set the same as $8207 at $878a
+$805d - set to $1f along with $8207 when linked list is constructed
+$805e - set to $b2be, that strange list from the "put values in memory" routine
 $8061 - voice task?
 $8063 - computed note?
 $8065 - key velocity
@@ -94,9 +95,9 @@ $80eb
 $80ec
 $80ee - unknown
 $80f0
-$8105
-$8106
-
+$8105 - set to $ff by routine at $875E
+$8106 - set to $ff by routine at $875E
+$8107 - linked list, 8 bytes per entry, 30 entries
 $8207 - unknown
 $8225 - start of ring buffer
 $8234 - end of ring buffer
@@ -200,7 +201,15 @@ $ad8f - unknown
 $ac27 - copy some byte?
 $99ce - select through edit parameters
 
-wavesample params
+voice table params
+table starts at $b052
+from $ae17 "zerofilter"
+$00 = next entry in table
+$02 = this entry?
+$0e
+$1c = routine that updates the filter
+$2b = routine that unmasks ints and does RTS
+$1a = zero
 
 "9d38" params - all of these are "double" values
 36 cutoff
