@@ -346,13 +346,14 @@ osvec:
 842F: 7E 83 EF    JMP   $83EF
 
 * unknown
+* probably to do with voice params?
 8432: EC 24       LDD   $0004,Y
 8434: A7 06       STA   $0006,X
 8436: E7 08       STB   $0008,X
 8438: A6 27       LDA   $0007,Y
 843A: A7 05       STA   $0005,X
-843C: 6F 88 18    CLR   $18,X
-843F: BD 87 38    JSR   $8738
+843C: 6F 88 18    CLR   $18,X	* clear filter offset? Makes little sense
+843F: BD 87 38    JSR   $8738	* "mash values about"
 8442: 39          RTS   
 
 8443: B6 81 04    LDA   $8104
@@ -403,7 +404,7 @@ osvec:
 84AB: AE 2A       LDX   $000A,Y
 84AD: A6 0B       LDA   $000B,X
 84AF: 27 03       BEQ   $84B4
-84B1: 33 C8 18    LEAU  $18,U
+84B1: 33 C8 18    LEAU  $18,U	* 36 bytes, ws?
 84B4: EC 2E       LDD   $000E,Y
 84B6: C3 00 02    ADDD  #$0002
 84B9: 34 06       PSHS  B,A
@@ -502,6 +503,7 @@ osvec:
 857B: A7 88 21    STA   $21,X
 857E: 39          RTS   
 
+* unknown, possibly voice param related
 857F: A6 27       LDA   $0007,Y
 8581: E6 24       LDB   $0004,Y
 8583: 9E 3D       LDX   $3D
@@ -1309,7 +1311,7 @@ ackkybd:
 8B86: D6 1E       LDB   $1E
 8B88: C1 09       CMPB  #$09
 8B8A: 26 05       BNE   $8B91
-8B8C: E6 88 18    LDB   $18,X
+8B8C: E6 88 18    LDB   $18,X	* could be VCF offset?
 8B8F: 20 03       BRA   $8B94
 
 8B91: E6 98 04    LDB   [$04,X]
@@ -1362,41 +1364,41 @@ ackkybd:
 8BDE: 8E 8B F1    LDX   #$8BF1	* point to the lookup table
 8BE1: E6 85       LDB   B,X	* fetch the corresponding value
 8BE3: 83 03 B1    SUBD  #$03B1	* 945?
-8BE6: E3 49       ADDD  $0009,U	* not sure what's here
+8BE6: E3 49       ADDD  $0009,U	* not sure what's here, prog?
 8BE8: 2A 01       BPL   $8BEB	* skip if positive
 8BEA: 4F          CLRA  
-8BEB: ED A8 10    STD   $10,Y	* not sure what's here
+8BEB: ED A8 10    STD   $10,Y	* save tuning word in voice params
 8BEE: 7E 8C A0    JMP   $8CA0	* jump
 
 * lookup table
 8BF1: 00 15 2B 40 55 6B 80 95 AB C0 D5 EB 
 
-8BFD: 8E 80 68    LDX   #$8068
-8C00: FC 80 11    LDD   $8011
-8C03: E3 01       ADDD  $0001,X
-8C05: ED 05       STD   $0005,X
-8C07: 30 07       LEAX  $0007,X
+8BFD: 8E 80 68    LDX   #$8068	* unknown
+8C00: FC 80 11    LDD   $8011	* tuning in B?
+8C03: E3 01       ADDD  $0001,X	* add to tuning
+8C05: ED 05       STD   $0005,X	* save
+8C07: 30 07       LEAX  $0007,X	* move on 7 bytes
 8C09: 8C 80 7D    CMPX  #$807D
-8C0C: 25 F2       BCS   $8C00
-8C0E: 10 8E B0 52 LDY   #$B052
-8C12: 0C 4E       INC   $4E
-8C14: BD 8C 34    JSR   $8C34
-8C17: 31 A8 4D    LEAY  $4D,Y
-8C1A: 34 20       PSHS  Y
-8C1C: BD 82 8C    JSR   $828C
-8C1F: 10 AE E4    LDY   ,S
-8C22: 10 8C B1 86 CMPY  #$B186
-8C26: 26 03       BNE   $8C2B
-8C28: BD 88 5E    JSR   $885E
-8C2B: 35 20       PULS  Y
-8C2D: 10 8C B2 BA CMPY  #$B2BA
-8C31: 25 DF       BCS   $8C12
-8C33: 39          RTS   
+8C0C: 25 F2       BCS   $8C00	* not 21 bytes yet
+8C0E: 10 8E B0 52 LDY   #$B052	* voice parameter table
+8C12: 0C 4E       INC   $4E	* some variable
+8C14: BD 8C 34    JSR   $8C34	* "lfo" routine?
+8C17: 31 A8 4D    LEAY  $4D,Y	* next voice
+8C1A: 34 20       PSHS  Y	* save y
+8C1C: BD 82 8C    JSR   $828C	* some routine
+8C1F: 10 AE E4    LDY   ,S	* reload Y but don't pop
+8C22: 10 8C B1 86 CMPY  #$B186	* four voices done?
+8C26: 26 03       BNE   $8C2B	* no, skip
+8C28: BD 88 5E    JSR   $885E	* handle some sort of task list?
+8C2B: 35 20       PULS  Y	* unstack Y
+8C2D: 10 8C B2 BA CMPY  #$B2BA	* eight voices done?
+8C31: 25 DF       BCS   $8C12	* no, loop
+8C33: 39          RTS
 
 * unknown
 * lfo?
 8C34: EE 24       LDU   $0004,Y
-8C36: E6 A8 14    LDB   $14,Y
+8C36: E6 A8 14    LDB   $14,Y	* 
 8C39: 26 14       BNE   $8C4F
 8C3B: 96 1D       LDA   $1D	* lfo mod source
 8C3D: 81 09       CMPA  #$09	* poly aftertouch
@@ -1435,16 +1437,17 @@ ackkybd:
 8C7C: BD F5 F1    JSR   unknown8
 8C7F: 39          RTS   
 
-8C80: 10 8E B0 52 LDY   #$B052
-8C84: CC 8A D7    LDD   #$8AD7
-8C87: ED A8 1C    STD   $1C,Y
-8C8A: 6F A8 1A    CLR   $1A,Y
-8C8D: CC 8B BE    LDD   #$8BBE
-8C90: ED A8 2B    STD   $2B,Y
-8C93: 6F A8 29    CLR   $29,Y
-8C96: 31 A8 4D    LEAY  $4D,Y
-8C99: 10 8C B2 BA CMPY  #$B2BA
-8C9D: 25 E5       BCS   $8C84
+* unknown
+8C80: 10 8E B0 52 LDY   #$B052	* voice params
+8C84: CC 8A D7    LDD   #$8AD7	* address of filter update routine
+8C87: ED A8 1C    STD   $1C,Y	* filter routine pointer
+8C8A: 6F A8 1A    CLR   $1A,Y	* unknown
+8C8D: CC 8B BE    LDD   #$8BBE	* some routine
+8C90: ED A8 2B    STD   $2B,Y	* next task?
+8C93: 6F A8 29    CLR   $29,Y	* unknown
+8C96: 31 A8 4D    LEAY  $4D,Y	* next voice, 77 bytes
+8C99: 10 8C B2 BA CMPY  #$B2BA	* last voice?
+8C9D: 25 E5       BCS   $8C84	* loop
 8C9F: 39          RTS   
 
 8CA0: AE 2A       LDX   $000A,Y
@@ -1627,32 +1630,35 @@ ackkybd:
 8DF2: A7 A8 23    STA   $23,Y	* save in parameter block
 8DF5: 39          RTS   
 
-8DF6: 2A 03       BPL   $8DFB
-8DF8: 4F          CLRA  
-8DF9: 20 06       BRA   $8E01
+* unknown
+* called from envelope calculation, seems to clamp values?
+8DF6: 2A 03       BPL   $8DFB	* bit 7 is zero
+8DF8: 4F          CLRA
+8DF9: 20 06       BRA   $8E01	* skip
 
-8DFB: 81 1F       CMPA  #$1F
-8DFD: 23 02       BLS   $8E01
-8DFF: 86 1F       LDA   #$1F
-8E01: 48          ASLA  
-8E02: EC C6       LDD   A,U
+8DFB: 81 1F       CMPA  #$1F	* 31?
+8DFD: 23 02       BLS   $8E01	* <31, skip
+8DFF: 86 1F       LDA   #$1F	* clamp
+8E01: 48          ASLA		* *2
+8E02: EC C6       LDD   A,U	* what's U set to? does a lookup
 8E04: 39          RTS   
 
 * unknown
-* Y might have address of parameter block?
-* in which case X contains fine tune and amplitude, makes little sense
-8E05: AE 2A       LDX   $000A,Y
+* Y might have address of voice parameter block
+* in which case X contains DCA envelope
+* U points at FF FF 80 00 40 00 2e e0
+8E05: AE 2A       LDX   $000A,Y	* DCA params
 8E07: CE F7 FD    LDU   #$F7FD	* points to top of table in ROM
 8E0A: CC 8A C7    LDD   #$8AC7	* points to some routine
-8E0D: ED A8 1C    STD   $1C,Y	* store
+8E0D: ED A8 1C    STD   $1C,Y	* store in update routine
 8E10: CC 8B 49    LDD   #$8B49	* points to some routine
-8E13: ED A8 2B    STD   $2B,Y	* store
+8E13: ED A8 2B    STD   $2B,Y	* store in end routine?
 8E16: E6 29       LDB   $0009,Y	
 8E18: A6 88 15    LDA   $15,X
 8E1B: 3D          MUL   
 8E1C: 40          NEGA  
-8E1D: AB 88 10    ADDA  $10,X
-8E20: 8D D4       BSR   $8DF6	* call
+8E1D: AB 88 10    ADDA  $10,X	* initially 0?
+8E20: 8D D4       BSR   $8DF6	* some routine, clamp and lookup
 8E22: ED A8 24    STD   $24,Y
 8E25: E6 29       LDB   $0009,Y
 8E27: A6 88 1F    LDA   $1F,X
@@ -1705,7 +1711,7 @@ ackkybd:
 8EBF: B5 8F B5 A7 B5 BF B5 D7 B5 EF B6 07 B6 1F B6 37 
 
 * unknown
-8ECF: 10 9E A7    LDY   $A7	* lower program
+8ECF: 10 9E A7    LDY   $A7	* lower program pointer
 8ED2: 8E 8E AF    LDX   #$8EAF	* lower ws addresses
 8ED5: CE 8E 71    LDU   #$8E71	* empty buffer?
 8ED8: 4F          CLRA  
@@ -1719,10 +1725,15 @@ ackkybd:
 8EE9: 97 7D       STA   $7D	* save in some variable
 8EEB: 39          RTS   
 
+* find wavesample for key?
+* takes program pointer in Y
+* seems to get the initial wavesample value
+* then checks to see if A > top key for ws
+* loops around incrementing and storing A
 8EEC: E6 2A       LDB   $000A,Y	* initial wavesample
-8EEE: 58          ASLB		* multiply by 2  
+8EEE: 58          ASLB
 8EEF: AE 85       LDX   B,X	* fetch ws param addr
-8EF1: A1 0E       CMPA  $000E,X * 0?
+8EF1: A1 0E       CMPA  $000E,X * top key
 8EF3: 22 05       BHI   $8EFA	* higher, skip
 8EF5: E7 C6       STB   A,U	* save B into that empty buffer
 8EF7: 4C          INCA  	* bump a
@@ -1734,7 +1745,7 @@ ackkybd:
 8F01: 27 05       BEQ   $8F08	* off?
 8F03: 30 88 18    LEAX  $18,X	* 36 bytes, next buffer
 8F06: CB 02       ADDB  #$02	* next wavesample addr
-8F08: 81 3C       CMPA  #$3C	* 60?
+8F08: 81 3C       CMPA  #$3C	* max top key is 61
 8F0A: 22 04       BHI   $8F10	* higher, skip
 8F0C: C1 0E       CMPB  #$0E	* last wavesample (14, 0-7*2)
 8F0E: 23 E1       BLS   $8EF1	* lower, loop back
@@ -2908,36 +2919,40 @@ ackkybd:
 9792: 0C 98       INC   $98	; increment $8098
 9794: 39          RTS   
 
-9795: 96 1B       LDA   $1B	
-9797: 26 3B       BNE   $97D4
-9799: 96 A4       LDA   $A4
-979B: 26 0C       BNE   $97A9
-979D: 0F AA       CLR   $AA
-979F: BD 9A 85    JSR   $9A85
-97A2: 8E 03 FA    LDX   #$03FA
-97A5: 86 1E       LDA   #$1E
-97A7: 20 0A       BRA   $97B3
+* initialise lower wavesamples
+9795: 96 1B       LDA   $1B	* user multisampling?
+9797: 26 3B       BNE   $97D4	* yes, jump way ahead
+9799: 96 A4       LDA   $A4	* bank select
+979B: 26 0C       BNE   $97A9	* upper?
+979D: 0F AA       CLR   $AA	* lower wavesample
+979F: BD 9A 85    JSR   $9A85	* look up selected wavesample
+97A2: 8E 03 FA    LDX   #$03FA	* Octave and Fine Tune
+97A5: 86 1E       LDA   #$1E	* High Key
+97A7: 20 0A       BRA   $97B3	* jump
 
-97A9: 0F A9       CLR   $A9
-97AB: BD 9A 85    JSR   $9A85
-97AE: 8E 03 8E    LDX   #$038E
-97B1: 86 3C       LDA   #$3C
+* initialise upper wavesamples
+97A9: 0F A9       CLR   $A9	* upper wavesample
+97AB: BD 9A 85    JSR   $9A85	* look up selected wavesample
+97AE: 8E 03 8E    LDX   #$038E	* Octave and Fine Tune
+97B1: 86 3C       LDA   #$3C	* High Key
+
+* initialise wavesamples
 97B3: 6F 4A       CLR   $000A,U
 97B5: 6F 4B       CLR   $000B,U
 97B7: C6 08       LDB   #$08
 97B9: 34 36       PSHS  Y,X,B,A
-97BB: AF 29       STX   $0009,Y
-97BD: A7 2E       STA   $000E,Y
-97BF: 6F 2F       CLR   $000F,Y
-97C1: 6F 28       CLR   $0008,Y
-97C3: CC FF 10    LDD   #$FF10
-97C6: BD 8F 11    JSR   $8F11
-97C9: 35 36       PULS  A,B,X,Y
-97CB: 31 A8 18    LEAY  $18,Y
-97CE: 5A          DECB  
-97CF: 26 E8       BNE   $97B9
-97D1: BD 8E CF    JSR   $8ECF
-97D4: BD 98 6C    JSR   $986C
+97BB: AF 29       STX   $0009,Y	* save octave and fine tune
+97BD: A7 2E       STA   $000E,Y	* save high key
+97BF: 6F 2F       CLR   $000F,Y	* clear something
+97C1: 6F 28       CLR   $0008,Y	* clear something else
+97C3: CC FF 10    LDD   #$FF10	* ?
+97C6: BD 8F 11    JSR   $8F11	* call
+97C9: 35 36       PULS  A,B,X,Y	* unstack
+97CB: 31 A8 18    LEAY  $18,Y	* next wavesample
+97CE: 5A          DECB  	* count down B
+97CF: 26 E8       BNE   $97B9	* loop
+97D1: BD 8E CF    JSR   $8ECF	* call
+97D4: BD 98 6C    JSR   $986C	* call
 97D7: 2B 14       BMI   $97ED
 97D9: 96 9B       LDA   $9B	* $809b, what's here?
 97DB: B7 E2 00    STA   $E200	* write it to IORB
@@ -3005,13 +3020,15 @@ ackkybd:
 9856: 4F          CLRA  
 9857: 39          RTS   
 
-* unknown
-* fiddles with bank selects
+
+* set precalculated upper/lower addresses
+* and bank select port
+* based on upper/lower variable
 9858: B6 E2 00    LDA   $E200	* VIA IORB
 985B: 84 FC       ANDA  #$FC	* mask off all but bank selects
-985D: D6 A4       LDB   $A4	* variable in $80a4
-985F: 27 02       BEQ   $9863	* is it zero?
-9861: 8A 02       ORA   #$02	* no, toggle upper/lower
+985D: D6 A4       LDB   $A4	* upper/lower
+985F: 27 02       BEQ   $9863	* skip
+9861: 8A 02       ORA   #$02	* upper
 9863: 97 9B       STA   $9B	* write it back to $809b
 9865: 4C          INCA  	* bump
 9866: 97 9C       STA   $9C	* write that back to $809c
@@ -3020,7 +3037,7 @@ ackkybd:
 
 * unknown
 * look up wavesample start and end?
-986C: BD 9A 85    JSR   $9A85	* look up parameter table
+986C: BD 9A 85    JSR   $9A85	* look up selected wavesample
 986F: EC 0F       LDD   $000F,X	* wavesample start/end?
 9871: D7 96       STB   $96	* some variable
 9873: 97 94       STA   $94	* some variable
@@ -3089,7 +3106,8 @@ ackkybd:
 98E8: 8D 57       BSR   $9941
 98EA: 39          RTS   
 
-98EB: BD 98 58    JSR   $9858
+* unknown
+98EB: BD 98 58    JSR   $9858	* select bank
 98EE: BD 98 6C    JSR   $986C
 98F1: 6D 28       TST   $0008,Y
 98F3: 27 4B       BEQ   $9940
@@ -3113,7 +3131,7 @@ ackkybd:
 991A: 10 AC E4    CMPY  ,S
 991D: 24 F1       BCC   $9910
 991F: 32 62       LEAS  $0002,S
-9921: BD 9A 85    JSR   $9A85
+9921: BD 9A 85    JSR   $9A85	* look up selected wavesample
 9924: DE 96       LDU   $96
 9926: 10 AE A8 12 LDY   $12,Y
 992A: 31 21       LEAY  $0001,Y
@@ -3127,35 +3145,34 @@ ackkybd:
 993E: 32 62       LEAS  $0002,S
 9940: 39          RTS   
 
-* unknown
-* if Y is pointing to a param block, might be to toggle loop?
+* write 16 zeros at end of loop (presumably used when 65 toggled)
 * something to do with calculating loop params
-9941: BD 9A 85    JSR   $9A85	* call
-9944: A6 28       LDA   $0008,Y	* a=(y+8) (param[8]=loopsw)
-9946: 27 42       BEQ   $998A	* finish
-9948: BD 98 58    JSR   $9858	* call
-994B: BD 98 6C    JSR   $986C	* call
-994E: EE 26       LDU   $0006,Y	* u=(y+6) (param[6]=loopend)
-9950: EC A8 12    LDD   $12,Y	* D=(y+18) (loop end/fine)
-9953: A1 5E       CMPA  $FFFE,U	* a == (U-2)
+9941: BD 9A 85    JSR   $9A85	* look up selected wavesample
+9944: A6 28       LDA   $0008,Y	* loop switch
+9946: 27 42       BEQ   $998A	* loop is off, finish
+9948: BD 98 58    JSR   $9858	* select bank
+994B: BD 98 6C    JSR   $986C	* fetch wavesample start and end
+994E: EE 26       LDU   $0006,Y	* loop end pointer
+9950: EC A8 12    LDD   $12,Y	* loop end/fine
+9953: A1 5E       CMPA  $FFFE,U	* value in loop start pointer
 9955: 26 06       BNE   $995D	* no, skip
 9957: C1 80       CMPB  #$80	
 9959: 24 02       BCC   $995D	* B >= $80?	
 995B: C6 FF       LDB   #$FF	* B=$ff
-995D: A1 A8 10    CMPA  $10,Y	* a==(y+16)?
+995D: A1 A8 10    CMPA  $10,Y	* wavesample end
 9960: 26 09       BNE   $996B	* no, skip
-9962: C1 DF       CMPB  #$DF
+9962: C1 DF       CMPB  #$DF	* 32 bytes back from end?
 9964: 23 05       BLS   $996B	* b<=$df?
-9966: C6 DF       LDB   #$DF	* b=$df
-9968: 6F A8 14    CLR   $14,Y	* (y+20)=0
-996B: E7 A8 13    STB   $13,Y	* (y+19)=b
-996E: EE A8 12    LDU   $12,Y	* u=(y+18)
+9966: C6 DF       LDB   #$DF	* no, set it
+9968: 6F A8 14    CLR   $14,Y	* free run flag
+996B: E7 A8 13    STB   $13,Y	* set loop end fine
+996E: EE A8 12    LDU   $12,Y	* U=loop end/fine
 9971: 33 41       LEAU  $0001,U	* u++
-9973: 10 9E 96    LDY   $96	* some variable
+9973: 10 9E 96    LDY   $96	* wavesample end for editing
 9976: 30 A8 10    LEAX  $10,Y	* x=y+16
 9979: 34 10       PSHS  X	* save X
-997B: BD 98 76    JSR   $9876	* get byte from sample RAM
-997E: 6F 84       CLR   ,X	* (X)=0
+997B: BD 98 76    JSR   $9876	* get byte from sample RAM setting bank
+997E: 6F 84       CLR   ,X	* X contains address, b contains byte
 9980: BD 98 8F    JSR   $988F	* call
 9983: 10 AC E4    CMPY  ,S	* y=(s)?
 9986: 26 F3       BNE   $997B	* no
@@ -3281,11 +3298,10 @@ ackkybd:
 9A81: 8D 02       BSR   $9A85	* get wavesample parameter
 9A83: 20 1C       BRA   $9AA1	* decode
 
-* look up upper or lower wavesample params 
+* look up upper or lower wavesample params for editing
 * $80a4 toggles which table we read and which variable we look up
 * sets the user stack and $80a9 points to the value in the table
 * returns U = program, Y = wavesample parameter
-
 9A85: 96 A4       LDA   $A4	* upper/lower
 9A87: 27 0A       BEQ   $9A93	* if zero, skip
 9A89: 10 8E 8E BF LDY   #$8EBF	* lookup table pointing to upper params
