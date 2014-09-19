@@ -1017,15 +1017,15 @@ irqentryend:
 896A: 3B          RTI   
 
 *** called just after startup
-896B: 8D 09       BSR   $8976	resetkybd
+896B: 8D 09       BSR   $8976	ackkybd
 896D: CC 89 A1    LDD   #$89A1	appears to be the entry point of a routine
 8970: DD 61       STD   $61
 8972: B6 E2 0A    LDA   $E20A	get shift register
 8975: 39          RTS   
 
 *** disable interrupts, pulse CA2 low
-*** does something to the keyboard controller
-resetkybd:
+*** acknowledge message from kybd controller
+ackkybd:
 8976: 34 01       PSHS  CC
 8978: 1A 50       ORCC  #$50
 897A: B6 E2 0C    LDA   $E20C		fetch peripheral control reg
@@ -1089,27 +1089,29 @@ resetkybd:
 89E8: BD 87 DD    JSR   $87DD	* call
 89EB: 39          RTS   
 
+* note off?
 89EC: CB 24       ADDB  #$24
 89EE: D7 63       STB   $63
-89F0: CC 89 F6    LDD   #$89F6
+89F0: CC 89 F6    LDD   #$89F6	* next task
 89F3: DD 61       STD   $61
 89F5: 39          RTS   
 
-89F6: 8E FB FE    LDX   #$FBFE
+* look up log curve
+89F6: 8E FB FE    LDX   #$FBFE	* log-ish scale in ROM
 89F9: E6 85       LDB   B,X
-89FB: 96 14       LDA   $14
-89FD: 80 1E       SUBA  #$1E
+89FB: 96 14       LDA   $14	* velocity sensitivity
+89FD: 80 1E       SUBA  #$1E	* -30
 89FF: 34 02       PSHS  A
 8A01: EB E0       ADDB  ,S+
-8A03: 28 02       BVC   $8A07
-8A05: C6 7F       LDB   #$7F
-8A07: 2E 02       BGT   $8A0B
-8A09: C6 01       LDB   #$01
-8A0B: 96 63       LDA   $63
-8A0D: CE 89 A1    LDU   #$89A1
-8A10: DF 61       STU   $61
-8A12: BD A0 C5    JSR   $A0C5
-8A15: BD AD BC    JSR   $ADBC
+8A03: 28 02       BVC   $8A07	* overflowed velocity?
+8A05: C6 7F       LDB   #$7F	* clamp
+8A07: 2E 02       BGT   $8A0B	* underflow?
+8A09: C6 01       LDB   #$01	* clamp
+8A0B: 96 63       LDA   $63	* note? velocity?
+8A0D: CE 89 A1    LDU   #$89A1	* next task
+8A10: DF 61       STU   $61	* save it
+8A12: BD A0 C5    JSR   $A0C5	* call
+8A15: BD AD BC    JSR   $ADBC	* call
 8A18: 96 63       LDA   $63
 8A1A: 8E 80 68    LDX   #$8068
 8A1D: 0D 1C       TST   $1C
@@ -1118,6 +1120,7 @@ resetkybd:
 
 8A24: 39          RTS   
 
+* note on?
 8A25: CB 24       ADDB  #$24
 8A27: D7 63       STB   $63
 8A29: CC 8A 2F    LDD   #$8A2F
@@ -1147,6 +1150,7 @@ resetkybd:
 
 8A5D: 39          RTS   
 
+* voice routing, suggested by Rainer Buchty
 8A5E: 8E B0 52    LDX   #$B052
 8A61: 10 8E EC 7F LDY   #$EC7F
 8A65: CE E4 18    LDU   #$E418

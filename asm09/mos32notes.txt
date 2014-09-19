@@ -33,11 +33,12 @@ $8056 - end of table
 $8057
 $8059
 $805d
-$8061 - note in
-$8062 - velocity in
+$8061 - voice task?
+$8063 - computed note?
 $8065 - key velocity
 $8066
 $8067
+$8068
 $806b
 $807d
 $807f
