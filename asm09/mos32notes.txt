@@ -210,6 +210,12 @@ $0e
 $1c = routine that updates the filter
 $2b = routine that unmasks ints and does RTS
 $1a = zero
+$1e
+$20 = 
+$27 = resonance
+$28 = cutoff
+$29
+$2b = next task?
 
 "9d38" params - all of these are "double" values
 36 cutoff

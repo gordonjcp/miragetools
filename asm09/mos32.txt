@@ -1190,39 +1190,43 @@ ackkybd:
 8A8A: 35 60       PULS  Y,U
 8A8C: 39          RTS   
 
-8A8D: 1A 50       ORCC  #$50
-8A8F: EC 88 1A    LDD   $1A,X
-8A92: 6E 98 1C    JMP   [$1C,X]
+* unknown
+* called from voice handler
+8A8D: 1A 50       ORCC  #$50	* mask ints
+8A8F: EC 88 1A    LDD   $1A,X	* something in voice table
+8A92: 6E 98 1C    JMP   [$1C,X]	* filter update routine
 
-8A95: E3 88 1E    ADDD  $1E,X
-8A98: 25 05       BCS   $8A9F
-8A9A: A1 88 20    CMPA  $20,X
-8A9D: 25 0A       BCS   $8AA9
-8A9F: CC 8A AE    LDD   #$8AAE
-8AA2: ED 88 1C    STD   $1C,X
-8AA5: A6 88 20    LDA   $20,X
+8A95: E3 88 1E    ADDD  $1E,X	* something in voice table
+8A98: 25 05       BCS   $8A9F	* lower, skip
+8A9A: A1 88 20    CMPA  $20,X	* something in voice table
+8A9D: 25 0A       BCS   $8AA9	* lower, skip
+8A9F: CC 8A AE    LDD   #$8AAE	* new function for...
+8AA2: ED 88 1C    STD   $1C,X	* filter update routine!
+8AA5: A6 88 20    LDA   $20,X	* something in voice table
 8AA8: 5F          CLRB  
-8AA9: ED 88 1A    STD   $1A,X
+8AA9: ED 88 1A    STD   $1A,X	* something in voice table
 8AAC: 20 29       BRA   $8AD7
 
-8AAE: A3 88 21    SUBD  $21,X
-8AB1: 25 05       BCS   $8AB8
-8AB3: A1 88 23    CMPA  $23,X
-8AB6: 22 0A       BHI   $8AC2
-8AB8: CC 8A D7    LDD   #$8AD7
-8ABB: ED 88 1C    STD   $1C,X
-8ABE: A6 88 23    LDA   $23,X
-8AC1: 5F          CLRB  
-8AC2: ED 88 1A    STD   $1A,X
-8AC5: 20 10       BRA   $8AD7
+* this function can be set as the filter update routine
+* so is it called with cutoff in B and resonance in A?
+8AAE: A3 88 21    SUBD  $21,X	* something in voice table
+8AB1: 25 05       BCS   $8AB8	* lower, skip
+8AB3: A1 88 23    CMPA  $23,X	* something in voice table
+8AB6: 22 0A       BHI   $8AC2	* skip
+8AB8: CC 8A D7    LDD   #$8AD7	* filter update routine
+8ABB: ED 88 1C    STD   $1C,X	* set in voice table
+8ABE: A6 88 23    LDA   $23,X	* something in voice table
+8AC1: 5F          CLRB
+8AC2: ED 88 1A    STD   $1A,X	* something in voice table
+8AC5: 20 10       BRA   $8AD7	* update filter (returns)
 
-8AC7: A3 88 24    SUBD  $24,X
-8ACA: 24 08       BCC   $8AD4
-8ACC: CC 8A D7    LDD   #$8AD7
-8ACF: ED 88 1C    STD   $1C,X
+8AC7: A3 88 24    SUBD  $24,X	* something in voice table
+8ACA: 24 08       BCC   $8AD4	* skip
+8ACC: CC 8A D7    LDD   #$8AD7	* update filter
+8ACF: ED 88 1C    STD   $1C,X	* set in voice table
 8AD2: 4F          CLRA  
 8AD3: 5F          CLRB  
-8AD4: ED 88 1A    STD   $1A,X
+8AD4: ED 88 1A    STD   $1A,X	* something in voice table (cleared)
 
 *** something to do with setting the filter
 8AD7: 1C AF       ANDCC #$AF		; unmask IRQ and FIRQ
