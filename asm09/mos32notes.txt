@@ -1,4 +1,4 @@
-$8011 - 
+$8011 - dummy byte
 $8012 - master tune
 $8013 - pitch bend range
 $8014 - velocity sensitivity
@@ -20,7 +20,7 @@ $8024 - param 85, seq clock
 $8025 - param 86, ext clock jack
 $8026 - param 87, seq speed
 $8027 - param 88, seq loop on/off
-$8028
+$8028 - pedal?
 $8029
 $802b - software version
 $8031
@@ -29,6 +29,8 @@ $8038 - start of 32 bytes zeroed out
 $803b - stores X while setting up voice table
 $8039 - initially holds address of voice parameter table
 $803d
+$8040
+$8041
 $804d
 $804e
 $804f - 7-byte table of values
@@ -37,26 +39,32 @@ $8057 - set to $8107 by routine at $875e
 $8059
 $805d - set to $1f along with $8207 when linked list is constructed
 $805e - set to $b2be, that strange list from the "put values in memory" routine
-$8061 - voice task?
+$8061 - voice task? note parser loop?
 $8063 - computed note?
 $8065 - key velocity
 $8066
 $8067
 $8068
-$806b
+$806b - cleared by sequencer/sustain sw.
 $807d
 $807e
 $807f
 $8081
 $8082
 $8083
-$8084 - value editable? cleared for 97, 98, 99
+$8084 - value editable? cleared for 97, 98, 99 - poss. up/down value?
 $808a
-$808b - parameter being examined?
+$808b - edit parameter
 $8094 - wavesample start for editing
 $8096 - wavesample end for editing
+
+$8098 - thing that reads ADC uses this
+$8099 - thing that reads ADC uses this
+$809a - thing that reads ADC uses this
+
 $809b - saved bank select value, even
 $809c - saved bank select value, odd
+$809f - 
 $80a0 - max value for param?
 $80a1 - min value for param?
 $80a2 - set by "set two variables" $9d38 = $02, $9d41 = $04
@@ -94,11 +102,12 @@ $80e0 - upper/lower sample = 0/2?
 $80e1 - load/save in disk routines
 $80e2 - load/save directory sector?
 $80e3 - used in sector finder, offset?
-$80e7
+$80e7 - used in routine at $ab90 that gets called a lot
 $80e9
+$80ea
 $80eb
 $80ec
-$80ee - unknown
+$80ee - some kind of pointer
 $80f0
 $8105 - set to $ff by routine at $875E
 $8106 - set to $ff by routine at $875E
@@ -116,6 +125,7 @@ $900a - pitch wheel offset?
 $900c
 $900d
 $900e
+$96fe - saves computed sampling filter cutoff
 
 $b800 - sequence memory
 $b804 - contains $b80a

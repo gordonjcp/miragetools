@@ -823,10 +823,11 @@ startup875e2:
 87C2: 20 0F       BRA   $87D3
 
 * unknown
+* called after local on/off switch so safeish to say it enables a note
 87C4: 34 02       PSHS  A	* save A
 87C6: 96 5D       LDA   $5D	* some variable
 87C8: 81 04       CMPA  #$04	* 4?
-87CA: 22 02       BHI   $87CE	* higher? skipe
+87CA: 22 02       BHI   $87CE	* higher? skip
 87CC: 35 82       PULS  A,PC ;(PUL? PC=RTS)
 
 87CE: 35 02       PULS  A	* restore A
@@ -876,7 +877,7 @@ startup875e2:
 881C: 7E 82 90    JMP   $8290	* jump to some routine
 
 * unknown
-881F: 10 9E 57    LDY   $57	* some variable
+881F: 10 9E 57    LDY   $57	* points at $8107 linked list
 8822: 26 10       BNE   $8834	* not zero, skip
 8824: 34 56       PSHS  U,X,B,A	* save regs
 8826: BD 9F 60    JSR   $9F60	* call
@@ -1070,13 +1071,13 @@ ackkybd:
 89A1: C1 90       CMPB  #$90	* note on?
 89A3: 26 07       BNE   $89AC	* no, next
 89A5: CC 8A 25    LDD   #$8A25	* 
-89A8: DD 61       STD   $61	* some variable
+89A8: DD 61       STD   $61	* voice task?
 89AA: 20 3F       BRA   $89EB	* bra rts
 
 89AC: C1 80       CMPB  #$80	* note off?
 89AE: 26 07       BNE   $89B7	* no, next
 89B0: CC 89 EC    LDD   #$89EC	
-89B3: DD 61       STD   $61	* some variable
+89B3: DD 61       STD   $61	* voice task?
 89B5: 20 34       BRA   $89EB	* bra rts
 
 89B7: C1 B8       CMPB  #$B8	* not sure 
@@ -1144,26 +1145,27 @@ ackkybd:
 8A2C: DD 61       STD   $61
 8A2E: 39          RTS   
 
-8A2F: 8E FB F8    LDX   #$FBF8
-8A32: E6 85       LDB   B,X
-8A34: 96 14       LDA   $14
-8A36: 80 1E       SUBA  #$1E
-8A38: 34 02       PSHS  A
-8A3A: EB E0       ADDB  ,S+
-8A3C: 28 02       BVC   $8A40
-8A3E: C6 7F       LDB   #$7F
-8A40: 2E 02       BGT   $8A44
-8A42: C6 01       LDB   #$01
-8A44: 96 63       LDA   $63
+* unknown, velocity?
+8A2F: 8E FB F8    LDX   #$FBF8	* table of values in ROM
+8A32: E6 85       LDB   B,X	* get value
+8A34: 96 14       LDA   $14	* velocity sensitivity
+8A36: 80 1E       SUBA  #$1E	* -30
+8A38: 34 02       PSHS  A	* stack
+8A3A: EB E0       ADDB  ,S+	* add note velocity, drop
+8A3C: 28 02       BVC   $8A40	* too high?
+8A3E: C6 7F       LDB   #$7F	* clamp
+8A40: 2E 02       BGT   $8A44	* too low
+8A42: C6 01       LDB   #$01	* clamp
+8A44: 96 63       LDA   $63	* computed note
 8A46: CE 89 A1    LDU   #$89A1	* note parser
-8A49: DF 61       STU   $61
-8A4B: BD A0 B9    JSR   $A0B9
-8A4E: BD AD BA    JSR   $ADBA
-8A51: 96 63       LDA   $63
-8A53: 8E 80 68    LDX   #$8068
-8A56: 0D 1C       TST   $1C
-8A58: 27 03       BEQ   $8A5D
-8A5A: 7E 87 C4    JMP   $87C4
+8A49: DF 61       STU   $61	* voice task? 
+8A4B: BD A0 B9    JSR   $A0B9	* call
+8A4E: BD AD BA    JSR   $ADBA	* call
+8A51: 96 63       LDA   $63	* computed note
+8A53: 8E 80 68    LDX   #$8068	* buffer?
+8A56: 0D 1C       TST   $1C	* local on/off
+8A58: 27 03       BEQ   $8A5D	* 0? skip to rts
+8A5A: 7E 87 C4    JMP   $87C4	* call
 
 8A5D: 39          RTS   
 
@@ -2838,38 +2840,41 @@ ackkybd:
 96FB: 97 83       STA   $83	* some variable
 96FD: 39          RTS   
 
-96FE: FF 18 1A    STU   $181A
-9701: 50          NEGB  
+* 96FE: FF 18 1A    STU   $181A
+* 9701: 50          NEGB  
+
+* configure sampling
+96FE: ff 18
+9700: 1A 50       ORCC #$50
 9702: 86 14       LDA   #$14	* drive select high, sample/play high
 9704: B7 E2 00    STA   $E200	* VIA IORB
 9707: BD AE 17    JSR   zerofilter
 970A: 8E E4 1F    LDX   #$E41F
-970D: 96 18       LDA   $18
-970F: BB B2 83    ADDA  $B283
-9712: 8B 5B       ADDA  #$5B
-9714: 24 02       BCC   $9718
-9716: 86 FF       LDA   #$FF
-9718: B7 96 FE    STA   $96FE
-971B: 10 8E 03 E8 LDY   #$03E8
+970D: 96 18       LDA   $18	* sample filter frequency
+970F: BB B2 83    ADDA  $B283	* probably offset for voice
+9712: 8B 5B       ADDA  #$5B	* 91?
+9714: 24 02       BCC   $9718	* too high
+9716: 86 FF       LDA   #$FF	* clamp
+9718: B7 96 FE    STA   $96FE	* some variable
+971B: 10 8E 03 E8 LDY   #$03E8	* delay for 1000 clocks
 971F: BD F0 A7    JSR   countdown
-9722: D6 19       LDB   $19
-9724: 26 05       BNE   $972B
+9722: D6 19       LDB   $19	* mike/line
+9724: 26 05       BNE   $972B	* non-zero
 9726: 86 10       LDA   #$10
 9728: B7 E2 00    STA   $E200	* drive select high, sample/play low
-972B: BD 98 58    JSR   $9858
-972E: 5F          CLRB  
-972F: 96 17       LDA   $17
-9731: 4A          DECA  
-9732: 48          ASLA  
-9733: FD E2 06    STD   $E206
-9736: CC 4C C0    LDD   #$4CC0
-9739: B7 E2 0B    STA   $E20B
-973C: F7 E2 0E    STB   $E20E
-973F: 8D 01       BSR   $9742
+972B: BD 98 58    JSR   $9858	* set sample bank?
+972E: 5F          CLRB  	* resonance zero
+972F: 96 17       LDA   $17	* sample time adjust
+9731: 4A          DECA  	* -1
+9732: 48          ASLA  	* x2
+9733: FD E2 06    STD   $E206	* VIA timer 1
+9736: CC 4C C0    LDD   #$4CC0	* 
+9739: B7 E2 0B    STA   $E20B	* VIA aux reg
+973C: F7 E2 0E    STB   $E20E	* VIA interrupt reg
+973F: 8D 01       BSR   $9742	* set sampling filter levels
 9741: 39          RTS   
 
-* the idiom here looks like it sets a filter
-* what with the writing A and B to two things 8 bytes apart, three times
+* set sampling filter levels
 9742: FC 96 FE    LDD   $96FE	* would contain resonance in B, cutoff in A
 9745: E7 84       STB   ,X	* stick the cutoff into the DAC (settling?)
 9747: E7 10       STB   $FFF0,X	* set the cutoff
@@ -2952,7 +2957,7 @@ ackkybd:
 97CE: 5A          DECB  	* count down B
 97CF: 26 E8       BNE   $97B9	* loop
 97D1: BD 8E CF    JSR   $8ECF	* call
-97D4: BD 98 6C    JSR   $986C	* call
+97D4: BD 98 6C    JSR   $986C	* fetch wavesample start and end
 97D7: 2B 14       BMI   $97ED
 97D9: 96 9B       LDA   $9B	* $809b, what's here?
 97DB: B7 E2 00    STA   $E200	* write it to IORB
@@ -2984,9 +2989,11 @@ ackkybd:
 980F: 86 01       LDA   #$01
 9811: 39          RTS   
 
-9812: BD 97 7B    JSR   $977B
+* unknown
+* sampling routine?
+9812: BD 97 7B    JSR   $977B	* routine that counts ADC value levels
 9815: 0D 99       TST   $99
-9817: 27 F2       BEQ   $980B
+9817: 27 F2       BEQ   $980B	* increment y?
 9819: C6 06       LDB   #$06	// upper/lower, mike/line high
 981B: F7 E2 0F    STB   $E20F	// ORA (without handshake? check doc)
 981E: 10 8E E2 04 LDY   #$E204	// T1 counter
@@ -3020,7 +3027,6 @@ ackkybd:
 9856: 4F          CLRA  
 9857: 39          RTS   
 
-
 * set precalculated upper/lower addresses
 * and bank select port
 * based on upper/lower variable
@@ -3035,12 +3041,13 @@ ackkybd:
 9868: B7 E2 00    STA   $E200	* select the bank
 986B: 39          RTS   
 
-* unknown
-* look up wavesample start and end?
+* look up wavesample start and end
+* $95 and $97 are (probably) always zero
+* this expands them out into their 16-bit values
 986C: BD 9A 85    JSR   $9A85	* look up selected wavesample
 986F: EC 0F       LDD   $000F,X	* wavesample start/end?
-9871: D7 96       STB   $96	* some variable
-9873: 97 94       STA   $94	* some variable
+9871: D7 96       STB   $96	* wavesample end for editing
+9873: 97 94       STA   $94	* wavesample start for editing
 9875: 39          RTS
 
 * get byte from sample RAM
@@ -3049,11 +3056,11 @@ ackkybd:
 9876: 1F 31       TFR   U,X
 9878: 8C 80 00    CMPX  #$8000
 987B: 24 04       BCC   $9881	* X>= $8000?
-987D: 96 9B       LDA   $9B	* some variable
+987D: 96 9B       LDA   $9B	* saved even bank select
 987F: 20 06       BRA   $9887	* skip
 
 9881: 30 89 80 00 LEAX  $8000,X	* X=X-$8000
-9885: 96 9C       LDA   $9C	* some variable
+9885: 96 9C       LDA   $9C	* saved odd bank select
 9887: B7 E2 00    STA   $E200	* bank select
 988A: 33 41       LEAU  $0001,U	* U++
 988C: E6 84       LDB   ,X	* B=(X)
@@ -3063,18 +3070,20 @@ ackkybd:
 9891: B6 E2 00    LDA   $E200	* VIA IORB (bank?)
 9894: 8C 80 00    CMPX  #$8000	
 9897: 24 04       BCC   $989D	* x>=$8000
-9899: 96 9B       LDA   $9B	* some variable
+9899: 96 9B       LDA   $9B	* saved even bank select
 989B: 20 06       BRA   $98A3	* skip
 
-989D: 96 9C       LDA   $9C	* some variable
+989D: 96 9C       LDA   $9C	* saved odd bank select
 989F: 30 89 80 00 LEAX  $8000,X	* x-=$8000
 98A3: B7 E2 00    STA   $E200	* bank fiddling
 98A6: 31 21       LEAY  $0001,Y * y++
 98A8: E7 84       STB   ,X	* (x)=b
 98AA: 39          RTS   
 
-98AB: 8D 3E       BSR   $98EB
-98AD: BD 98 6C    JSR   $986C
+* unknown
+* probably rotate sample other way
+98AB: 8D 3E       BSR   $98EB	* place stop marker?
+98AD: BD 98 6C    JSR   $986C	* fetch wavesample start and end
 98B0: DE 96       LDU   $96
 98B2: 33 5F       LEAU  $FFFF,U
 98B4: 1F 32       TFR   U,Y
@@ -3091,58 +3100,61 @@ ackkybd:
 98CB: 8D 74       BSR   $9941
 98CD: 39          RTS   
 
-98CE: 8D 1B       BSR   $98EB
-98D0: BD 98 6C    JSR   $986C
-98D3: DE 94       LDU   $94
-98D5: 1F 32       TFR   U,Y
-98D7: 8D 9D       BSR   $9876
-98D9: 34 04       PSHS  B
-98DB: 8D 99       BSR   $9876
-98DD: 8D B0       BSR   $988F
-98DF: 11 93 96    CMPU  $96
-98E2: 26 F7       BNE   $98DB
-98E4: 35 04       PULS  B
-98E6: 8D A7       BSR   $988F
-98E8: 8D 57       BSR   $9941
+* unknown
+* rotate wavesample?
+98CE: 8D 1B       BSR   $98EB	* place stop marker?
+98D0: BD 98 6C    JSR   $986C	* fetch wavesample start and end
+98D3: DE 94       LDU   $94	* wavesample start for editing
+98D5: 1F 32       TFR   U,Y	* y=u
+98D7: 8D 9D       BSR   $9876	* fetch byte
+98D9: 34 04       PSHS  B	* save
+98DB: 8D 99       BSR   $9876	* fetch byte
+98DD: 8D B0       BSR   $988F	* save byte
+98DF: 11 93 96    CMPU  $96	* reached wavesample end?
+98E2: 26 F7       BNE   $98DB	* not done yet
+98E4: 35 04       PULS  B	* restore
+98E6: 8D A7       BSR   $988F	* save byte
+98E8: 8D 57       BSR   $9941	* loop params?
 98EA: 39          RTS   
 
 * unknown
+* put "stop" markers in sample after editng?
 98EB: BD 98 58    JSR   $9858	* select bank
-98EE: BD 98 6C    JSR   $986C
-98F1: 6D 28       TST   $0008,Y
-98F3: 27 4B       BEQ   $9940
-98F5: A6 A8 11    LDA   $11,Y
-98F8: A1 2F       CMPA  $000F,Y
-98FA: 27 25       BEQ   $9921
+98EE: BD 98 6C    JSR   $986C	* fetch wavesample start and end
+98F1: 6D 28       TST   $0008,Y	* loop flag
+98F3: 27 4B       BEQ   $9940	* 0? rts
+98F5: A6 A8 11    LDA   $11,Y	* loop start
+98F8: A1 2F       CMPA  $000F,Y	* compare with sample start
+98FA: 27 25       BEQ   $9921	* equal, skip
 98FC: 5F          CLRB  
-98FD: 1F 03       TFR   D,U
-98FF: 33 5F       LEAU  $FFFF,U
-9901: BD 98 76    JSR   $9876
-9904: 26 1B       BNE   $9921
-9906: 31 5F       LEAY  $FFFF,U
-9908: 33 57       LEAU  $FFF7,U
-990A: 9E 94       LDX   $94
-990C: 30 08       LEAX  $0008,X
-990E: 34 10       PSHS  X
-9910: BD 98 76    JSR   $9876
-9913: BD 98 8F    JSR   $988F
-9916: 33 5E       LEAU  $FFFE,U
-9918: 31 3E       LEAY  $FFFE,Y
-991A: 10 AC E4    CMPY  ,S
-991D: 24 F1       BCC   $9910
-991F: 32 62       LEAS  $0002,S
+98FD: 1F 03       TFR   D,U	* U=16-bit loop start
+98FF: 33 5F       LEAU  $FFFF,U	* U--
+9901: BD 98 76    JSR   $9876	* get byte from sample RAM
+9904: 26 1B       BNE   $9921	* nonzero?
+9906: 31 5F       LEAY  $FFFF,U	* Y=u-1
+9908: 33 57       LEAU  $FFF7,U	* U=U-8
+990A: 9E 94       LDX   $94	* wavesample start for editing
+990C: 30 08       LEAX  $0008,X	* x+=8
+990E: 34 10       PSHS  X	* save
+9910: BD 98 76    JSR   $9876	* get byte
+9913: BD 98 8F    JSR   $988F	* save byte?
+9916: 33 5E       LEAU  $FFFE,U	* -2
+9918: 31 3E       LEAY  $FFFE,Y * -2
+991A: 10 AC E4    CMPY  ,S	* reached saved X?
+991D: 24 F1       BCC   $9910	* not yet
+991F: 32 62       LEAS  $0002,S	* drop
 9921: BD 9A 85    JSR   $9A85	* look up selected wavesample
-9924: DE 96       LDU   $96
-9926: 10 AE A8 12 LDY   $12,Y
-992A: 31 21       LEAY  $0001,Y
-992C: 30 C8 10    LEAX  $10,U
-992F: 34 10       PSHS  X
-9931: BD 98 76    JSR   $9876
-9934: 6F 84       CLR   ,X
-9936: BD 98 8F    JSR   $988F
-9939: 11 A3 E4    CMPU  ,S
-993C: 26 F3       BNE   $9931
-993E: 32 62       LEAS  $0002,S
+9924: DE 96       LDU   $96	* wavesample end for editing
+9926: 10 AE A8 12 LDY   $12,Y	* loop end
+992A: 31 21       LEAY  $0001,Y	* y++
+992C: 30 C8 10    LEAX  $10,U	* 16 bytes past wavesample end
+992F: 34 10       PSHS  X	* save X
+9931: BD 98 76    JSR   $9876	* get byte
+9934: 6F 84       CLR   ,X	* clear byte at address
+9936: BD 98 8F    JSR   $988F	* save byte?
+9939: 11 A3 E4    CMPU  ,S	* reached saved X yet?
+993C: 26 F3       BNE   $9931	* loop
+993E: 32 62       LEAS  $0002,S	* drop
 9940: 39          RTS   
 
 * write 16 zeros at end of loop (presumably used when 65 toggled)
@@ -3180,8 +3192,10 @@ ackkybd:
 998A: 39          RTS
 
 * unknown
+* looks up something from a table of values, based on the edit parameter
+
 998B: CE 9F F3    LDU   #$9FF3	* table of values? scratchpad?
-998E: D6 8B       LDB   $8B	* some variable
+998E: D6 8B       LDB   $8B	* edit parameter
 9990: A6 C5       LDA   B,U	* find the value in table
 9992: 97 AC       STA   $AC	* some variable
 9994: 1F 89       TFR   A,B	* b=a
@@ -3192,60 +3206,62 @@ ackkybd:
 999E: 0F A3       CLR   $A3	* double/quad value flag
 99A0: 86 01       LDA   #$01
 99A2: 97 A2       STA   $A2	* double/quad value scale
-99A4: 96 8B       LDA   $8B	* some variable
+99A4: 96 8B       LDA   $8B	* edit parameter
 99A6: 81 1E       CMPA  #$1E	* 30 local on/off
 99A8: 26 06       BNE   $99B0	* no, skip
 99AA: 8E 80 1C    LDX   #$801C	* local on/off in config
-99AD: 7E 9C C1    JMP   $9CC1	* thing that takes X and some variables
+99AD: 7E 9C C1    JMP   $9CC1	* display
 
-99B0: 96 8B       LDA   $8B
-99B2: 81 1B       CMPA  #$1B
-99B4: 10 25 00 BB LBCS  $9A73
-99B8: 81 3B       CMPA  #$3B
-99BA: 10 22 00 B5 LBHI  $9A73
-99BE: 8D 02       BSR   $99C2
-99C0: 20 0C       BRA   $99CE
+99B0: 96 8B       LDA   $8B	* edit parameter
+99B2: 81 1B       CMPA  #$1B	* 27, initial wavesample
+99B4: 10 25 00 BB LBCS  $9A73	* less, jump way ahead
+99B8: 81 3B       CMPA  #$3B	* 59
+99BA: 10 22 00 B5 LBHI  $9A73	* higher, into loop points
+99BE: 8D 02       BSR   $99C2	* get parameter table pointer
+99C0: 20 0C       BRA   $99CE	* continue
 
-99C2: 0D A4       TST   $A4
-99C4: 27 04       BEQ   $99CA
-99C6: 10 9E A5    LDY   $A5
+* get upper or lower params in Y
+99C2: 0D A4       TST   $A4	* upper/lower
+99C4: 27 04       BEQ   $99CA	* lower
+99C6: 10 9E A5    LDY   $A5	* upper pointer
 99C9: 39          RTS   
 
-99CA: 10 9E A7    LDY   $A7
-99CD: 39          RTS   
+99CA: 10 9E A7    LDY   $A7	* lower pointer
+99CD: 39          RTS
 
 * selecting edit parameters
+* Y points to parameter block 
 99CE: 96 8B       LDA   $8B	* fetch parameter
 99D0: 81 1B       CMPA  #$1B	* 27 (initial wavesample)
 99D2: 10 26 00 18 LBNE  $99EE	* no, continue
-99D6: 30 2A       LEAX  $000A,Y
-99D8: 86 07       LDA   #$07	* 1-8, guess this is max
+99D6: 30 2A       LEAX  $000A,Y	* X points to Initial Wavesample
+99D8: 86 07       LDA   #$07	* 1-8
 99DA: 97 A0       STA   $A0	* param_max
-99DC: 0C A3       INC   $A3	* flag set for "multiplied" values
-99DE: 0D 84       TST   $84	* upper/lower?
-99E0: 10 27 02 DD LBEQ  $9CC1	* jump
-99E4: BD 9C C1    JSR   $9CC1	* call
-99E7: BD 8E CF    JSR   $8ECF	* then jump
+99DC: 0C A3       INC   $A3	* 1-based
+99DE: 0D 84       TST   $84	* editable flag?
+99E0: 10 27 02 DD LBEQ  $9CC1	* jump display
+99E4: BD 9C C1    JSR   $9CC1	* call display
+99E7: BD 8E CF    JSR   $8ECF	* then jump to wavesample search thing
 99EA: 39          RTS   
 
-99EB: 16 00 5F    LBRA  $9A4D
+99EB: 16 00 5F    LBRA  $9A4D	* is this ever called?
 
 99EE: 81 1C       CMPA  #$1C	* 28 (mix mode on/off)
 99F0: 10 26 00 12 LBNE  $9A06	* no, continue
-99F4: 30 2B       LEAX  $000B,Y
-99F6: 0D 84       TST   $84
-99F8: 10 27 02 C9 LBEQ  $9CC5
-99FC: BD 9C C1    JSR   $9CC1
-99FF: BD 8E CF    JSR   $8ECF
+99F4: 30 2B       LEAX  $000B,Y * X points to Mix Mode:
+99F6: 0D 84       TST   $84	* editable flag?
+99F8: 10 27 02 C9 LBEQ  $9CC5	* only time 9CC5 is used
+99FC: BD 9C C1    JSR   $9CC1	* display
+99FF: BD 8E CF    JSR   $8ECF	* wavesample search thing
 9A02: 39          RTS   
 
-9A03: 16 00 47    LBRA  $9A4D
+9A03: 16 00 47    LBRA  $9A4D	* is this ever called?
 
 * more parameters?
 9A06: 81 1D       CMPA  #$1D	* 29 (mono on/off)
 9A08: 10 26 00 14 LBNE  $9A20	* no, continue
 9A0C: 0D 84       TST   $84
-9A0E: 10 27 00 55 LBEQ  $9A67
+9A0E: 10 27 00 55 LBEQ  $9A67	* done
 9A12: 34 26       PSHS  Y,B,A
 9A14: 1A 50       ORCC  #$50
 9A16: BD 87 5E    JSR   $875E	* build linked list for voices
@@ -3255,34 +3271,34 @@ ackkybd:
 
 9A20: 81 22       CMPA  #$22	* 34 (osc mix)
 9A22: 10 26 00 06 LBNE  $9A2C	* no, continue
-9A26: BD 9D 41    JSR   $9D41	* call routine that sets two variables
+9A26: BD 9D 41    JSR   $9D41	* set 4x scaling
 9A29: 16 00 21    LBRA  $9A4D	* continue
 
 9A2C: 81 23       CMPA  #$23	* 35 (osc mix Vs)
 9A2E: 10 26 00 06 LBNE  $9A38	* no, skip
-9A32: BD 9D 41    JSR   $9D41	* "set two variables"
+9A32: BD 9D 41    JSR   $9D41	* 4x scaling
 9A35: 16 00 15    LBRA  $9A4D	* continue
 
 9A38: 81 24       CMPA  #$24	* 36 cutoff?
 9A3A: 10 26 00 06 LBNE  $9A44	* no, continue
-9A3E: BD 9D 38    JSR   $9D38	* "set two variables"
+9A3E: BD 9D 38    JSR   $9D38	* 2x scalling
 9A41: 16 00 09    LBRA  $9A4D	* continue
 
 9A44: 81 25       CMPA  #$25	* 37 resonance
 9A46: 10 26 00 03 LBNE  $9A4D	* no, continue
-9A4A: BD 9D 41    JSR   $9D41	* "set two variables"
+9A4A: BD 9D 41    JSR   $9D41	* 4x scaling
 9A4D: 96 8B       LDA   $8B	* parameter being examined
 9A4F: 81 2D       CMPA  #$2D	* 45 (VCF Attack Vs)
 9A51: 25 07       BCS   $9A5A	* lower? continue
 9A53: 81 31       CMPA  #$31	* 49 (VCF Release Vs)
 9A55: 22 03       BHI   $9A5A	* higher, continue
-9A57: BD 9D 41    JSR   $9D41	* "set two variables"
+9A57: BD 9D 41    JSR   $9D41	* 4x scaling
 9A5A: 96 8B       LDA   $8B	* get parameter
 9A5C: 81 37       CMPA  #$37	* 55 (DCA Attack Vs)
 9A5E: 25 07       BCS   $9A67	* lower, continue
 9A60: 81 3B       CMPA  #$3B	* 59 (DCA Release Vs)
 9A62: 22 03       BHI   $9A67	* higher, continue
-9A64: BD 9D 41    JSR   $9D41	* "set two variables"
+9A64: BD 9D 41    JSR   $9D41	* 4x scaling
 9A67: 8E A0 57    LDX   #$A057	* table of values
 9A6A: A6 85       LDA   B,X	* b contains ?
 9A6C: 97 A0       STA   $A0	* maximum parameter value
@@ -3375,7 +3391,7 @@ ackkybd:
 9B06: 27 04       BEQ   $9B0C
 9B08: 81 47       CMPA  #$47	* 71 max filter freq
 9B0A: 26 03       BNE   $9B0F
-9B0C: BD 9D 38    JSR   $9D38
+9B0C: BD 9D 38    JSR   $9D38	* 2x scaling
 9B0F: 96 8B       LDA   $8B
 9B11: 81 48       CMPA  #$48	* 72 top key
 9B13: 26 0E       BNE   $9B23
@@ -3434,7 +3450,7 @@ ackkybd:
 
 9B77: 81 57       CMPA  #$57	* 87 seq speed
 9B79: 26 10       BNE   $9B8B
-9B7B: BD 9D 38    JSR   $9D38
+9B7B: BD 9D 38    JSR   $9D38	* 2x scaling
 9B7E: 86 C6       LDA   #$C6
 9B80: 97 A0       STA   $A0
 9B82: 86 01       LDA   #$01
@@ -3451,35 +3467,34 @@ ackkybd:
 9B97: 81 18       CMPA  #$18 	* 24 keyboard balance
 9B99: 26 0D       BNE   $9BA8
 9B9B: 8E 80 15    LDX   #$8015
-9B9E: BD 9D 38    JSR   $9D38
+9B9E: BD 9D 38    JSR   $9D38	* 2x scaling
 9BA1: 86 7E       LDA   #$7E
 9BA3: 97 A0       STA   $A0
 9BA5: 7E 9C C1    JMP   $9CC1
 
 9BA8: 81 19       CMPA  #$19	* 25 link upper/lower
-9BAA: 26 06       BNE   $9BB2
-9BAC: 8E 80 16    LDX   #$8016
-9BAF: 7E 9C C1    JMP   $9CC1
+9BAA: 26 06       BNE   $9BB2	* no
+9BAC: 8E 80 16    LDX   #$8016	* Link Switch
+9BAF: 7E 9C C1    JMP   $9CC1	* display
 
 9BB2: 81 1A       CMPA  #$1A	* 26 wavesample select
-9BB4: 26 14       BNE   $9BCA
-9BB6: 0F 9F       CLR   $9F
-9BB8: 0D A4       TST   $A4
-9BBA: 27 05       BEQ   $9BC1
-9BBC: 8E 80 A9    LDX   #$80A9
-9BBF: 20 03       BRA   $9BC4
-
-9BC1: 8E 80 AA    LDX   #$80AA
-9BC4: 86 01       LDA   #$01
+9BB4: 26 14       BNE   $9BCA	* no, skip
+9BB6: 0F 9F       CLR   $9F	* some variable
+9BB8: 0D A4       TST   $A4	* upper/lower
+9BBA: 27 05       BEQ   $9BC1	* lower
+9BBC: 8E 80 A9    LDX   #$80A9	* upper wavesample pointer
+9BBF: 20 03       BRA   $9BC4	* continue
+9BC1: 8E 80 AA    LDX   #$80AA	* lower wavesample pointer
+9BC4: 86 01       LDA   #$01	* 1-based counting
 9BC6: 97 A3       STA   $A3
-9BC8: 20 1E       BRA   $9BE8
+9BC8: 20 1E       BRA   $9BE8	* jump ahead
 
 9BCA: 81 15       CMPA  #$15	* $15=21, master tune
 9BCC: 26 0A       BNE   $9BD8
 9BCE: 86 63       LDA   #$63	* $63=99, max value
-9BD0: 97 A0       STA   $A0	* some variable that holds max tune val
-9BD2: 8E 80 12    LDX   #$8012	* tuning in config
-9BD5: 16 00 E9    LBRA  $9CC1
+9BD0: 97 A0       STA   $A0	* maximum parameter
+9BD2: 8E 80 12    LDX   #$8012	* Master Tune
+9BD5: 16 00 E9    LBRA  $9CC1	* display
 
 9BD8: 81 16       CMPA  #$16	* pitch bend range
 9BDA: 26 05       BNE   $9BE1
@@ -3496,14 +3511,14 @@ ackkybd:
 9BEF: 26 0E       BNE   $9BFF
 9BF1: 86 1E       LDA   #$1E	* 30, minimum
 9BF3: 97 A1       STA   $A1
-9BF5: 86 63       LDA   #$63	* 99, max
+9BF5: 86 63       LDA   #$63	* 99, maximum
 9BF7: 97 A0       STA   $A0
 9BF9: 8E 80 17    LDX   #$8017	* param
 9BFC: 16 00 C2    LBRA  $9CC1
 
 9BFF: 81 4A       CMPA  #$4A	* 74 - input filter freq
 9C01: 26 0D       BNE   $9C10
-9C03: BD 9D 38    JSR   $9D38
+9C03: BD 9D 38    JSR   $9D38	* 2x scaling
 9C06: 86 C6       LDA   #$C6	* max=198
 9C08: 97 A0       STA   $A0
 9C0A: 8E 80 18    LDX   #$8018
@@ -3516,7 +3531,7 @@ ackkybd:
 
 9C1A: 81 4C       CMPA  #$4C	* 76 sample threshold
 9C1C: 26 0D       BNE   $9C2B
-9C1E: BD 9D 38    JSR   $9D38
+9C1E: BD 9D 38    JSR   $9D38	* 2x scaling
 9C21: 8E 80 1A    LDX   #$801A
 9C24: 86 7E       LDA   #$7E
 9C26: 97 A0       STA   $A0
@@ -3539,25 +3554,25 @@ ackkybd:
 
 9C48: 81 50       CMPA  #$50	* 80 Aftertouch Depth
 9C4A: 26 0C       BNE   $9C58
-9C4C: BD 9D 38    JSR   $9D38
+9C4C: BD 9D 38    JSR   $9D38	* 2x scaling
 9C4F: 8E 80 1F    LDX   #$801F
 9C52: 86 7E       LDA   #$7E
 9C54: 97 A0       STA   $A0
 9C56: 20 69       BRA   $9CC1
 
 9C58: 81 59       CMPA  #$59	* 89 pedal sus/seq
-9C5A: 26 1A       BNE   $9C76
-9C5C: 0D 84       TST   $84
-9C5E: 27 10       BEQ   $9C70
-9C60: 2B 0C       BMI   $9C6E
-9C62: 86 01       LDA   #$01
-9C64: 97 28       STA   $28
-9C66: 0F 6B       CLR   $6B
+9C5A: 26 1A       BNE   $9C76	* no, continue
+9C5C: 0D 84       TST   $84	* editable?
+9C5E: 27 10       BEQ   $9C70	* jump
+9C60: 2B 0C       BMI   $9C6E	* jump
+9C62: 86 01       LDA   #$01	
+9C64: 97 28       STA   $28	* set flag
+9C66: 0F 6B       CLR   $6B	* clear
 9C68: BD 87 DD    JSR   $87DD
 9C6B: 7E 9C 70    JMP   $9C70
 
 9C6E: 0F 28       CLR   $28
-9C70: 8E 80 28    LDX   #$8028
+9C70: 8E 80 28    LDX   #$8028	* only place this literal value is
 9C73: 7E 9C D3    JMP   $9CD3
 
 9C76: 81 5B       CMPA  #$5B	* 91?
@@ -5481,7 +5496,7 @@ AB8F: 39          RTS
 * called from a few places
 * called from routine that sets up sampling?
 AB90: 96 E7       LDA   $E7     * some variable
-AB92: 27 7B       BEQ   $AC0F   * jump
+AB92: 27 7B       BEQ   $AC0F   * beq rts
 AB94: 0F E7       CLR   $E7     * some variable
 AB96: DE EE       LDU   $EE     * some variable
 AB98: 81 06       CMPA  #$06    * is it 6, what does this even mean
@@ -5494,16 +5509,16 @@ ABA0: 20 49       BRA   $ABEB
 ABA2: 81 08       CMPA  #$08
 ABA4: 26 3E       BNE   $ABE4
 ABA6: 96 F0       LDA   $F0
-ABA8: 0D 24       TST   $24
+ABA8: 0D 24       TST   $24	* seq clock?
 ABAA: 27 26       BEQ   $ABD2
-ABAC: 0D EB       TST   $EB
+ABAC: 0D EB       TST   $EB	* some variable
 ABAE: 26 EC       BNE   $AB9C
 ABB0: D6 EA       LDB   $EA
 ABB2: C1 0C       CMPB  #$0C
 ABB4: 24 08       BCC   $ABBE
 ABB6: 90 EA       SUBA  $EA
 ABB8: 24 02       BCC   $ABBC
-ABBA: 8B 18       ADDA  #$18
+ABBA: 8B 18       ADDA  #$18	* 24
 ABBC: 20 14       BRA   $ABD2
 
 ABBE: 50          NEGB  
@@ -6188,6 +6203,15 @@ B7F0: 00 02 1E 14 18 19 00 00 00 00 00 00 00 00 00 00
 
 * might be sequence data
 * everything after this point gets clobbered by the sequencer!
+* TH iss. 32 has a description of the data
+* B806 contains the address of the first byte of unused memory
+* B80B is sequence data
+* events are three byte
+* 1) 0x80+note = on, note=off
+* 2) velocity
+* 3) ticks
+
+* bend = 00, sustain = 03, mod = 01
 
 B800: 01 39 39 39 B8 0A B8 35 B8 0A 00 C9 40 00 00 40 
 B810: 00 01 00 00 03 00 18 49 40 00 CB 40 18 4B 40 00 
