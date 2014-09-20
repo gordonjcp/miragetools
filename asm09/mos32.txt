@@ -124,9 +124,9 @@ osvec:
 * appears to be some sort of linked list task loop
 
 828C: 34 01       PSHS  CC
-828E: 0F 4E       CLR   $4E	* some variable
+828E: 0F 4E       CLR   $4E	* task list counter?
 8290: 1A 50       ORCC  #$50	* disable interrupts
-8292: 96 4E       LDA   $4E	* get variable
+8292: 96 4E       LDA   $4E	* get task list counter?
 8294: 26 07       BNE   $829D	* zero? return
 8296: 10 9E 59    LDY   $59	* some 16-bit variable
 8299: 26 04       BNE   $829F	* zero? continue
@@ -147,11 +147,11 @@ osvec:
 * bit set
 82AE: E6 24       LDB   $0004,Y	* get a value (voice params?)
 82B0: C0 24       SUBB  #$24	* subtract 36 (three octaves?)
-82B2: CE 80 4F    LDU   #$804F	* some variable
+82B2: CE 80 4F    LDU   #$804F	* some table of values
 82B5: 1F 98       TFR   B,A	* copy B
 82B7: 44          LSRA  	
 82B8: 44          LSRA  
-82B9: 44          LSRA  	* *8
+82B9: 44          LSRA  	* A=B/8
 82BA: C4 07       ANDB  #$07	* mask lower 3 bits of A
 82BC: 8E 80 FC    LDX   #$80FC	
 82BF: E6 85       LDB   B,X	* b now contains 255-(2^b)
@@ -877,6 +877,7 @@ startup875e2:
 881C: 7E 82 90    JMP   $8290	* jump to some routine
 
 * unknown
+* something in that list must get poked at?
 881F: 10 9E 57    LDY   $57	* points at $8107 linked list
 8822: 26 10       BNE   $8834	* not zero, skip
 8824: 34 56       PSHS  U,X,B,A	* save regs
@@ -2158,7 +2159,7 @@ ackkybd:
 91F4: 7D 80 07    TST   fdcerr
 91F7: 27 07       BEQ   $9200
 91F9: BD 92 49    JSR   $9249
-91FC: BD 94 31    JSR   $9431
+91FC: BD 94 31    JSR   $9431	* set83898a
 91FF: 39          RTS   
 
 9200: D6 85       LDB   $85
@@ -2224,7 +2225,7 @@ ackkybd:
 9274: 97 8D       STA   $8D
 9276: A6 A6       LDA   A,Y
 9278: DD B3       STD   $B3
-927A: BD 94 31    JSR   $9431
+927A: BD 94 31    JSR   $9431	* set83898a
 927D: 0F 8A       CLR   $8A
 927F: 86 01       LDA   #$01
 9281: 97 82       STA   $82
@@ -2271,9 +2272,10 @@ ackkybd:
 92CD: D7 8B       STB   $8B
 92CF: 39          RTS   
 
-92D0: BD 94 31    JSR   $9431
+92D0: BD 94 31    JSR   $9431	* set83898a
 92D3: 39          RTS   
 
+* unknown, dispatcher?
 92D4: D7 8B       STB   $8B
 92D6: 1F 98       TFR   B,A
 92D8: 81 0B       CMPA  #$0B
@@ -2300,14 +2302,14 @@ ackkybd:
 92FF: 86 02       LDA   #$02
 9301: 97 85       STA   $85
 9303: 97 82       STA   $82
-9305: BD 94 31    JSR   $9431
+9305: BD 94 31    JSR   $9431	* set83898a
 9308: 39          RTS   
 
 9309: 81 0E       CMPA  #$0E
 930B: 26 10       BNE   $931D
 930D: CC B6 CE    LDD   #$B6CE
 9310: DD B3       STD   $B3
-9312: BD 94 31    JSR   $9431
+9312: BD 94 31    JSR   $9431	* set83898a
 9315: CC 09 04    LDD   #$0904
 9318: 97 85       STA   $85
 931A: D7 82       STB   $82
@@ -2325,7 +2327,7 @@ ackkybd:
 
 932D: CC 2A 3A    LDD   #$2A3A
 9330: DD B3       STD   $B3
-9332: BD 94 31    JSR   $9431
+9332: BD 94 31    JSR   $9431	* set83898a
 9335: 39          RTS   
 
 9336: 81 02       CMPA  #$02
@@ -2467,6 +2469,8 @@ ackkybd:
 
 * second-most frequently called
 * 12 places
+* set $83 to $80 and $8A and $89 to 1
+* set83898a
 9431: CC 01 80    LDD   #$0180
 9434: 97 8A       STA   $8A	* $808a = 1
 9436: 97 89       STA   $89	* $8089 = 1
@@ -2547,7 +2551,7 @@ ackkybd:
 94BF: 97 85       STA   $85
 94C1: CC 03 E8    LDD   #$03E8
 94C4: DD 34       STD   $34
-94C6: BD 94 31    JSR   $9431
+94C6: BD 94 31    JSR   $9431	* set83898a
 94C9: BD 9D D7    JSR   $9DD7
 94CC: DC 34       LDD   $34
 94CE: 27 02       BEQ   $94D2
@@ -2585,7 +2589,7 @@ ackkybd:
 9510: 26 13       BNE   $9525
 9512: CC 2A B6    LDD   #$2AB6
 9515: DD B3       STD   $B3
-9517: BD 94 31    JSR   $9431
+9517: BD 94 31    JSR   $9431	* set83898a
 951A: 39          RTS   
 
 951B: CC B6 8E    LDD   #$B68E
@@ -2695,7 +2699,7 @@ ackkybd:
 95D7: 86 B6       LDA   #$B6
 95D9: C6 B6       LDB   #$B6
 95DB: DD B3       STD   $B3
-95DD: BD 94 31    JSR   $9431
+95DD: BD 94 31    JSR   $9431	* set83898a
 95E0: 39          RTS   
 
 * unknown
@@ -3623,7 +3627,7 @@ ackkybd:
 9CB4: 8E 80 06    LDX   #fdcstat
 9CB7: 20 08       BRA   $9CC1
 
-9CB9: BD 94 31    JSR   $9431
+9CB9: BD 94 31    JSR   $9431	* set83898a
 9CBC: CC 11 12    LDD   #$1112
 9CBF: 20 62       BRA   $9D23
 
@@ -4013,6 +4017,7 @@ ackkybd:
 9F5E: 20 FE       BRA   $9F5E
 
 * seems to be called before sampling?
+* resets hardware
 9F60: 1A 50       ORCC  #$50	* mask interrupts
 9F62: BD AB 90    JSR   $AB90	* thing that gets called before sampling
 9F65: BD F1 BB    JSR   qchipsetup
@@ -4050,7 +4055,7 @@ ackkybd:
 9FA4: 86 7C       LDA   #$7C	* 124
 9FA6: C6 9C       LDB   #$9C	* 156
 9FA8: DD B3       STD   $B3	* some variable
-9FAA: BD 94 31    JSR   $9431	* reset some variables
+9FAA: BD 94 31    JSR   $9431	* set83898a
 9FAD: 0F 8A       CLR   $8A	* some variable
 9FAF: C6 06       LDB   #$06	* 6
 9FB1: D7 82       STB   $82	* some variable
@@ -4086,7 +4091,7 @@ ackkybd:
 9FE9: DD B3       STD   $B3
 9FEB: 86 80       LDA   #$80
 9FED: 97 BA       STA   $BA
-9FEF: BD 94 31    JSR   $9431
+9FEF: BD 94 31    JSR   $9431	* set83898a
 9FF2: 39          RTS   
 
 9FF3: 00 00 00 00 00 00 00 00 00 00 00 FF FF FF FF FF 

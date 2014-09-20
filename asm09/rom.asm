@@ -303,26 +303,27 @@ hwsetup1:
 *** initialize qchip
 *** (todo)
 qchipsetup:
-	ldx   #$ec80	; wavetable pointers
+	ldx   #$ec80	; wavetable pointer registers
 qchip1
-	lda   #$10
-	sta   ,x+
+	lda   #$10	*
+	sta   ,x+	* write $10 to all of them, why?
 	cmpx  #$eca0
-	bne   qchip1
+	bne   qchip1	* loop over all registers
 	ldx   #$eca0	; oscillator control registers
 qchip2:
 	lda   #$63	; channel 6, oneshot, stopped?
 	sta   ,x+
 	cmpx  #$ecc0
-	bne   qchip2
+	bne   qchip2	* loop over all registers
 	ldb   #$20
+* wait for all voices to stop?
 qchip3:
-	lda   $ece0		// interrupt register
+	lda   $ece0	* read interrupt register
 	ldy   #$000c
-	jsr   countdown
-	decb  
-	cmpb  #$00
-	bne   qchip3
+	jsr   countdown	* wait
+	decb
+	cmpb  #$00	* done it 32 times?
+	bne   qchip3	* loop
 	rts   
 
 

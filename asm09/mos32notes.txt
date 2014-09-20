@@ -33,12 +33,14 @@ $8039 - initially holds address of voice parameter table
 $803d
 $8040
 $8041
+$8045
 $804d
-$804e
+$804e - task list counter thing
 $804f - 7-byte table of values
 $8056 - end of table
 $8057 - set to $8107 by routine at $875e
 $8059
+$805b - set if $8059 is nonzero?
 $805d - set to $1f along with $8207 when linked list is constructed
 $805e - set to $b2be, that strange list from the "put values in memory" routine
 $8061 - voice task? note parser loop?
@@ -54,12 +56,15 @@ $807e
 $807f
 $8081
 $8082
-$8083
+$808
 $8084 - value editable? cleared for 97, 98, 99 - poss. up/down value?
+$8085
 $8087
 $8088
+$8089
 $808a
 $808b - edit parameter
+$8092
 $8094 - wavesample start for editing
 $8096 - wavesample end for editing
 
@@ -236,7 +241,10 @@ table starts at $b052
 from $ae17 "zerofilter"
 $00 = next entry in table
 $02 = this entry?
+$04
+$05
 $06 = note
+$07
 $08 = velocity?
 $09 = 
 $0a = program for voice
