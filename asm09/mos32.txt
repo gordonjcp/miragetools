@@ -1197,42 +1197,43 @@ ackkybd:
 * unknown
 * called from voice handler
 8A8D: 1A 50       ORCC  #$50	* mask ints
-8A8F: EC 88 1A    LDD   $1A,X	* something in voice table
-8A92: 6E 98 1C    JMP   [$1C,X]	* filter update routine
+8A8F: EC 88 1A    LDD   $1A,X	* task pointer?
+8A92: 6E 98 1C    JMP   [$1C,X]	* call next task
 
-8A95: E3 88 1E    ADDD  $1E,X	* something in voice table
+8A95: E3 88 1E    ADDD  $1E,X	* VCF attack
 8A98: 25 05       BCS   $8A9F	* lower, skip
-8A9A: A1 88 20    CMPA  $20,X	* something in voice table
+8A9A: A1 88 20    CMPA  $20,X	* VCF peak
 8A9D: 25 0A       BCS   $8AA9	* lower, skip
 8A9F: CC 8A AE    LDD   #$8AAE	* new function for...
 8AA2: ED 88 1C    STD   $1C,X	* filter update routine!
 8AA5: A6 88 20    LDA   $20,X	* something in voice table
 8AA8: 5F          CLRB  
 8AA9: ED 88 1A    STD   $1A,X	* something in voice table
-8AAC: 20 29       BRA   $8AD7
+8AAC: 20 29       BRA   $8AD7	* update filter
 
 * this function can be set as the filter update routine
 * so is it called with cutoff in B and resonance in A?
-8AAE: A3 88 21    SUBD  $21,X	* something in voice table
+8AAE: A3 88 21    SUBD  $21,X	* VCF Decay Time
 8AB1: 25 05       BCS   $8AB8	* lower, skip
-8AB3: A1 88 23    CMPA  $23,X	* something in voice table
+8AB3: A1 88 23    CMPA  $23,X	* VCF sustain
 8AB6: 22 0A       BHI   $8AC2	* skip
 8AB8: CC 8A D7    LDD   #$8AD7	* filter update routine
 8ABB: ED 88 1C    STD   $1C,X	* set in voice table
-8ABE: A6 88 23    LDA   $23,X	* something in voice table
+8ABE: A6 88 23    LDA   $23,X	* VCF sustain level
 8AC1: 5F          CLRB
 8AC2: ED 88 1A    STD   $1A,X	* something in voice table
-8AC5: 20 10       BRA   $8AD7	* update filter (returns)
+8AC5: 20 10       BRA   $8AD7	* update filter
 
-8AC7: A3 88 24    SUBD  $24,X	* something in voice table
+* calculate release task
+8AC7: A3 88 24    SUBD  $24,X	* subtract Release A value
 8ACA: 24 08       BCC   $8AD4	* skip
-8ACC: CC 8A D7    LDD   #$8AD7	* update filter
+8ACC: CC 8A D7    LDD   #$8AD7	* update filter routine
 8ACF: ED 88 1C    STD   $1C,X	* set in voice table
 8AD2: 4F          CLRA  
 8AD3: 5F          CLRB  
 8AD4: ED 88 1A    STD   $1A,X	* something in voice table (cleared)
 
-*** something to do with setting the filter
+* update voice filter task
 8AD7: 1C AF       ANDCC #$AF		; unmask IRQ and FIRQ
 8AD9: A1 88 27    CMPA  $27,X		; resonance (max is 40?)
 8ADC: 23 03       BLS   $8AE1		; less than 39
@@ -1345,10 +1346,10 @@ ackkybd:
 8BBE: 1C AF       ANDCC #$AF	; unmask FIRQ and IRQ
 8BC0: 39          RTS   
 
-8BC1: 86 40       LDA   #$40
-8BC3: A7 88 24    STA   $24,X
-8BC6: CC 8A C7    LDD   #$8AC7
-8BC9: ED 88 1C    STD   $1C,X
+8BC1: 86 40       LDA   #$40	* set filter release time?
+8BC3: A7 88 24    STA   $24,X	* this points to VCF release A
+8BC6: CC 8A C7    LDD   #$8AC7	* filter update routine
+8BC9: ED 88 1C    STD   $1C,X	* set task
 8BCC: 39          RTS   
 
 * calculate tuning from note number
@@ -1584,13 +1585,12 @@ ackkybd:
 * calculate envelope?
 * assume X is program param block
 * and Y is voice param block
-* bet this is called from the note on code
 8DA1: A6 88 11    LDA   $11,X	* attack vel sense
 8DA4: D6 65       LDB   $65	* note velocity
 8DA6: 3D          MUL   
 8DA7: 40          NEGA 		* because the harder the note, the faster 
 8DA8: AB 0C       ADDA  $000C,X	* add attack rate
-8DAA: 8D 4A       BSR   $8DF6	* call
+8DAA: 8D 4A       BSR   $8DF6	* call 
 8DAC: ED A8 1E    STD   $1E,Y	* attack time
 8DAF: A6 88 12    LDA   $12,X	* Peak vel sense
 8DB2: D6 65       LDB   $65	* note velocity
@@ -1634,23 +1634,30 @@ ackkybd:
 
 * unknown
 * called from envelope calculation, seems to clamp values?
-8DF6: 2A 03       BPL   $8DFB	* bit 7 is zero
-8DF8: 4F          CLRA
+* called with a value from 0 to 31 in A and table pointer in U
+* returns value from table in D
+* table runs:
+* $ff80 $0040 $002e $e020 $0017 $7010 $000b $b808
+* $0006	$6605 $1e04 $1003 $3302 $8f02 $1901 $9901
+* $9901 $4701 $0600 $cf00 $a300 $8300 $6800 $5300
+* $4200 $3600 $2900 $2100 $1a00 $1400 $1000 $0e00
+
+8DF6: 2A 03       BPL   $8DFB	* greater than 0?
+8DF8: 4F          CLRA		* no, clamp
 8DF9: 20 06       BRA   $8E01	* skip
 
 8DFB: 81 1F       CMPA  #$1F	* 31?
 8DFD: 23 02       BLS   $8E01	* <31, skip
 8DFF: 86 1F       LDA   #$1F	* clamp
 8E01: 48          ASLA		* *2
-8E02: EC C6       LDD   A,U	* what's U set to? does a lookup
+8E02: EC C6       LDD   A,U	* base address of table
 8E04: 39          RTS   
 
 * unknown
 * Y might have address of voice parameter block
 * in which case X contains DCA envelope
-* U points at FF FF 80 00 40 00 2e e0
 8E05: AE 2A       LDX   $000A,Y	* DCA params
-8E07: CE F7 FD    LDU   #$F7FD	* points to top of table in ROM
+8E07: CE F7 FD    LDU   #$F7FD	* points to envelope lookup table
 8E0A: CC 8A C7    LDD   #$8AC7	* points to some routine
 8E0D: ED A8 1C    STD   $1C,Y	* store in update routine
 8E10: CC 8B 49    LDD   #$8B49	* points to some routine
@@ -1660,7 +1667,7 @@ ackkybd:
 8E1B: 3D          MUL   
 8E1C: 40          NEGA  
 8E1D: AB 88 10    ADDA  $10,X	* initially 0?
-8E20: 8D D4       BSR   $8DF6	* some routine, clamp and lookup
+8E20: 8D D4       BSR   $8DF6	* envelope lookup
 8E22: ED A8 24    STD   $24,Y
 8E25: E6 29       LDB   $0009,Y
 8E27: A6 88 1F    LDA   $1F,X
@@ -2015,7 +2022,7 @@ ackkybd:
 
 9101: 96 AE       LDA   $AE
 9103: 81 18       CMPA  #$18
-9105: 25 04       BCS   $910B
+9105: 25 04       BCS   $910B	* < 24, continue
 9107: BD 95 F0    JSR   $95F0
 910A: 39          RTS   
 
@@ -2030,7 +2037,7 @@ ackkybd:
 9116: 96 AE       LDA   $AE	* some variable
 9118: 81 0B       CMPA  #$0B	* 11?
 911A: 26 08       BNE   $9124	* no, skip
-911C: BD AB 90    JSR   $AB90	* call thing called from sampling setup
+911C: BD AB 90    JSR   $AB90	* something to do with sequencer
 911F: BD 92 49    JSR   $9249	* clear a bunch of variables to zero
 9122: 20 07       BRA   $912B	* skip
 
@@ -2074,8 +2081,8 @@ ackkybd:
 916A: 86 C8       LDA   #$C8
 916C: 97 87       STA   $87
 916E: 96 87       LDA   $87
-9170: 97 32       STA   $32
-9172: BD 99 8B    JSR   $998B
+9170: 97 32       STA   $32	* some variable
+9172: BD 99 8B    JSR   $998B	* edit values
 9175: 7D 82 08    TST   $8208
 9178: 27 02       BEQ   $917C
 917A: 4F          CLRA  
@@ -2085,7 +2092,7 @@ ackkybd:
 917F: 96 88       LDA   $88
 9181: 91 AE       CMPA  $AE
 9183: 26 12       BNE   $9197
-9185: 0D 32       TST   $32
+9185: 0D 32       TST   $32	* some variable
 9187: 26 F3       BNE   $917C
 9189: C6 14       LDB   #$14
 918B: D1 87       CMPB  $87
@@ -2608,7 +2615,7 @@ ackkybd:
 
 9551: 81 02       CMPA  #$02
 9553: 26 09       BNE   $955E
-9555: BD AB 90    JSR   $AB90
+9555: BD AB 90    JSR   $AB90	* something to do with sequencer
 9558: BD 95 E1    JSR   $95E1
 955B: 39          RTS   
 
@@ -2625,7 +2632,7 @@ ackkybd:
 9570: 0F 89       CLR   $89
 9572: 39          RTS   
 
-9573: BD AB 90    JSR   $AB90
+9573: BD AB 90    JSR   $AB90	* something to do with sequencer
 9576: BD 95 E1    JSR   $95E1
 9579: 39          RTS   
 
@@ -2652,7 +2659,7 @@ ackkybd:
 959C: BD AB 4E    JSR   $AB4E
 959F: 20 06       BRA   $95A7
 
-95A1: BD AB 90    JSR   $AB90
+95A1: BD AB 90    JSR   $AB90	* something to do with sequencer
 95A4: BD AB 4E    JSR   $AB4E
 95A7: C6 04       LDB   #$04
 95A9: D7 82       STB   $82
@@ -2727,7 +2734,7 @@ ackkybd:
 
 962D: 81 08       CMPA  #$08
 962F: 26 13       BNE   $9644
-9631: BD AB 90    JSR   $AB90
+9631: BD AB 90    JSR   $AB90	* something to do with sequencer
 9634: 96 27       LDA   $27
 9636: 27 04       BEQ   $963C
 9638: BD 95 E1    JSR   $95E1
@@ -2738,7 +2745,7 @@ ackkybd:
 9640: BD 91 16    JSR   $9116
 9643: 39          RTS   
 
-9644: BD AB 90    JSR   $AB90
+9644: BD AB 90    JSR   $AB90	* something to do with sequencer
 9647: 20 F3       BRA   $963C
 
 9649: 16 00 A7    LBRA  $96F3
@@ -3575,14 +3582,14 @@ ackkybd:
 9C70: 8E 80 28    LDX   #$8028	* only place this literal value is
 9C73: 7E 9C D3    JMP   $9CD3
 
-9C76: 81 5B       CMPA  #$5B	* 91?
+9C76: 81 5B       CMPA  #$5B	* 91? What is Param 91?
 9C78: 26 05       BNE   $9C7F
-9C7A: 8E 80 29    LDX   #$8029
+9C7A: 8E 80 29    LDX   #$8029	* some variable?
 9C7D: 20 42       BRA   $9CC1
 
-9C7F: 81 5C       CMPA  #$5C	* 92?
+9C7F: 81 5C       CMPA  #$5C	* 92? What is Param 92?
 9C81: 26 15       BNE   $9C98
-9C83: 8E 80 2A    LDX   #$802A
+9C83: 8E 80 2A    LDX   #$802A	* some variable
 9C86: 0D 84       TST   $84
 9C88: 27 0C       BEQ   $9C96
 9C8A: 2B 07       BMI   $9C93
@@ -3596,7 +3603,7 @@ ackkybd:
 9C98: 81 61       CMPA  #$61	* 97 Software Version
 9C9A: 26 07       BNE   $9CA3
 9C9C: 0F 84       CLR   $84
-9C9E: 8E 80 2B    LDX   #$802B	* points to $32 in RAM
+9C9E: 8E 80 2B    LDX   #$802B	* points to value $32 in RAM
 9CA1: 20 1E       BRA   $9CC1
 
 9CA3: 81 62       CMPA  #$62	* 98 show last FDC error
@@ -4600,7 +4607,8 @@ A42F: BF 82 7A    STX   $827A
 A432: 1A 01       ORCC  #$01
 A434: 39          RTS   
 
-* some sort of command dispatcher?
+* deal with disk commands
+* check disk
 A435: BD A4 BA    JSR   $A4BA
 A438: B6 80 07    LDA   fdcerr
 A43B: 81 00       CMPA  #$00
@@ -4650,26 +4658,26 @@ A48B: 20 19       BRA   $A4A6
 
 A48D: 81 09       CMPA  #$09
 A48F: 26 05       BNE   $A496
-A491: BD A5 A1    JSR   $A5A1
+A491: BD A5 A1    JSR   $A5A1	* sequence
 A494: 20 10       BRA   $A4A6
 
 A496: 81 0A       CMPA  #$0A
 A498: 26 05       BNE   $A49F
-A49A: BD A5 FC    JSR   $A5FC
+A49A: BD A5 FC    JSR   $A5FC	* sequence
 A49D: 20 07       BRA   $A4A6
 
 A49F: 81 0B       CMPA  #$0B
 A4A1: 26 03       BNE   $A4A6
 A4A3: BD A6 53    JSR   $A653	* save OS parameters
 A4A6: B6 E8 01    LDA   $E801	* track register
-A4A9: B7 80 02    STA   fdctrk
-A4AC: B6 80 07    LDA   fdcerr
+A4A9: B7 80 02    STA   fdctrk	* save track
+A4AC: B6 80 07    LDA   fdcerr	* error?
 A4AF: 81 00       CMPA  #$00
-A4B1: 26 04       BNE   $A4B7
-A4B3: 1C FE       ANDCC #$FE
-A4B5: 20 02       BRA   $A4B9
+A4B1: 26 04       BNE   $A4B7	* yes
+A4B3: 1C FE       ANDCC #$FE	* carry clear
+A4B5: 20 02       BRA   $A4B9	* return
 
-A4B7: 1A 01       ORCC  #$01
+A4B7: 1A 01       ORCC  #$01	* carry set
 A4B9: 39          RTS   
 
 * fiddles with some variables
@@ -4678,7 +4686,7 @@ A4B9: 39          RTS
 * into $80d1 = offset in table
 A4BA: B7 80 CF    STA   vbanktoload
 A4BD: F7 80 D0    STB   $80D0 
-A4C0: BD AB 20    JSR   $AB20 * no idea, -1 *4 > $80d1
+A4C0: BD AB 20    JSR   $AB20 *	calculate offset in table
 A4C3: 7F 80 07    CLR   fdcerr
 A4C6: 86 E8       LDA   #$E8
 A4C8: 1F 8B       TFR   A,DP
@@ -4811,7 +4819,7 @@ A5D9: BD AA D2    JSR   $AAD2
 A5DC: B6 80 06    LDA   fdcstat
 A5DF: 81 00       CMPA  #$00
 A5E1: 27 05       BEQ   $A5E8
-A5E3: BD AB 00    JSR   $AB00
+A5E3: BD AB 00    JSR   $AB00	* show disk error
 A5E6: 20 10       BRA   $A5F8
 
 A5E8: 7F 80 E1    CLR   $80E1
@@ -4819,7 +4827,7 @@ A5EB: BD A8 47    JSR   $A847
 A5EE: B6 80 06    LDA   fdcstat
 A5F1: 81 00       CMPA  #$00
 A5F3: 27 03       BEQ   $A5F8
-A5F5: BD AB 00    JSR   $AB00
+A5F5: BD AB 00    JSR   $AB00	* show disk error
 A5F8: BD F4 D6    JSR   disablefd
 A5FB: 39          RTS   
 
@@ -4847,7 +4855,7 @@ A628: BD AA D2    JSR   $AAD2	* find sector
 A62B: B6 80 06    LDA   fdcstat
 A62E: 81 00       CMPA  #$00
 A630: 27 06       BEQ   $A638	* fdc okay
-A632: BD AB 00    JSR   $AB00	* error
+A632: BD AB 00    JSR   $AB00	* show disk error
 A635: 16 00 17    LBRA  $A64F	* lbra rts
 
 A638: 86 02       LDA   #$02	* 2
@@ -4856,7 +4864,7 @@ A63D: BD A8 47    JSR   $A847	* call load/save sequence
 A640: B6 80 06    LDA   fdcstat
 A643: 81 00       CMPA  #$00
 A645: 27 05       BEQ   $A64C	* okay?
-A647: BD AB 00    JSR   $AB00	* nope, error
+A647: BD AB 00    JSR   $AB00	* show disk error
 A64A: 20 03       BRA   $A64F
 
 A64C: BD A9 7C    JSR   $A97C	* call
@@ -4880,7 +4888,7 @@ A670: BD AA D2    JSR   $AAD2	* fetch start and end track/sector
 A673: B6 80 06    LDA   fdcstat
 A676: 81 00       CMPA  #$00	* zero?
 A678: 27 05       BEQ   $A67F	* yes, continue
-A67A: BD AB 00    JSR   $AB00	* call routine to work out which error
+A67A: BD AB 00    JSR   $AB00	* show disk error
 A67D: 20 19       BRA   $A698	* branch to RTS
 
 A67F: B6 80 D6    LDA   vfirstsec	* first sector
@@ -4891,7 +4899,7 @@ A68B: BD F4 76    JSR   writesector
 A68E: B6 80 06    LDA   fdcstat	* fetch FDC status
 A691: 81 00       CMPA  #$00	* Ok?
 A693: 27 03       BEQ   $A698	* skip over error
-A695: BD AB 00    JSR   $AB00	* find error message
+A695: BD AB 00    JSR   $AB00	* show disk error
 A698: BD F4 D6    JSR   disablefd
 A69B: 39          RTS   
 
@@ -4901,7 +4909,7 @@ A6A0: BD AA D2    JSR   $AAD2	* look up values
 A6A3: B6 80 06    LDA   fdcstat
 A6A6: 81 00       CMPA  #$00
 A6A8: 27 06       BEQ   $A6B0	* okay?
-A6AA: BD AB 00    JSR   $AB00	* no, error
+A6AA: BD AB 00    JSR   $AB00	* show disk error
 A6AD: 16 00 37    LBRA  $A6E7	* lbra rts
 
 A6B0: 7F 80 DD    CLR   $80DD	* clear bank value?
@@ -4920,14 +4928,14 @@ A6CB: BD A7 8B    JSR   $A78B	* call save parameter
 A6CE: B6 80 06    LDA   fdcstat
 A6D1: 81 00       CMPA  #$00
 A6D3: 27 05       BEQ   $A6DA	* okay
-A6D5: BD AB 00    JSR   $AB00	
+A6D5: BD AB 00    JSR   $AB00	* show disk error
 A6D8: 20 0D       BRA   $A6E7 	* bra rts
 
 A6DA: BD A7 AE    JSR   $A7AE 	* call read/write sector
 A6DD: B6 80 06    LDA   fdcstat
 A6E0: 81 00       CMPA  #$00
 A6E2: 27 03       BEQ   $A6E7	* okay?
-A6E4: BD AB 00    JSR   $AB00 	* nope, error
+A6E4: BD AB 00    JSR   $AB00 	* show disk error
 A6E7: 39          RTS   
 
 * load/save upper sounds
@@ -4936,7 +4944,7 @@ A6EC: BD AA D2    JSR   $AAD2	* get sector
 A6EF: B6 80 06    LDA   fdcstat
 A6F2: 81 00       CMPA  #$00
 A6F4: 27 06       BEQ   $A6FC	* okay?
-A6F6: BD AB 00    JSR   $AB00	* nope, error
+A6F6: BD AB 00    JSR   $AB00	* show disk error
 A6F9: 16 00 39    LBRA  $A735	* lbra rts
 
 A6FC: 86 02       LDA   #$02	* select upper bank
@@ -4956,14 +4964,14 @@ A719: BD A7 8B    JSR   $A78B	* call save param block
 A71C: B6 80 06    LDA   fdcstat
 A71F: 81 00       CMPA  #$00
 A721: 27 05       BEQ   $A728	* okay?
-A723: BD AB 00    JSR   $AB00	* nope, error
+A723: BD AB 00    JSR   $AB00	* show disk error
 A726: 20 0D       BRA   $A735	* bra rts
 
 A728: BD A7 AE    JSR   $A7AE	* call read/write sector
 A72B: B6 80 06    LDA   fdcstat
 A72E: 81 00       CMPA  #$00
 A730: 27 03       BEQ   $A735	* okay?
-A732: BD AB 00    JSR   $AB00	nope, error
+A732: BD AB 00    JSR   $AB00	* show disk error
 A735: 39          RTS   
 
 * load parameter block and copy
@@ -5140,7 +5148,7 @@ A8BC: BD AA 2F    JSR   $AA2F	* check "directory"?
 A8BF: B6 80 06    LDA   fdcstat * saved FDC status
 A8C2: 81 00       CMPA  #$00	* zero?
 A8C4: 27 06       BEQ   $A8CC	* yes, jump
-A8C6: BD AB 00    JSR   $AB00	* nope, error
+A8C6: BD AB 00    JSR   $AB00	* show disk error
 A8C9: 16 00 AF    LBRA  $A97B	* lbra rts
 
 A8CC: B6 80 CF    LDA   vbanktoload	* some variable
@@ -5231,7 +5239,7 @@ A97F: BD AA 2F    JSR   $AA2F	* directory?
 A982: B6 80 06    LDA   fdcstat
 A985: 81 00       CMPA  #$00
 A987: 27 06       BEQ   $A98F	* okay
-A989: BD AB 00    JSR   $AB00	* nope, error
+A989: BD AB 00    JSR   $AB00	* show disk error
 A98C: 16 00 7B    LBRA  $AA0A	* lbra rts
 
 A98F: B6 80 CF    LDA   vbanktoload
@@ -5284,7 +5292,7 @@ A9FD: BD AA 2F    JSR   $AA2F
 AA00: B6 80 06    LDA   fdcstat
 AA03: 81 00       CMPA  #$00
 AA05: 27 03       BEQ   $AA0A
-AA07: BD AB 00    JSR   $AB00
+AA07: BD AB 00    JSR   $AB00	* show disk error
 AA0A: 39          RTS   
 
 * sequence directory?
@@ -5433,21 +5441,21 @@ AB29: 39          RTS
 
 AB2A: B7 A2 
 
-* points into sequence memory
-AB2C: FE B8 04    LDU   $B804	* U=($b804), $b80a by default
-AB2F: A6 C0       LDA   ,U+	* a=(u++)
-AB31: DF EC       STU   $EC	* save U in some variable
-AB33: 97 F1       STA   $F1	* save A in some variable
+* get byte from sequence
+AB2C: FE B8 04    LDU   $B804	* sequence pointer?
+AB2F: A6 C0       LDA   ,U+	* get command
+AB31: DF EC       STU   $EC	* save sequence pointer
+AB33: 97 F1       STA   $F1	* save command
 AB35: 39          RTS   
 
-AB36: FE B8 08    LDU   $B808
-AB39: FF B8 04    STU   $B804
-AB3C: A7 C0       STA   ,U+
-AB3E: DF EE       STU   $EE
-AB40: 0F F0       CLR   $F0
+AB36: FE B8 08    LDU   $B808	* start of sequence
+AB39: FF B8 04    STU   $B804	* sequence pointer?
+AB3C: A7 C0       STA   ,U+	* save byte
+AB3E: DF EE       STU   $EE	* save U in some variable
+AB40: 0F F0       CLR   $F0	* clear some variable
 AB42: 39          RTS   
 
-AB43: 8D E7       BSR   $AB2C
+AB43: 8D E7       BSR   $AB2C	* get byte from sequence
 AB45: 0F 36       CLR   $36
 AB47: 0F E9       CLR   $E9
 AB49: C6 02       LDB   #$02
@@ -5468,55 +5476,56 @@ AB5D: D7 E7       STB   $E7
 AB5F: 39          RTS   
 
 * unknown
-* clears some variables, increments others
+* initialise sequencer vars?
 AB60: 0F 36       CLR   $36
 AB62: 0F E9       CLR   $E9
 AB64: 0C EB       INC   $EB
 AB66: 0F EA       CLR   $EA
 AB68: 86 60       LDA   #$60
-AB6A: 97 26       STA   $26
+AB6A: 97 26       STA   $26	* sequencer speed 
 AB6C: 86 08       LDA   #$08
-AB6E: 97 E7       STA   $E7
+AB6E: 97 E7       STA   $E7	* sequencer flag?
 AB70: F6 90 09    LDB   $9009	* initially $4000
 AB73: BD AD AF    JSR   $ADAF	* call some routine
-AB76: D6 6C       LDB   $6C	* some variable
+AB76: D6 6C       LDB   $6C	* start/stop?
 AB78: BD AD B2    JSR   $ADB2	* call some routine
-AB7B: D6 6B       LDB   $6B	* some variable
+AB7B: D6 6B       LDB   $6B	* footswitch flag
 AB7D: 7E AD B6    JMP   $ADB6	* some routine
 
 AB80: 0F 36       CLR   $36
 AB82: 0F E9       CLR   $E9
 AB84: BD AC 10    JSR   $AC10
-AB87: 8D A3       BSR   $AB2C
+AB87: 8D A3       BSR   $AB2C	* get byte from sequence
 AB89: 8D AB       BSR   $AB36
 AB8B: C6 0A       LDB   #$0A
 AB8D: D7 E7       STB   $E7
 AB8F: 39          RTS   
 
-* called from a few places
+* called from lots of places
 * called from routine that sets up sampling?
+* something to do with sequencer?
 AB90: 96 E7       LDA   $E7     * some variable
 AB92: 27 7B       BEQ   $AC0F   * beq rts
 AB94: 0F E7       CLR   $E7     * some variable
-AB96: DE EE       LDU   $EE     * some variable
+AB96: DE EE       LDU   $EE     * sequence pointer
 AB98: 81 06       CMPA  #$06    * is it 6, what does this even mean
 AB9A: 26 06       BNE   $ABA2   * no, jump
 AB9C: 86 FF       LDA   #$FF    
-AB9E: 20 32       BRA   $ABD2   * jump
+AB9E: 20 32       BRA   $ABD2   * put byte in sequence
 
 ABA0: 20 49       BRA   $ABEB
 
 ABA2: 81 08       CMPA  #$08
 ABA4: 26 3E       BNE   $ABE4
 ABA6: 96 F0       LDA   $F0
-ABA8: 0D 24       TST   $24	* seq clock?
-ABAA: 27 26       BEQ   $ABD2
+ABA8: 0D 24       TST   $24	* external seq clock
+ABAA: 27 26       BEQ   $ABD2	* off
 ABAC: 0D EB       TST   $EB	* some variable
-ABAE: 26 EC       BNE   $AB9C
-ABB0: D6 EA       LDB   $EA
-ABB2: C1 0C       CMPB  #$0C
-ABB4: 24 08       BCC   $ABBE
-ABB6: 90 EA       SUBA  $EA
+ABAE: 26 EC       BNE   $AB9C	* jump
+ABB0: D6 EA       LDB   $EA	* some variable
+ABB2: C1 0C       CMPB  #$0C	* 12
+ABB4: 24 08       BCC   $ABBE	* >= 12
+ABB6: 90 EA       SUBA  $EA	* 
 ABB8: 24 02       BCC   $ABBC
 ABBA: 8B 18       ADDA  #$18	* 24
 ABBC: 20 14       BRA   $ABD2
@@ -5527,18 +5536,23 @@ ABC1: 34 04       PSHS  B
 ABC3: AB E0       ADDA  ,S+
 ABC5: 24 0B       BCC   $ABD2
 ABC7: 4C          INCA  
-ABC8: A7 5F       STA   $FFFF,U
+ABC8: A7 5F       STA   $FFFF,U	* save sequencer ticks?
 ABCA: 86 81       LDA   #$81
 ABCC: A7 C0       STA   ,U+
 ABCE: 86 FF       LDA   #$FF
 ABD0: A7 C0       STA   ,U+
-ABD2: A7 5F       STA   $FFFF,U
-ABD4: 86 80       LDA   #$80
+
+* unknown-ish
+* put byte into sequence?
+* U probably points at first $80 in end marker?
+* A contains byte to store
+ABD2: A7 5F       STA   $FFFF,U	* store A
+ABD4: 86 80       LDA   #$80	* end marker is $80
 ABD6: A7 C0       STA   ,U+
 ABD8: A7 C0       STA   ,U+
-ABDA: A7 C0       STA   ,U+
-ABDC: FF B8 06    STU   $B806   * this is in sequence memory
-ABDF: BD AB 2C    JSR   $AB2C
+ABDA: A7 C0       STA   ,U+	* write three $80
+ABDC: FF B8 06    STU   $B806   * set pointer to first byte of free seqram
+ABDF: BD AB 2C    JSR   $AB2C	* get byte from sequence
 ABE2: 20 07       BRA   $ABEB
 
 ABE4: 81 0A       CMPA  #$0A
@@ -5562,16 +5576,16 @@ AC0B: 81 61       CMPA  #$61
 AC0D: 25 EE       BCS   $ABFD
 AC0F: 39          RTS   
 
-AC10: BE B8 06    LDX   $B806
+AC10: BE B8 06    LDX   $B806	* first byte of free seqram
 AC13: DE E5       LDU   $E5
-AC15: FF B8 06    STU   $B806
-AC18: BC B8 04    CPX   $B804
-AC1B: 23 06       BLS   $AC23
-AC1D: A6 82       LDA   ,-X
-AC1F: A7 C2       STA   ,-U
-AC21: 20 F5       BRA   $AC18
+AC15: FF B8 06    STU   $B806	* first byte of free seqram
+AC18: BC B8 04    CPX   $B804	* sequence pointer?
+AC1B: 23 06       BLS   $AC23	* less, skip
+AC1D: A6 82       LDA   ,-X	* a=(--x)
+AC1F: A7 C2       STA   ,-U	* (--u)=a
+AC21: 20 F5       BRA   $AC18	* loop
 
-AC23: FF B8 04    STU   $B804
+AC23: FF B8 04    STU   $B804	* sequence pointer?
 AC26: 39          RTS   
 
 AC27: 9E EC       LDX   $EC
@@ -5584,7 +5598,7 @@ AC33: A6 80       LDA   ,X+
 AC35: A7 C0       STA   ,U+
 AC37: 9C E5       CPX   $E5
 AC39: 25 F8       BCS   $AC33
-AC3B: FF B8 06    STU   $B806
+AC3B: FF B8 06    STU   $B806	* first byte of free seqram
 AC3E: 39          RTS   
 
 AC3F: 5F          CLRB  
@@ -5721,18 +5735,18 @@ AD2B: 81 0A       CMPA  #$0A	* a=10?
 AD2D: 26 0C       BNE   $AD3B	* no, jump
 AD2F: 33 5D       LEAU  $FFFD,U	* u-=3
 AD31: DF EC       STU   $EC	* save
-AD33: BD AB 90    JSR   $AB90	* sampling? no
+AD33: BD AB 90    JSR   $AB90	* something to do with sequencer
 AD36: BD AB 84    JSR   $AB84	* call
 AD39: 20 06       BRA   $AD41	* skip
 
 AD3B: BD AB F2    JSR   $ABF2	* call
-AD3E: BD AB 2C    JSR   $AB2C	* call
+AD3E: BD AB 2C    JSR   $AB2C	* get byte from sequence
 
 AD41: 20 0C       BRA   $AD4F	* jump rts
 
 AD43: 33 5D       LEAU  $FFFD,U	* u-=3
 AD45: DF EC       STU   $EC	* save
-AD47: BD AB 90    JSR   $AB90	* sampling? no
+AD47: BD AB 90    JSR   $AB90	* something to do with sequencer
 AD4A: 86 1A       LDA   #$1A	* 26?
 AD4C: BD A4 04    JSR   $A404	* put value in ringbuffer
 AD4F: 20 3D       BRA   $AD8E	* jump rts
@@ -5811,7 +5825,7 @@ ADC2: 11 93 EC    CMPU  $EC	* some variable
 ADC5: 25 0E       BCS   $ADD5	* $80EC<$80EE?
 ADC7: 35 01       PULS  CC	* restore state
 ADC9: 34 04       PSHS  B	* save B
-ADCB: BD AB 90    JSR   $AB90	* set up sampling?
+ADCB: BD AB 90    JSR   $AB90	* something to do with sequencer?
 ADCE: 86 1A       LDA   #$1A	* 26
 ADD0: BD A4 04    JSR   $A404	* stuff it in ringbuffer
 ADD3: 35 84       PULS  B,PC ;(PUL? PC=RTS)

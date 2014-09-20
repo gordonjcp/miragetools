@@ -21,9 +21,11 @@ $8025 - param 86, ext clock jack
 $8026 - param 87, seq speed
 $8027 - param 88, seq loop on/off
 $8028 - pedal?
-$8029
+$8029 - param 91
+$802a - param 92
 $802b - software version
 $8031
+$8032
 $8036
 $8038 - start of 32 bytes zeroed out
 $803b - stores X while setting up voice table
@@ -46,6 +48,7 @@ $8066
 $8067
 $8068
 $806b - cleared by sequencer/sustain sw.
+$806c - maybe sequence start/stop?
 $807d
 $807e
 $807f
@@ -53,6 +56,8 @@ $8081
 $8082
 $8083
 $8084 - value editable? cleared for 97, 98, 99 - poss. up/down value?
+$8087
+$8088
 $808a
 $808b - edit parameter
 $8094 - wavesample start for editing
@@ -102,17 +107,18 @@ $80e0 - upper/lower sample = 0/2?
 $80e1 - load/save in disk routines
 $80e2 - load/save directory sector?
 $80e3 - used in sector finder, offset?
-$80e7 - used in routine at $ab90 that gets called a lot
+$80e7 - sequencer flag?
 $80e9
-$80ea
-$80eb
+$80ea - sequencer timing?
+$80eb - sequencer timing?
 $80ec
 $80ee - some kind of pointer
-$80f0
+$80f0 - sequencer timing?
 $8105 - set to $ff by routine at $875E
 $8106 - set to $ff by routine at $875E
 $8107 - linked list, 8 bytes per entry, 30 entries
 $8207 - unknown
+$8208
 $8225 - start of ring buffer
 $8234 - end of ring buffer
 $8235 - something to do with FIRQ?
@@ -215,6 +221,7 @@ $ad9a - unknown
 $ad8f - unknown
 $ac27 - copy some byte?
 $99ce - select through edit parameters
+$9116 - LED patterns?
 
 
 wavesample params
@@ -236,15 +243,15 @@ $10 = tuning word
 $15 = 
 $18 = VCF offset
 $1a = zero
-$1c = routine that updates the filter (or, updates whatever)
-$1e = VCF attack time
-$1f = 
+$1c = next task
+$1e = VCF Attack time A
+$1f = VCF Attack time B
 $20 = VCF Peak level
-$21 = VCF Decay time
-$22 = 
+$21 = VCF Decay time A
+$22 = VCF Decay time B
 $23 = VCF Sustain level
-$24 = VCF Release?
-$25 = 
+$24 = VCF Release time A
+$25 = VCF Release time B
 $2b = routine that unmasks ints and does RTS
 $20 = 
 $27 = resonance
