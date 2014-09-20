@@ -1200,34 +1200,34 @@ ackkybd:
 8A8F: EC 88 1A    LDD   $1A,X	* task pointer?
 8A92: 6E 98 1C    JMP   [$1C,X]	* call next task
 
+* calculate envelope attack phase
 8A95: E3 88 1E    ADDD  $1E,X	* VCF attack
 8A98: 25 05       BCS   $8A9F	* lower, skip
 8A9A: A1 88 20    CMPA  $20,X	* VCF peak
 8A9D: 25 0A       BCS   $8AA9	* lower, skip
-8A9F: CC 8A AE    LDD   #$8AAE	* new function for...
-8AA2: ED 88 1C    STD   $1C,X	* filter update routine!
+8A9F: CC 8A AE    LDD   #$8AAE	* envelope decay
+8AA2: ED 88 1C    STD   $1C,X	* set task
 8AA5: A6 88 20    LDA   $20,X	* something in voice table
 8AA8: 5F          CLRB  
 8AA9: ED 88 1A    STD   $1A,X	* something in voice table
-8AAC: 20 29       BRA   $8AD7	* update filter
+8AAC: 20 29       BRA   $8AD7	* update filter task
 
-* this function can be set as the filter update routine
-* so is it called with cutoff in B and resonance in A?
+* calculate envelope decay task
 8AAE: A3 88 21    SUBD  $21,X	* VCF Decay Time
 8AB1: 25 05       BCS   $8AB8	* lower, skip
 8AB3: A1 88 23    CMPA  $23,X	* VCF sustain
 8AB6: 22 0A       BHI   $8AC2	* skip
-8AB8: CC 8A D7    LDD   #$8AD7	* filter update routine
+8AB8: CC 8A D7    LDD   #$8AD7	* update filter task
 8ABB: ED 88 1C    STD   $1C,X	* set in voice table
 8ABE: A6 88 23    LDA   $23,X	* VCF sustain level
 8AC1: 5F          CLRB
 8AC2: ED 88 1A    STD   $1A,X	* something in voice table
-8AC5: 20 10       BRA   $8AD7	* update filter
+8AC5: 20 10       BRA   $8AD7	* update filter task
 
-* calculate release task
+* calculate envelope release task
 8AC7: A3 88 24    SUBD  $24,X	* subtract Release A value
 8ACA: 24 08       BCC   $8AD4	* skip
-8ACC: CC 8A D7    LDD   #$8AD7	* update filter routine
+8ACC: CC 8A D7    LDD   #$8AD7	* update filter task
 8ACF: ED 88 1C    STD   $1C,X	* set in voice table
 8AD2: 4F          CLRA  
 8AD3: 5F          CLRB  
@@ -1348,7 +1348,7 @@ ackkybd:
 
 8BC1: 86 40       LDA   #$40	* set filter release time?
 8BC3: A7 88 24    STA   $24,X	* this points to VCF release A
-8BC6: CC 8A C7    LDD   #$8AC7	* filter update routine
+8BC6: CC 8A C7    LDD   #$8AC7	* envelope release task
 8BC9: ED 88 1C    STD   $1C,X	* set task
 8BCC: 39          RTS   
 
@@ -1440,12 +1440,12 @@ ackkybd:
 8C7C: BD F5 F1    JSR   unknown8
 8C7F: 39          RTS   
 
-* unknown
+* initialise voice params
 8C80: 10 8E B0 52 LDY   #$B052	* voice params
-8C84: CC 8A D7    LDD   #$8AD7	* address of filter update routine
-8C87: ED A8 1C    STD   $1C,Y	* filter routine pointer
+8C84: CC 8A D7    LDD   #$8AD7	* update filter task
+8C87: ED A8 1C    STD   $1C,Y	* voice task pointer
 8C8A: 6F A8 1A    CLR   $1A,Y	* unknown
-8C8D: CC 8B BE    LDD   #$8BBE	* some routine
+8C8D: CC 8B BE    LDD   #$8BBE	* enable interrupts and return
 8C90: ED A8 2B    STD   $2B,Y	* next task?
 8C93: 6F A8 29    CLR   $29,Y	* unknown
 8C96: 31 A8 4D    LEAY  $4D,Y	* next voice, 77 bytes
@@ -1453,60 +1453,64 @@ ackkybd:
 8C9D: 25 E5       BCS   $8C84	* loop
 8C9F: 39          RTS   
 
+* unknown
+* Y might point to voice params
 8CA0: AE 2A       LDX   $000A,Y
-8CA2: A6 26       LDA   $0006,Y
-8CA4: 80 18       SUBA  #$18
-8CA6: 2A 01       BPL   $8CA9
-8CA8: 4F          CLRA  
+8CA2: A6 26       LDA   $0006,Y	* note?
+8CA4: 80 18       SUBA  #$18	* subtract 24
+8CA6: 2A 01       BPL   $8CA9	* too low?
+8CA8: 4F          CLRA  	* clamp
 8CA9: E6 08       LDB   $0008,X
-8CAB: 3D          MUL   
-8CAC: 46          RORA  
-8CAD: 56          RORB  
-8CAE: 34 04       PSHS  B
+8CAB: 3D          MUL 		* (note-24)*[8]  
+8CAC: 46          RORA
+8CAD: 56          RORB		* /2  
+8CAE: 34 04       PSHS  B	* stack B
 8CB0: E6 A8 16    LDB   $16,Y
 8CB3: 1D          SEX   
-8CB4: EB E0       ADDB  ,S+
-8CB6: 89 00       ADCA  #$00
-8CB8: EB 06       ADDB  $0006,X
-8CBA: 89 00       ADCA  #$00
-8CBC: EB 4C       ADDB  $000C,U
-8CBE: 89 00       ADCA  #$00
-8CC0: 27 07       BEQ   $8CC9
-8CC2: 2A 03       BPL   $8CC7
-8CC4: 5F          CLRB  
-8CC5: 20 02       BRA   $8CC9
+8CB4: EB E0       ADDB  ,S+	* add B to previously stacked B
+8CB6: 89 00       ADCA  #$00	* ?
+8CB8: EB 06       ADDB  $0006,X	* add the note back in
+8CBA: 89 00       ADCA  #$00	* ?
+8CBC: EB 4C       ADDB  $000C,U	* some voice param
+8CBE: 89 00       ADCA  #$00	* ?
+8CC0: 27 07       BEQ   $8CC9	* skip if zero
+8CC2: 2A 03       BPL   $8CC7	* below zero?
+8CC4: 5F          CLRB		* clamp
+8CC5: 20 02       BRA   $8CC9	* skip
 
-8CC7: C6 FF       LDB   #$FF
-8CC9: D7 65       STB   $65
-8CCB: A6 A8 1A    LDA   $1A,Y
-8CCE: A0 A8 26    SUBA  $26,Y
-8CD1: 9B 65       ADDA  $65
-8CD3: 24 02       BCC   $8CD7
-8CD5: 86 FF       LDA   #$FF
-8CD7: A7 A8 1A    STA   $1A,Y
-8CDA: A6 A8 20    LDA   $20,Y
-8CDD: A0 A8 26    SUBA  $26,Y
-8CE0: 9B 65       ADDA  $65
-8CE2: 24 02       BCC   $8CE6
-8CE4: 86 FF       LDA   #$FF
-8CE6: A7 A8 20    STA   $20,Y
-8CE9: A6 A8 23    LDA   $23,Y
-8CEC: A0 A8 26    SUBA  $26,Y
-8CEF: 9B 65       ADDA  $65
-8CF1: 24 02       BCC   $8CF5
-8CF3: 86 FF       LDA   #$FF
-8CF5: A7 A8 23    STA   $23,Y
-8CF8: E7 A8 26    STB   $26,Y
-8CFB: A6 4D       LDA   $000D,U
+8CC7: C6 FF       LDB   #$FF	*
+8CC9: D7 65       STB   $65	* velocity
+8CCB: A6 A8 1A    LDA   $1A,Y	* thing the envelope fiddles with
+8CCE: A0 A8 26    SUBA  $26,Y	* 
+8CD1: 9B 65       ADDA  $65	* add velocity
+8CD3: 24 02       BCC   $8CD7	* too large?
+8CD5: 86 FF       LDA   #$FF	* clamp
+8CD7: A7 A8 1A    STA   $1A,Y	* store
+8CDA: A6 A8 20    LDA   $20,Y	* VCF peak
+8CDD: A0 A8 26    SUBA  $26,Y	* ? 
+8CE0: 9B 65       ADDA  $65	* add velocity
+8CE2: 24 02       BCC   $8CE6	* too large
+8CE4: 86 FF       LDA   #$FF	* clamp
+8CE6: A7 A8 20    STA   $20,Y	* store
+8CE9: A6 A8 23    LDA   $23,Y	* VCF sustain
+8CEC: A0 A8 26    SUBA  $26,Y	* subtract 
+8CEF: 9B 65       ADDA  $65	* add velocity
+8CF1: 24 02       BCC   $8CF5	* too large
+8CF3: 86 FF       LDA   #$FF	* clamp
+8CF5: A7 A8 23    STA   $23,Y	* store in VCF sustain
+8CF8: E7 A8 26    STB   $26,Y	* store velocity?
+8CFB: A6 4D       LDA   $000D,U	* ?
 8CFD: 8B 39       ADDA  #$39
-8CFF: A7 A8 27    STA   $27,Y
+8CFF: A7 A8 27    STA   $27,Y	* resonance?
 8D02: 39          RTS   
 
 * voice assigner maybe?
+* Y probably points to voice
+* X points to program? program+1
 8D03: AE 2A       LDX   $000A,Y
 8D05: EE 2C       LDU   $000C,Y
 8D07: B6 80 15    LDA   $8015	* keyboard balance
-8D0A: 8C B7 6F    CMPX  #$B76F	
+8D0A: 8C B7 6F    CMPX  #$B76F	* some table?
 8D0D: 24 0C       BCC   $8D1B	* skip
 8D0F: 48          ASLA  
 8D10: 81 80       CMPA  #$80	
@@ -1525,38 +1529,38 @@ ackkybd:
 8D24: 58          ASLB  
 8D25: 58          ASLB  
 8D26: 3D          MUL   
-8D27: 97 67       STA   $67
+8D27: 97 67       STA   $67	* some variable
 8D29: A6 28       LDA   $0008,Y
-8D2B: 97 65       STA   $65
+8D2B: 97 65       STA   $65	* key velocity
 8D2D: A6 26       LDA   $0006,Y
 8D2F: 80 24       SUBA  #$24
-8D31: 97 66       STA   $66
-8D33: E6 03       LDB   $0003,X
+8D31: 97 66       STA   $66	* note
+8D33: E6 03       LDB   $0003,X * osc mix
 8D35: C1 01       CMPB  #$01
-8D37: 27 05       BEQ   $8D3E
+8D37: 27 05       BEQ   $8D3E	* 1?
 8D39: 81 10       CMPA  #$10
-8D3B: 24 01       BCC   $8D3E
+8D3B: 24 01       BCC   $8D3Ea	* >=16
 8D3D: 57          ASRB  
-8D3E: E7 A8 15    STB   $15,Y
-8D41: A6 07       LDA   $0007,X
+8D3E: E7 A8 15    STB   $15,Y	* osc mix?
+8D41: A6 07       LDA   $0007,X	* cutoff
 8D43: A7 A8 28    STA   $28,Y
-8D46: A6 01       LDA   $0001,X
+8D46: A6 01       LDA   $0001,X	* LFO depth
 8D48: A7 A8 13    STA   $13,Y
-8D4B: A6 02       LDA   $0002,X
+8D4B: A6 02       LDA   $0002,X	* Detune
 8D4D: A7 A8 14    STA   $14,Y
 8D50: 6F A8 12    CLR   $12,Y
-8D53: A6 05       LDA   $0005,X
+8D53: A6 05       LDA   $0005,X	* cutoff
 8D55: 27 0E       BEQ   $8D65
 8D57: 80 04       SUBA  #$04
-8D59: D6 65       LDB   $65
+8D59: D6 65       LDB   $65	* velocity
 8D5B: 48          ASLA  
 8D5C: 58          ASLB  
 8D5D: 3D          MUL   
 8D5E: 4C          INCA  
-8D5F: AB 04       ADDA  $0004,X
-8D61: 24 02       BCC   $8D65
-8D63: 86 FF       LDA   #$FF
-8D65: A7 A8 36    STA   $36,Y
+8D5F: AB 04       ADDA  $0004,X	* mix velocity sensitivity
+8D61: 24 02       BCC   $8D65	* too high
+8D63: 86 FF       LDA   #$FF	* clamp
+8D65: A7 A8 36    STA   $36,Y	* mix?
 8D68: 4F          CLRA  
 8D69: 5F          CLRB  
 8D6A: ED A8 29    STD   $29,Y
@@ -1658,7 +1662,7 @@ ackkybd:
 * in which case X contains DCA envelope
 8E05: AE 2A       LDX   $000A,Y	* DCA params
 8E07: CE F7 FD    LDU   #$F7FD	* points to envelope lookup table
-8E0A: CC 8A C7    LDD   #$8AC7	* points to some routine
+8E0A: CC 8A C7    LDD   #$8AC7	* envelope release task
 8E0D: ED A8 1C    STD   $1C,Y	* store in update routine
 8E10: CC 8B 49    LDD   #$8B49	* points to some routine
 8E13: ED A8 2B    STD   $2B,Y	* store in end routine?
@@ -2847,6 +2851,7 @@ ackkybd:
 96FB: 97 83       STA   $83	* some variable
 96FD: 39          RTS   
 
+* probably incorrectly disassembled block
 * 96FE: FF 18 1A    STU   $181A
 * 9701: 50          NEGB  
 
@@ -4011,7 +4016,7 @@ ackkybd:
 9F60: 1A 50       ORCC  #$50	* mask interrupts
 9F62: BD AB 90    JSR   $AB90	* thing that gets called before sampling
 9F65: BD F1 BB    JSR   qchipsetup
-9F68: BD 8C 80    JSR   $8C80	* call
+9F68: BD 8C 80    JSR   $8C80	* initialise voice tables
 9F6B: BD F5 41    JSR   unknown3 * call to reset ACIA and VIA
 9F6E: 39          RTS   
 
@@ -5876,10 +5881,10 @@ AE1D: BD F5 E7    JSR   setfilterdac	* set filter (increments U)
 AE20: 11 83 E4 20 CMPU  #$E420		; done all filters?
 AE24: 26 F7       BNE   zerofilter2	; no, continue
 AE26: CE B0 52    LDU   #$B052		* voice table
-AE29: CC 8A D7    LDD   #$8AD7		; "update filter for voice"
+AE29: CC 8A D7    LDD   #$8AD7		* update filter task
 AE2C: 8E 8B BE    LDX   #$8BBE		; "unmask IRQ and FIRQ and return"
 zerofilter3:
-AE2F: ED C8 1C    STD   $1C,U		; store address of filter routine
+AE2F: ED C8 1C    STD   $1C,U		* set voice task
 AE32: AF C8 2B    STX   $2B,U		; store address of unmask routine
 AE35: 6F C8 1A    CLR   $1A,U		; zero
 AE38: 33 C8 4D    LEAU  $4D,U		; add 77 bytes

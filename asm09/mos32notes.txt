@@ -237,12 +237,18 @@ from $ae17 "zerofilter"
 $00 = next entry in table
 $02 = this entry?
 $06 = note
+$08 = velocity?
 $09 = 
+$0a = program for voice
+$0b
+$0c
 $0e = 
 $10 = tuning word
-$15 = 
+$13 =
+$15 = detune?
+$16 = 
 $18 = VCF offset
-$1a = zero
+$1a = zero, set by stuff that fiddles with velocity?
 $1c = next task
 $1e = VCF Attack time A
 $1f = VCF Attack time B
@@ -252,12 +258,11 @@ $22 = VCF Decay time B
 $23 = VCF Sustain level
 $24 = VCF Release time A
 $25 = VCF Release time B
-$2b = routine that unmasks ints and does RTS
-$20 = 
+$26 = voice velocity?
 $27 = resonance
 $28 = cutoff
 $29
-$2b = next task?
+$2b = next task? initially set to enable ints and return
 
 "9d38" params - all of these are "double" values
 36 cutoff
