@@ -2,7 +2,6 @@ AN1/AN0
 AN1 = low for record, high for play (controls output volume)
 AN0 = low for line/pitch wheel, high for compressed/mod wheel
 
-
 $8011 - dummy byte
 $8012 - master tune
 $8013 - pitch bend range
@@ -64,7 +63,9 @@ $8069 - 16-bit computed pitch bend
 $806b - cleared by sequencer/sustain sw.
 $806c - maybe sequence start/stop? no, holds mod wheel val at $90b7
 $8070 - stores computed pitch bend amount, at $ad73
+$8072 - set at $ac40, cleared at $9f95, never seems to be used?
 $8077 - stores computed pitch bend amount, at $a30a
+$8079
 $807d
 $807e
 $807f
@@ -72,12 +73,15 @@ $8081
 $8082 - save routine uses this
 $8083 - display timer?
 $8084 - value editable? cleared for 97, 98, 99 - poss. up/down value?
-$8085 - save routine uses this
+$8085 - save routine uses this, load/save flag?
 $8087
 $8088 - edit value buffer?
 $8089
 $808a
 $808b - edit parameter
+$808c - bank to save to?
+$808d
+$8091
 $8092 - save routine uses this
 $8094 - wavesample start for editing
 $8096 - wavesample end for editing
@@ -141,6 +145,8 @@ $8106 - set to $ff by routine at $875E
 $8107 - linked list, 8 bytes per entry, 30 entries
 $8207 - unknown
 $8208
+$821f
+$8223
 $8225 - start of ring buffer
 $8234 - end of ring buffer
 $8235 - something to do with FIRQ?
@@ -203,7 +209,7 @@ $9f60 - (3) seems to be called before sampling?
 $9941 - (3) unknownish, loop params?
 $988f - (3) store byte in sample RAM, similar to $9876
 $9858 - (3) something to do with selecting banks
-$96f4 - (3) unknown, points $80B3 to a strange offset in param table
+$96f4 - (3) Show "Sr" on display?
 $8f11 - (3) unknown, handles editing loop values
 $adba - (2) ors A with $80, continues with ADBC
 $aceb - (2) unknown, lots of weird compares and writes 

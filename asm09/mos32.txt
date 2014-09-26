@@ -224,6 +224,7 @@ osvec:
 
 834B: 39          RTS   
 
+* unknown
 834C: CE 80 4F    LDU   #$804F
 834F: 4F          CLRA  
 8350: 5F          CLRB  
@@ -585,6 +586,7 @@ osvec:
 8613: BD 88 44    JSR   $8844	* set values in voice param?
 8616: 39          RTS   
 
+* unknown
 8617: 86 61       LDA   #$61
 8619: 34 02       PSHS  A
 861B: CE 80 56    LDU   #$8056
@@ -1021,7 +1023,7 @@ irqentry2:
 8958: 96 25       LDA   $25
 895A: 27 05       BEQ   $8961
 895C: 0C E9       INC   $E9
-895E: BD A1 16    JSR   $A116
+895E: BD A1 16    JSR   $A116	* send MIDI clock
 8961: 3B          RTI
 
 irqentry3:
@@ -1088,7 +1090,7 @@ ackkybd:
 89BF: 86 01       LDA   #$01	
 89C1: 97 6B       STA   $6B	* some variable
 89C3: C6 7F       LDB   #$7F
-89C5: BD A0 DA    JSR   $A0DA	* call
+89C5: BD A0 DA    JSR   $A0DA	* send MIDI sustain off
 89C8: BD AD B6    JSR   $ADB6	* call
 89CB: 20 05       BRA   $89D2	* bra rts
 
@@ -1102,7 +1104,7 @@ ackkybd:
 89DA: 26 0F       BNE   $89EB	* non-zero, rts
 89DC: 0F 6B       CLR   $6B	* some variable
 89DE: 5F          CLRB  
-89DF: BD A0 DA    JSR   $A0DA	* some kind of MIDI routine
+89DF: BD A0 DA    JSR   $A0DA	* send MIDI sustain off
 89E2: BD AD B6    JSR   $ADB6	* call
 89E5: 8E 80 68    LDX   #$8068	
 89E8: BD 87 DD    JSR   $87DD	* call
@@ -2043,7 +2045,7 @@ ackkybd:
 
 * unknown, seems to get bit pattern for LEDs?
 * handle keypresses?
-9116: 96 AE       LDA   $AE	* some variable
+9116: 96 AE       LDA   $AE	* current keystroke
 9118: 81 0B       CMPA  #$0B	* CANCEL/STOP
 911A: 26 08       BNE   $9124	* no, skip
 911C: BD AB 90    JSR   $AB90	* something to do with sequencer
@@ -2058,7 +2060,7 @@ ackkybd:
 9130: CE FB 4D    LDU   #$FB4D	* LED patterns for 0-F
 9133: A6 C6       LDA   A,U	* get the values
 9135: E6 C5       LDB   B,U
-9137: DD B3       STD   $B3	* save the bit pattern to display
+9137: DD B3       STD   $B3	* LED bit pattern
 9139: 4F          CLRA  
 913A: 39          RTS   
 
@@ -2129,7 +2131,7 @@ ackkybd:
 91B3: 81 06       CMPA  #$06
 91B5: 26 06       BNE   $91BD
 91B7: BD AB 60    JSR   $AB60
-91BA: BD 96 F4    JSR   $96F4	* show "Sr"
+91BA: BD 96 F4    JSR   $96F4	* show "rS"
 91BD: 4F          CLRA  
 91BE: 39          RTS   
 
@@ -2213,22 +2215,23 @@ ackkybd:
 9255: 0F 89       CLR   $89	* some variable
 9257: 39          RTS   
 
-9258: 10 8E FB 4D LDY   #$FB4D
-925C: 96 82       LDA   $82
-925E: 81 00       CMPA  #$00
-9260: 10 26 00 44 LBNE  $92A8
-9264: 0D AE       TST   $AE
-9266: 27 1C       BEQ   $9284
-9268: 0D A4       TST   $A4
-926A: 26 04       BNE   $9270
-926C: C6 1C       LDB   #$1C
-926E: 20 02       BRA   $9272
+* unknown
+9258: 10 8E FB 4D LDY   #$FB4D	* bit pattern lookup table
+925C: 96 82       LDA   $82	* save routine uses this?
+925E: 81 00       CMPA  #$00	* 0?
+9260: 10 26 00 44 LBNE  $92A8	* no, skip
+9264: 0D AE       TST   $AE	* current keystroke
+9266: 27 1C       BEQ   $9284	* zero, skip
+9268: 0D A4       TST   $A4	* upper/lower bank for editing
+926A: 26 04       BNE   $9270	* upper
+926C: C6 1C       LDB   #$1C	* "L"
+926E: 20 02       BRA   $9272	* skip
 
-9270: C6 7C       LDB   #$7C
-9272: 96 AE       LDA   $AE
-9274: 97 8D       STA   $8D
-9276: A6 A6       LDA   A,Y
-9278: DD B3       STD   $B3
+9270: C6 7C       LDB   #$7C	* "U"
+9272: 96 AE       LDA   $AE	* current keystroke
+9274: 97 8D       STA   $8D	* some variable
+9276: A6 A6       LDA   A,Y	
+9278: DD B3       STD   $B3	* LED bit pattern
 927A: BD 94 31    JSR   $9431	* set83898a
 927D: 0F 8A       CLR   $8A
 927F: 86 01       LDA   #$01
@@ -2247,7 +2250,7 @@ ackkybd:
 9293: 5C          INCB  
 9294: E6 A5       LDB   B,Y
 9296: 86 7C       LDA   #$7C
-9298: DD B3       STD   $B3
+9298: DD B3       STD   $B3	* LED bit pattern
 929A: CC 80 05    LDD   #$8005
 929D: 97 83       STA   $83
 929F: D7 82       STB   $82
@@ -2257,18 +2260,18 @@ ackkybd:
 92A7: 39          RTS   
 
 92A8: 81 01       CMPA  #$01
-92AA: 10 26 00 88 LBNE  $9336
+92AA: 10 26 00 88 LBNE  $9336	* call
 92AE: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
-92B1: D6 AE       LDB   $AE
-92B3: E6 A5       LDB   B,Y
-92B5: D7 B4       STB   $B4
-92B7: 96 8D       LDA   $8D
+92B1: D6 AE       LDB   $AE	* current keystroke
+92B3: E6 A5       LDB   B,Y	* look up value
+92B5: D7 B4       STB   $B4	* store it in LED pattern
+92B7: 96 8D       LDA   $8D	* some variable
 92B9: C6 0A       LDB   #$0A
-92BB: 3D          MUL   
-92BC: DB AE       ADDB  $AE
+92BB: 3D          MUL   	* times 10
+92BC: DB AE       ADDB  $AE	* add keystroke
 92BE: C1 0B       CMPB  #$0B
 92C0: 25 0E       BCS   $92D0
-92C2: CE 9F F3    LDU   #$9FF3
+92C2: CE 9F F3    LDU   #$9FF3	* lookup table?
 92C5: A6 C5       LDA   B,U
 92C7: 27 07       BEQ   $92D0
 92C9: 81 FF       CMPA  #$FF
@@ -2303,7 +2306,7 @@ ackkybd:
 92F7: D7 92       STB   $92
 92F9: C6 EE       LDB   #$EE
 92FB: 86 B6       LDA   #$B6
-92FD: DD B3       STD   $B3	* contains either $b61c, $b67c or $b6ee, "SL, SU, SA"
+92FD: DD B3       STD   $B3	* LED bit pattern, either "SL", "SU" or "SA"
 92FF: 86 02       LDA   #$02
 9301: 97 85       STA   $85
 9303: 97 82       STA   $82
@@ -2313,21 +2316,21 @@ ackkybd:
 9309: 81 0E       CMPA  #$0E	* 14 = Save Parameters
 930B: 26 10       BNE   $931D
 930D: CC B6 CE    LDD   #$B6CE	* "SP"
-9310: DD B3       STD   $B3
+9310: DD B3       STD   $B3	* LED bit pattern
 9312: BD 94 31    JSR   $9431	* set83898a
 9315: CC 09 04    LDD   #$0904
 9318: 97 85       STA   $85
 931A: D7 82       STB   $82
 931C: 39          RTS   
 
-931D: 81 0F       CMPA  #$0F
-931F: 26 04       BNE   $9325
-9321: BD 9F 9A    JSR   $9F9A
-9324: 39          RTS   
+931D: 81 0F       CMPA  #$0F	* Param 15, Copy Lower
+931F: 26 04       BNE   $9325	* no, skip
+9321: BD 9F 9A    JSR   $9F9A	* call
+9324: 39          RTS
 
-9325: 81 10       CMPA  #$10
-9327: 26 04       BNE   $932D
-9329: BD 9F 9A    JSR   $9F9A
+9325: 81 10       CMPA  #$10	* Param 16, Copy Upper
+9327: 26 04       BNE   $932D	* no, skip
+9329: BD 9F 9A    JSR   $9F9A	* call
 932C: 39          RTS   
 
 * flash "no"?
@@ -2338,20 +2341,20 @@ ackkybd:
 
 9336: 81 02       CMPA  #$02
 9338: 26 10       BNE   $934A
-933A: 96 AE       LDA   $AE
-933C: 26 07       BNE   $9345
-933E: 96 91       LDA   $91
-9340: 81 02       CMPA  #$02
-9342: 27 13       BEQ   $9357
+933A: 96 AE       LDA   $AE	* current keystroke
+933C: 26 07       BNE   $9345	* not zero, continue
+933E: 96 91       LDA   $91	* some variable
+9340: 81 02       CMPA  #$02	* 2?
+9342: 27 13       BEQ   $9357	* yes, continue
 9344: 39          RTS   
 
 9345: 81 03       CMPA  #$03
-9347: 23 0E       BLS   $9357
+9347: 23 0E       BLS   $9357	* <=3? continue
 9349: 39          RTS   
 
 934A: 81 03       CMPA  #$03
 934C: 26 2E       BNE   $937C
-934E: 96 AE       LDA   $AE
+934E: 96 AE       LDA   $AE	* current keystroke
 9350: 27 04       BEQ   $9356
 9352: 81 09       CMPA  #$09
 9354: 25 01       BCS   $9357
@@ -2366,13 +2369,13 @@ ackkybd:
 9363: 20 02       BRA   $9367
 
 9365: C6 05       LDB   #$05
-9367: A6 A5       LDA   B,Y
-9369: D6 AE       LDB   $AE
-936B: D7 8C       STB   $8C
-936D: E6 A5       LDB   B,Y
-936F: DD B3       STD   $B3
-9371: 0F 90       CLR   $90
-9373: 0F 8A       CLR   $8A
+9367: A6 A5       LDA   B,Y	* A now holds "5" bitpattern, "S" I guess
+9369: D6 AE       LDB   $AE	* current keystroke
+936B: D7 8C       STB   $8C	* some variable, bank to save to?
+936D: E6 A5       LDB   B,Y	* B now holds the bank number
+936F: DD B3       STD   $B3	* LED bit pattern
+9371: 0F 90       CLR   $90	* some variable
+9373: 0F 8A       CLR   $8A	* some variable
 9375: 0F 89       CLR   $89
 9377: 86 04       LDA   #$04
 9379: 97 82       STA   $82
@@ -2380,7 +2383,7 @@ ackkybd:
 
 937C: 81 04       CMPA  #$04
 937E: 26 20       BNE   $93A0
-9380: 96 AE       LDA   $AE
+9380: 96 AE       LDA   $AE	* current keystroke
 9382: 81 01       CMPA  #$01
 9384: 25 19       BCS   $939F
 9386: 81 04       CMPA  #$04
@@ -2395,7 +2398,7 @@ ackkybd:
 9397: 97 90       STA   $90
 9399: 96 8C       LDA   $8C
 939B: A6 A6       LDA   A,Y
-939D: DD B3       STD   $B3
+939D: DD B3       STD   $B3	* LED bit pattern
 939F: 39          RTS   
 
 93A0: 81 05       CMPA  #$05
@@ -2410,7 +2413,7 @@ ackkybd:
 93B3: 0C A4       INC   $A4
 93B5: 16 FE CC    LBRA  $9284
 
-93B8: 96 AE       LDA   $AE
+93B8: 96 AE       LDA   $AE	* current keystroke
 93BA: 81 01       CMPA  #$01
 93BC: 25 54       BCS   $9412
 93BE: 81 04       CMPA  #$04
@@ -2458,7 +2461,7 @@ ackkybd:
 940F: BD A0 F2    JSR   $A0F2
 9412: 81 06       CMPA  #$06
 9414: 26 1A       BNE   $9430
-9416: 96 AE       LDA   $AE
+9416: 96 AE       LDA   $AE	* current keystroke
 9418: 81 01       CMPA  #$01
 941A: 25 14       BCS   $9430
 941C: 81 04       CMPA  #$04
@@ -2485,7 +2488,7 @@ ackkybd:
 943A: 39          RTS
 
 943B: CE FB 4D    LDU   #$FB4D
-943E: 96 AE       LDA   $AE
+943E: 96 AE       LDA   $AE	* current keystroke
 9440: 81 10       CMPA  #$10
 9442: 27 04       BEQ   $9448
 9444: 81 11       CMPA  #$11
@@ -2501,15 +2504,15 @@ ackkybd:
 9458: C1 10       CMPB  #$10
 945A: 27 09       BEQ   $9465
 945C: C6 1C       LDB   #$1C
-945E: DD B3       STD   $B3
+945E: DD B3       STD   $B3	* LED bit pattern
 9460: 0F 91       CLR   $91
-9462: 7E 95 DD    JMP   $95DD
+9462: 7E 95 DD    JMP   $95DD	* jsr set87898a
 
 9465: C6 7C       LDB   #$7C
-9467: DD B3       STD   $B3
+9467: DD B3       STD   $B3	* LED bit pattern
 9469: 86 01       LDA   #$01
 946B: 97 91       STA   $91
-946D: 7E 95 DD    JMP   $95DD
+946D: 7E 95 DD    JMP   $95DD	* jsr set87898a
 
 9470: 96 91       LDA   $91
 9472: 81 02       CMPA  #$02
@@ -2519,7 +2522,7 @@ ackkybd:
 9477: 96 82       LDA   $82
 9479: 81 02       CMPA  #$02
 947B: 26 1E       BNE   $949B
-947D: 96 AE       LDA   $AE
+947D: 96 AE       LDA   $AE	* current keystroke
 947F: 81 11       CMPA  #$11
 9481: 27 07       BEQ   $948A
 9483: 96 91       LDA   $91
@@ -2531,29 +2534,29 @@ ackkybd:
 948C: 26 01       BNE   $948F
 948E: 39          RTS   
 
-948F: CC 1C EE    LDD   #$1CEE
-9492: DD B3       STD   $B3
+948F: CC 1C EE    LDD   #$1CEE	* "LY." ?
+9492: DD B3       STD   $B3	* LED bit pattern
 9494: 86 02       LDA   #$02
 9496: 97 91       STA   $91
-9498: 7E 95 DD    JMP   $95DD
+9498: 7E 95 DD    JMP   $95DD	* jsr set87899a
 
-949B: 96 AE       LDA   $AE
-949D: 81 12       CMPA  #$12
-949F: 27 06       BEQ   $94A7
-94A1: 81 13       CMPA  #$13
-94A3: 10 26 00 86 LBNE  $952D
-94A7: 96 AE       LDA   $AE
-94A9: 81 12       CMPA  #$12
-94AB: 26 08       BNE   $94B5
+949B: 96 AE       LDA   $AE	* current keystroke
+949D: 81 12       CMPA  #$12	* SAMPLE UPPER
+949F: 27 06       BEQ   $94A7	* yes, go
+94A1: 81 13       CMPA  #$13	* SAMPLE LOWER
+94A3: 10 26 00 86 LBNE  $952D	* yes, go
+94A7: 96 AE       LDA   $AE	* current keystroke
+94A9: 81 12       CMPA  #$12	* SAMPLE UPPER
+94AB: 26 08       BNE   $94B5	* yes, go
 94AD: C6 7C       LDB   #$7C
 94AF: 86 01       LDA   #$01
-94B1: 97 A4       STA   $A4
+94B1: 97 A4       STA   $A4	* some variable
 94B3: 20 04       BRA   $94B9
 
 94B5: C6 1C       LDB   #$1C
 94B7: 0F A4       CLR   $A4
 94B9: 86 B6       LDA   #$B6
-94BB: DD B3       STD   $B3
+94BB: DD B3       STD   $B3	* LED bit pattern
 94BD: 86 03       LDA   #$03
 94BF: 97 85       STA   $85
 94C1: CC 03 E8    LDD   #$03E8
@@ -2595,12 +2598,12 @@ ackkybd:
 950E: 81 01       CMPA  #$01
 9510: 26 13       BNE   $9525
 9512: CC 2A B6    LDD   #$2AB6
-9515: DD B3       STD   $B3
+9515: DD B3       STD   $B3	* LED bit pattern
 9517: BD 94 31    JSR   $9431	* set83898a
 951A: 39          RTS   
 
 951B: CC B6 8E    LDD   #$B68E
-951E: DD B3       STD   $B3
+951E: DD B3       STD   $B3	* LED bit pattern
 9520: 86 80       LDA   #$80
 9522: 97 83       STA   $83
 9524: 39          RTS   
@@ -2706,7 +2709,7 @@ ackkybd:
 95D5: 97 85       STA   $85
 95D7: 86 B6       LDA   #$B6
 95D9: C6 B6       LDB   #$B6
-95DB: DD B3       STD   $B3
+95DB: DD B3       STD   $B3	* LED bit pattern
 95DD: BD 94 31    JSR   $9431	* set83898a
 95E0: 39          RTS   
 
@@ -2727,7 +2730,7 @@ ackkybd:
 95F2: 81 19       CMPA  #$19	* no idea what $19 is
 95F4: 26 09       BNE   $95FF	* no, skip
 95F6: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
-95F9: BD 96 F4    JSR   $96F4	* show "Sr"
+95F9: BD 96 F4    JSR   $96F4	* show "rS"
 95FC: 16 00 F4    LBRA  $96F3	* bra rts
 
 95FF: 81 1A       CMPA  #$1A	* no idea what $1A is
@@ -2860,9 +2863,9 @@ ackkybd:
 96F1: 97 16       STA   $16	* link upper/lower
 96F3: 39          RTS   
 
-* show "Sr"
+* show "rS"
 * set timer?
-96F4: CC B6 0A    LDD   #$B60A	* "Sr"
+96F4: CC B6 0A    LDD   #$B60A	* "rS"
 96F7: DD B3       STD   $B3	* LED bit pattern
 96F9: 86 80       LDA   #$80
 96FB: 97 83       STA   $83	* some variable
@@ -3909,12 +3912,13 @@ ackkybd:
 9E7E: 10 23 FF 6A LBLS  $9DEC
 9E82: 39          RTS   
 
-9E83: 96 85       LDA   $85
+* unknown
+9E83: 96 85       LDA   $85	* save routine uses this
 9E85: 81 01       CMPA  #$01
 9E87: 26 1F       BNE   $9EA8
-9E89: B6 82 23    LDA   $8223
+9E89: B6 82 23    LDA   $8223	* some variable
 9E8C: B7 82 1F    STA   $821F
-9E8F: 96 91       LDA   $91
+9E8F: 96 91       LDA   $91	* some variable
 9E91: 27 08       BEQ   $9E9B
 9E93: 81 01       CMPA  #$01
 9E95: 26 08       BNE   $9E9F
@@ -3924,18 +3928,18 @@ ackkybd:
 9E9B: 86 01       LDA   #$01
 9E9D: 20 5B       BRA   $9EFA
 
-9E9F: 96 8C       LDA   $8C
-9EA1: 27 04       BEQ   $9EA7
+9E9F: 96 8C       LDA   $8C	* bank to save to?
+9EA1: 27 04       BEQ   $9EA7	* 0?
 9EA3: 86 03       LDA   #$03
 9EA5: 20 53       BRA   $9EFA
 
-9EA7: 3F          SWI   
-9EA8: 81 02       CMPA  #$02
-9EAA: 26 1A       BNE   $9EC6
-9EAC: B6 82 23    LDA   $8223
-9EAF: B7 82 1F    STA   $821F
-9EB2: 96 92       LDA   $92
-9EB4: 27 08       BEQ   $9EBE
+9EA7: 3F          SWI		* Load All 0, reboot!
+9EA8: 81 02       CMPA  #$02	* 2?
+9EAA: 26 1A       BNE   $9EC6	* no, skip
+9EAC: B6 82 23    LDA   $8223	* some variable
+9EAF: B7 82 1F    STA   $821F	* some variable
+9EB2: 96 92       LDA   $92	* save routine uses this
+9EB4: 27 08       BEQ   $9EBE	* 0? skip
 9EB6: 81 01       CMPA  #$01
 9EB8: 26 08       BNE   $9EC2
 9EBA: 86 05       LDA   #$05
@@ -3976,8 +3980,8 @@ ackkybd:
 9EF4: B7 80 07    STA   fdcerr
 9EF7: 7E 9F 1B    JMP   $9F1B
 
-9EFA: D6 8C       LDB   $8C
-9EFC: F1 82 1F    CMPB  $821F
+9EFA: D6 8C       LDB   $8C	* bank to save to
+9EFC: F1 82 1F    CMPB  $821F	* some variable
 9EFF: 23 08       BLS   $9F09
 9F01: 86 0E       LDA   #$0E
 9F03: B7 80 07    STA   fdcerr
@@ -3991,7 +3995,7 @@ ackkybd:
 9F17: BD 9F 6F    JSR   $9F6F	* reset some stuff
 9F1A: 39          RTS   
 
-9F1B: BD 9F 6F    JSR   $9F6F	* reset
+9F1B: BD 9F 6F    JSR   $9F6F	* reset some stuff
 9F1E: B6 80 07    LDA   fdcerr	* fetch stored FDC error	
 9F21: 27 3B       BEQ   $9F5E	* if it's zero, hang?
 9F23: 81 01       CMPA  #$01	* disk error?
@@ -4024,7 +4028,7 @@ ackkybd:
 9F54: 81 09       CMPA  #$09
 9F56: 26 06       BNE   $9F5E
 9F58: CC 2A 1A    LDD   #$2A1A	* "nc" code?
-9F5B: DD B3       STD   $B3
+9F5B: DD B3       STD   $B3	* LED bit pattern
 9F5D: 39          RTS   
 
 9F5E: 20 FE       BRA   $9F5E
@@ -4038,7 +4042,6 @@ ackkybd:
 9F6B: BD F5 41    JSR   unknown3 * call to reset ACIA and VIA
 9F6E: 39          RTS   
 
-* Oooh, what's this
 * reset a bunch of stuff
 9F6F: 1A 50       ORCC  #$50	* mask interrupts
 9F71: BD F5 41    JSR   unknown3	* reinit via
@@ -4053,25 +4056,26 @@ ackkybd:
 9F8B: 7F E2 04    CLR   $E204	* VIA timer 1 latch
 9F8E: 7F E2 05    CLR   $E205	* VIA timer 1 trigger
 9F91: 0F 79       CLR   $79	* some variable
-9F93: 0F 6B       CLR   $6B	* some variable
+9F93: 0F 6B       CLR   $6B	* cleared by seq/sustain sw
 9F95: 0F 72       CLR   $72	* some variable
 9F97: 1C AF       ANDCC #$AF	* re-enable interrupts
 9F99: 39          RTS   
 
 * unknown
+* copy upper/lower param keystrokes
 9F9A: 97 BA       STA   $BA	* some variable
 9F9C: 81 0F       CMPA  #$0F
 9F9E: 26 04       BNE   $9FA4	* not 15? skip
-9FA0: 86 1C       LDA   #$1C	* a=28
+9FA0: 86 1C       LDA   #$1C	* "L"
 9FA2: 20 02       BRA   $9FA6	* skip
 
-9FA4: 86 7C       LDA   #$7C	* 124
-9FA6: C6 9C       LDB   #$9C	* 156
-9FA8: DD B3       STD   $B3	* some variable
+9FA4: 86 7C       LDA   #$7C	* "U"
+9FA6: C6 9C       LDB   #$9C	* "C"
+9FA8: DD B3       STD   $B3	* LED bit pattern
 9FAA: BD 94 31    JSR   $9431	* set83898a
 9FAD: 0F 8A       CLR   $8A	* some variable
 9FAF: C6 06       LDB   #$06	* 6
-9FB1: D7 82       STB   $82	* some variable
+9FB1: D7 82       STB   $82	* used by save routine?
 9FB3: 39          RTS   
 
 9FB4: 96 B7       LDA   $B7
@@ -4101,7 +4105,7 @@ ackkybd:
 9FE5: 39          RTS   
 
 9FE6: CC 2A 3A    LDD   #$2A3A
-9FE9: DD B3       STD   $B3
+9FE9: DD B3       STD   $B3	* LED bit pattern
 9FEB: 86 80       LDA   #$80
 9FED: 97 BA       STA   $BA
 9FEF: BD 94 31    JSR   $9431	* set83898a
@@ -4136,6 +4140,7 @@ A09C: 7F 82 36    CLR   $8236
 A09F: 7F 82 37    CLR   $8237
 A0A2: 39          RTS   
 
+* unknown, do something to ring buffer?
 A0A3: 34 46       PSHS  U,B,A
 A0A5: DC BC       LDD   $BC
 A0A7: 93 BE       SUBD  $BE
@@ -4148,21 +4153,22 @@ A0B3: 20 F0       BRA   $A0A5
 
 A0B5: 35 C6       PULS  A,B,U,PC ;(PUL? PC=RTS)
 
+* send MIDI note on
 A0B7: 8D EA       BSR   $A0A3
 A0B9: 34 01       PSHS  CC
 A0BB: 1A 50       ORCC  #$50
-A0BD: DD C2       STD   $C2
-A0BF: C6 90       LDB   #$90
-A0C1: 20 5F       BRA   $A122
+A0BD: DD C2       STD   $C2	* values to send
+A0BF: C6 90       LDB   #$90	* MIDI note on
+A0C1: 20 5F       BRA   $A122	* MIDI send three byte message
 
 A0C3: 8D DE       BSR   $A0A3
 
 * send MIDI note off
 A0C5: 34 01       PSHS  CC
 A0C7: 1A 50       ORCC  #$50
-A0C9: DD C2       STD   $C2	* some variable
-A0CB: C6 80       LDB   #$80
-A0CD: 20 53       BRA   $A122
+A0C9: DD C2       STD   $C2	* values to send
+A0CB: C6 80       LDB   #$80	* note off
+A0CD: 20 53       BRA   $A122	* MIDI send three byte message
 
 * set up to send pitchbend message?
 A0CF: 34 01       PSHS  CC
@@ -4172,21 +4178,21 @@ A0D4: DD C2       STD   $C2	* some variable
 A0D6: C6 E0       LDB   #$E0	* MIDI pitchbend
 A0D8: 20 12       BRA   $A0EC
 
-* send MIDI sustain off
+* send MIDI sustain message
 A0DA: 34 01       PSHS  CC	* save state
 A0DC: 1A 50       ORCC  #$50	* mask interrupts
-A0DE: 86 40       LDA   #$40	* CC sustain off
+A0DE: 86 40       LDA   #$40	* CC sustain
 A0E0: 20 06       BRA   $A0E8	* skip
 
 * send MIDI modwheel message
 A0E2: 34 01       PSHS  CC	* save state
 A0E4: 1A 50       ORCC  #$50	* mask interrupts
 A0E6: 86 01       LDA   #$01	* CC Mod Wheel
-A0E8: DD C2       STD   $C2	* some variable
-A0EA: C6 B0       LDB   #$B0	* MIDI control change?
+A0E8: DD C2       STD   $C2	* message to send
+A0EA: C6 B0       LDB   #$B0	* MIDI control change
 A0EC: 96 23       LDA   $23	* Param84, message filter
 A0EE: 27 44       BEQ   $A134	* zero? jump
-A0F0: 20 30       BRA   $A122	* jump
+A0F0: 20 30       BRA   $A122	* send three byte message
 
 * send program change?
 * OS 3.2 param 84
@@ -4223,16 +4229,19 @@ A11C: D7 BB       STB   $BB	* message to send? some variable
 A11E: 8D 18       BSR   $A138	* puts B in ringbuffer
 A120: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-A122: DA 21       ORB   $21
-A124: D1 BB       CMPB  $BB
-A126: 27 04       BEQ   $A12C
-A128: D7 BB       STB   $BB
-A12A: 8D 0C       BSR   $A138
-A12C: D6 C2       LDB   $C2
-A12E: 8D 08       BSR   $A138
-A130: D6 C3       LDB   $C3
-A132: 8D 04       BSR   $A138
-A134: DC C2       LDD   $C2
+* MIDI construct three byte message 
+* does running status?
+* B contains status
+A122: DA 21       ORB   $21	* MIDI channel
+A124: D1 BB       CMPB  $BB	* midi message to be sent?
+A126: 27 04       BEQ   $A12C	* same?
+A128: D7 BB       STB   $BB	* no, update
+A12A: 8D 0C       BSR   $A138	* put status byte in buffer
+A12C: D6 C2       LDB   $C2	* first value to send
+A12E: 8D 08       BSR   $A138	* put first value in buffer
+A130: D6 C3       LDB   $C3	* second value to send
+A132: 8D 04       BSR   $A138	* put value in buffer
+A134: DC C2       LDD   $C2	* put message values back in D
 A136: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
 * put byte in TX buffer if not using MIDI through
@@ -4581,7 +4590,7 @@ A3B2: 26 09       BNE   $A3BD
 A3B4: 96 24       LDA   $24
 A3B6: 27 05       BEQ   $A3BD
 A3B8: 0C E9       INC   $E9
-A3BA: BD A1 16    JSR   $A116
+A3BA: BD A1 16    JSR   $A116	* send MIDI clock
 A3BD: 39          RTS   
 
 A3BE: 86 1C       LDA   #$1C
@@ -5629,8 +5638,10 @@ AC3B: FF B8 06    STU   $B806	* first byte of free seqram
 AC3E: 39          RTS   
 
 AC3F: 5F          CLRB  
+
+* unknown
 AC40: D7 72       STB   $72
-AC42: BD A0 DA    JSR   $A0DA
+AC42: BD A0 DA    JSR   $A0DA	* send MIDI sustain off
 AC45: 5D          TSTB  
 AC46: 26 06       BNE   $AC4E
 AC48: 8E 80 6F    LDX   #$806F
@@ -5658,7 +5669,7 @@ AC75: DB 26       ADDB  $26
 AC77: D7 E8       STB   $E8
 AC79: 24 06       BCC   $AC81
 AC7B: BD AC A3    JSR   $ACA3
-AC7E: BD A1 16    JSR   $A116
+AC7E: BD A1 16    JSR   $A116	* send MIDI clock
 AC81: 0A 36       DEC   $36
 AC83: 20 EC       BRA   $AC71
 
