@@ -2016,6 +2016,7 @@ ackkybd:
 90E7: 20 F9       BRA   $90E2
 
 * unknown
+* interpret keystroke
 90E9: 96 AE       LDA   $AE	* current keystroke
 90EB: 81 0A       CMPA  #$0A	* 10?
 90ED: 24 04       BCC   $90F3	* not a digit, try functions?
@@ -2803,37 +2804,40 @@ ackkybd:
 9684: 2B 01       BMI   $9687
 9686: 39          RTS   
 
+* unknown
 9687: 84 3F       ANDA  #$3F
 9689: 1F 89       TFR   A,B
 968B: 44          LSRA  
 968C: 44          LSRA  
 968D: 44          LSRA  
 968E: 44          LSRA  
-968F: 8E 82 0C    LDX   #$820C
+968F: 8E 82 0C    LDX   #$820C	* lookup table?
 9692: A6 86       LDA   A,X
-9694: 97 91       STA   $91
-9696: C4 0F       ANDB  #$0F
-9698: 8E 82 0F    LDX   #$820F
+9694: 97 91       STA   $91	* some variable
+9696: C4 0F       ANDB  #$0F	* mask lower nybble
+9698: 8E 82 0F    LDX   #$820F	* another table
 969B: E6 85       LDB   B,X
-969D: 2B 26       BMI   $96C5
+969D: 2B 26       BMI   $96C5	* minus? continue
 969F: 1F 98       TFR   B,A
-96A1: 84 03       ANDA  #$03
-96A3: 97 90       STA   $90
-96A5: 54          LSRB  
+96A1: 84 03       ANDA  #$03	* mask lower bits
+96A3: 97 90       STA   $90	* some variable
+96A5: 54          LSRB 		* divide by 4 
 96A6: 54          LSRB  
-96A7: D7 8C       STB   $8C
+96A7: D7 8C       STB   $8C	* bank to save to?
 96A9: CC 01 04    LDD   #$0104
-96AC: 97 85       STA   $85
-96AE: D7 82       STB   $82
-96B0: 86 0A       LDA   #$0A
-96B2: 97 AE       STA   $AE
-96B4: 8E 80 23    LDX   #$8023
-96B7: A6 84       LDA   ,X
-96B9: 34 12       PSHS  X,A
-96BB: 6F 84       CLR   ,X
-96BD: BD 90 E9    JSR   $90E9
-96C0: 35 12       PULS  A,X
-96C2: A7 84       STA   ,X
+96AC: 97 85       STA   $85	* save routine uses this
+96AE: D7 82       STB   $82	* save routine uses this
+96B0: 86 0A       LDA   #$0A	* ENTER
+96B2: 97 AE       STA   $AE	* current keystroke
+
+* unknown
+96B4: 8E 80 23    LDX   #$8023	* MIDI message filter?
+96B7: A6 84       LDA   ,X	* in A
+96B9: 34 12       PSHS  X,A	* stack
+96BB: 6F 84       CLR   ,X	* set it to zero
+96BD: BD 90 E9    JSR   $90E9	* call
+96C0: 35 12       PULS  A,X	* unstack
+96C2: A7 84       STA   ,X	* restore
 96C4: 39          RTS   
 
 96C5: C4 03       ANDB  #$03
@@ -2857,7 +2861,7 @@ ackkybd:
 96E4: 97 16       STA   $16	* link upper/lower
 96E6: 86 05       LDA   #$05
 96E8: 97 82       STA   $82
-96EA: 0F B3       CLR   $B3
+96EA: 0F B3       CLR   $B3	* LED bit pattern?
 96EC: BD 96 B4    JSR   $96B4
 96EF: 35 02       PULS  A
 96F1: 97 16       STA   $16	* link upper/lower

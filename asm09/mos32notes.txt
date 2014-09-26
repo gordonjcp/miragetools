@@ -81,6 +81,7 @@ $808a
 $808b - edit parameter
 $808c - bank to save to?
 $808d
+$8090
 $8091
 $8092 - save routine uses this
 $8094 - wavesample start for editing
