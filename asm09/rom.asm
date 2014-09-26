@@ -756,12 +756,12 @@ timer2int:
 	ldd   #$1388	; 5000
 	sta   $e209	; VIA t2 high
 	andcc #$bf           ;clear firq mask bit
-	com   $2e	; DP is set to $80 in unknown2
+	com   $2e	* internal to ROM
 	beq   timer2int1
-	dec   $2f
+	dec   $2f	* counted down every second interrupt?
 	bra   timer2int2
 timer2int1:
-	dec   $30
+	dec   $30	* called every second interrupt?
 	inc   $36
 timer2int2:
 	dec   $33
@@ -956,6 +956,8 @@ setfilterdac:
 
 
 *** another qchip dealie
+* probably not DOC, probably something to do with voice management
+* pitch, maybe?
 unknown8:
 	orcc  #$50
 	puls  u
@@ -975,6 +977,7 @@ unknown8:
 	fill $ff, 200
 
 *** another qchip dealie
+* probably not DOC, probably something to do with voice management
 unknown9:
 	orcc  #$50		// mask firq/irq
 	ldd   $0002,s		// stack+2, return address?

@@ -913,8 +913,8 @@ startup875e2:
 * task list?
 885E: 9E 5E       LDX   $5E
 8860: 10 EF 81    STS   ,X++
-8863: 8C B2 C6    CMPX  #$B2C6
-8866: 25 03       BCS   $886B
+8863: 8C B2 C6    CMPX  #$B2C6	* run out of values?
+8866: 25 03       BCS   $886B	* no, continue
 
 *** jumped to from thing that fills in weird blocks
 8868: 8E B2 BE    LDX   #$B2BE	point to the prepared list
@@ -1401,6 +1401,7 @@ ackkybd:
 
 * unknown
 * lfo?
+* calculate pitch?
 8C34: EE 24       LDU   $0004,Y
 8C36: E6 A8 14    LDB   $14,Y	* 
 8C39: 26 14       BNE   $8C4F
@@ -1410,7 +1411,7 @@ ackkybd:
 8C41: E6 A8 18    LDB   $18,Y	* filter offset?
 8C44: 20 02       BRA   $8C48
 
-8C46: E6 44       LDB   $0004,U
+8C46: E6 44       LDB   $0004,U	* if U is program-for-voice, osc mix?
 8C48: 8E F7 7D    LDX   #$F77D	* points to a curve lookup table
 8C4B: E6 85       LDB   B,X
 8C4D: 20 01       BRA   $8C50
@@ -1419,7 +1420,7 @@ ackkybd:
 8C50: A6 A8 13    LDA   $13,Y
 8C53: AB A8 12    ADDA  $12,Y
 8C56: A7 A8 12    STA   $12,Y
-8C59: 8E F8 CD    LDX   #$F8CD
+8C59: 8E F8 CD    LDX   #$F8CD	* lookup table?
 8C5C: A6 86       LDA   A,X
 8C5E: 2A 05       BPL   $8C65
 8C60: 40          NEGA  
@@ -1434,7 +1435,7 @@ ackkybd:
 8C6B: E3 A8 10    ADDD  $10,Y
 8C6E: BD F5 14    JSR   unknown1
 8C71: 34 06       PSHS  B,A
-8C73: EB A8 15    ADDB  $15,Y
+8C73: EB A8 15    ADDB  $15,Y	* detune value?
 8C76: 89 00       ADCA  #$00
 8C78: 34 06       PSHS  B,A
 8C7A: AE 2E       LDX   $000E,Y
@@ -1896,95 +1897,97 @@ ackkybd:
 9000: 7F 00 09 12 1B 24 2D 36 3F 40 00 00 00 00 00 
 
 *** called from weird jumping-off routine
-900F: 96 2F       LDA   $2F
+900F: 96 2F       LDA   $2F	* ISR counter, counts down at 200Hz?
 9011: 2A 07       BPL   $901A
-9013: 0C 2F       INC   $2F
-9015: BD 8A 5E    JSR   $8A5E
+9013: 0C 2F       INC   $2F	* ISR counter
+9015: BD 8A 5E    JSR   $8A5E	* voice routing update?
 9018: 20 03       BRA   $901D
 
-901A: BD 88 5E    JSR   $885E
+901A: BD 88 5E    JSR   $885E	* handle some sort of task list?
 901D: 20 F0       BRA   $900F
 
-901F: BD 88 5E    JSR   $885E
-9022: 96 30       LDA   $30
+901F: BD 88 5E    JSR   $885E	* handle some sort of task list?
+9022: 96 30       LDA   $30	* ISR counter, dec every 2nd int?
 9024: 2A F9       BPL   $901F
 9026: 0F 30       CLR   $30
 9028: BD 90 39    JSR   $9039
-902B: BD 88 5E    JSR   $885E
-902E: 96 30       LDA   $30
+902B: BD 88 5E    JSR   $885E	* handle some sort of task list?
+902E: 96 30       LDA   $30	* ISR counter, dec every 2nd int?
 9030: 2A F9       BPL   $902B
 9032: 0F 30       CLR   $30
 9034: BD 8B FD    JSR   $8BFD
 9037: 20 E6       BRA   $901F
 
+* handle pitch bend and mod wheel
 9039: 1A 50       ORCC  #$50	* mask interrupts
 903B: B6 E2 00    LDA   $E200	* VIA IORB
-903E: 84 FB       ANDA  #$FB	* mic/line
-9040: 8A 08       ORA   #$08	* set it high (can't remember which way round)
-9042: B7 E2 00    STA   $E200	* write it back
+903E: 84 FB       ANDA  #$FB	* AN0 = low
+9040: 8A 08       ORA   #$08	* AN1 = play
+9042: B7 E2 00    STA   $E200	* select pitch wheel
 9045: 1C AF       ANDCC #$AF
-9047: B6 EC E1    LDA   $ECE1
-904A: B6 EC E2    LDA   $ECE2
-904D: BD 88 5E    JSR   $885E
+9047: B6 EC E1    LDA   $ECE1	* oscillator enable register
+904A: B6 EC E2    LDA   $ECE2	* DAC register, start conversion?
+904D: BD 88 5E    JSR   $885E	* handle some sort of task list?
 9050: 1A 50       ORCC  #$50
-9052: F6 EC E2    LDB   $ECE2
+9052: F6 EC E2    LDB   $ECE2	* DAC register
 9055: B6 E2 00    LDA   $E200	* VIA IORB
-9058: 8A 0C       ORA   #$0C	* mic/line and sample/play high
-905A: B7 E2 00    STA   $E200	* write it back
+9058: 8A 0C       ORA   #$0C	* AN0, AN1 = high
+905A: B7 E2 00    STA   $E200	* select mod wheel
 905D: 1C AF       ANDCC #$AF
-905F: F7 90 0C    STB   $900C
+905F: F7 90 0C    STB   $900C	* save pitch wheel value	
 9062: 4F          CLRA  
-9063: FB 90 0D    ADDB  $900D
-9066: 89 00       ADCA  #$00
-9068: FB 90 0E    ADDB  $900E
-906B: 89 00       ADCA  #$00
-906D: 47          ASRA  
-906E: 56          RORB  
-906F: 47          ASRA  
-9070: 56          RORB  
-9071: B6 EC E1    LDA   $ECE1
-9074: B6 EC E2    LDA   $ECE2
-9077: F0 90 0A    SUBB  $900A
-907A: 2A 07       BPL   $9083
-907C: CB 08       ADDB  #$08
-907E: 2B 01       BMI   $9081
-9080: 5F          CLRB  
+9063: FB 90 0D    ADDB  $900D	* add in previous value
+9066: 89 00       ADCA  #$00	* and carry into D
+9068: FB 90 0E    ADDB  $900E	* add the one before that
+906B: 89 00       ADCA  #$00	* and carry into D
+906D: 47          ASRA		* 16-bit divide by four  	
+906E: 56          RORB
+906F: 47          ASRA
+9070: 56          RORB		* D now contains the average of the last three readings
+9071: B6 EC E1    LDA   $ECE1	* read the ADC
+9074: B6 EC E2    LDA   $ECE2	* read the ADC
+9077: F0 90 0A    SUBB  $900A	* offset computed at startup
+907A: 2A 07       BPL   $9083	* if it's over zero, skip ahead
+907C: CB 08       ADDB  #$08	* +8 for dead band
+907E: 2B 01       BMI   $9081	* still negative? skip ahead
+9080: 5F          CLRB  	* clear the value
 9081: 20 05       BRA   $9088
 
-9083: C0 08       SUBB  #$08
-9085: 2A 01       BPL   $9088
-9087: 5F          CLRB  
-9088: CB 40       ADDB  #$40
-908A: 28 02       BVC   $908E
-908C: C6 7F       LDB   #$7F
-908E: 2A 01       BPL   $9091
-9090: 5F          CLRB  
-9091: F1 90 09    CMPB  $9009
-9094: 27 0D       BEQ   $90A3
-9096: F7 90 09    STB   $9009
-9099: BD A0 CF    JSR   $A0CF
-909C: BD AD AF    JSR   $ADAF
-909F: 8D 1F       BSR   $90C0
-90A1: DD 69       STD   $69
+9083: C0 08       SUBB  #$08	* -8 for dead band
+9085: 2A 01       BPL   $9088	* still positive, skip ahead
+9087: 5F          CLRB  	* clear the value
+9088: CB 40       ADDB  #$40	* out of dead band, get it between 0-$7f
+908A: 28 02       BVC   $908E	* too high?
+908C: C6 7F       LDB   #$7F	* clamp
+908E: 2A 01       BPL   $9091	* too low?
+9090: 5F          CLRB  	* clamp
+9091: F1 90 09    CMPB  $9009	* same as previous value?
+9094: 27 0D       BEQ   $90A3	* yes, skip ahead
+9096: F7 90 09    STB   $9009	* save new value
+9099: BD A0 CF    JSR   $A0CF	* send pitch bend message
+909C: BD AD AF    JSR   $ADAF	* ring buffer? A=0
+909F: 8D 1F       BSR   $90C0	* calculate pitch bend amount
+90A1: DD 69       STD   $69	* save computed pitch bend
 90A3: FC 90 0C    LDD   $900C
-90A6: FD 90 0D    STD   $900D
-90A9: F6 EC E2    LDB   $ECE2
-90AC: 54          LSRB  
-90AD: F1 90 0B    CMPB  $900B
-90B0: 27 0D       BEQ   $90BF
-90B2: F7 90 0B    STB   $900B
+90A6: FD 90 0D    STD   $900D	* shift values for averaging
+90A9: F6 EC E2    LDB   $ECE2	* read ADC, pitch wheel?
+90AC: 54          LSRB 		* divide by 2 
+90AD: F1 90 0B    CMPB  $900B	* has it changed?
+90B0: 27 0D       BEQ   $90BF	* no, rts
+90B2: F7 90 0B    STB   $900B	* yes, save it
 90B5: D7 68       STB   $68
 90B7: D7 6C       STB   $6C
-90B9: BD A0 E2    JSR   $A0E2
-90BC: BD AD B2    JSR   $ADB2
+90B9: BD A0 E2    JSR   $A0E2	* MIDI control change
+90BC: BD AD B2    JSR   $ADB2	* ring buffer? A=1
 90BF: 39          RTS   
 
 * unknown
-90C0: 86 AB       LDA   #$AB	* some variable
-90C2: C0 40       SUBB  #$40	* b-=64
+* calculate pitch bend amount?
+90C0: 86 AB       LDA   #$AB	* 171?
+90C2: C0 40       SUBB  #$40	* subtract 64 from bend val
 90C4: 2A 05       BPL   $90CB	* >0? jump
 90C6: 3D          MUL
-90C7: 80 2B       SUBA  #$2B	* subtract 43, why?
+90C7: 80 2B       SUBA  #$2B	* subtract 43, why? 172/43=4, significant?
 90C9: 20 06       BRA   $90D1	* jump
 
 90CB: C1 3F       CMPB  #$3F	* 63?	
@@ -2011,46 +2014,47 @@ ackkybd:
 90E7: 20 F9       BRA   $90E2
 
 * unknown
-90E9: 96 AE       LDA   $AE	*  some variable
+90E9: 96 AE       LDA   $AE	* current keystroke
 90EB: 81 0A       CMPA  #$0A	* 10?
-90ED: 24 04       BCC   $90F3	* >=, jump
+90ED: 24 04       BCC   $90F3	* not a digit, try functions?
 90EF: BD 92 58    JSR   $9258	* call
 90F2: 39          RTS   
 
-90F3: 96 AE       LDA   $AE	* some variable
-90F5: 81 10       CMPA  #$10	* 16?
-90F7: 25 08       BCS   $9101	* <, jump
-90F9: 81 17       CMPA  #$17	* 23?
+90F3: 96 AE       LDA   $AE	* current keystroke
+90F5: 81 10       CMPA  #$10	* LOAD UPPER?
+90F7: 25 08       BCS   $9101	* less
+90F9: 81 17       CMPA  #$17	* SAVE SEQ?
 90FB: 22 04       BHI   $9101	* >, jump
-90FD: BD 94 3B    JSR   $943B	* call
+90FD: BD 94 3B    JSR   $943B	* call load/save button routine
 9100: 39          RTS   
 
-9101: 96 AE       LDA   $AE
-9103: 81 18       CMPA  #$18
+9101: 96 AE       LDA   $AE	* keystroke
+9103: 81 18       CMPA  #$18	* 24 keys
 9105: 25 04       BCS   $910B	* < 24, continue
-9107: BD 95 F0    JSR   $95F0
+9107: BD 95 F0    JSR   $95F0	* call
 910A: 39          RTS   
 
-910B: 8D 09       BSR   $9116
-910D: 81 0E       CMPA  #$0E
-910F: 27 D8       BEQ   $90E9
-9111: 81 0F       CMPA  #$0F
-9113: 27 D4       BEQ   $90E9
-9115: 39          RTS   
+910B: 8D 09       BSR   $9116	* handle keypress
+910D: 81 0E       CMPA  #$0E	* ? maybe was it UP
+910F: 27 D8       BEQ   $90E9	* yes, max val?
+9111: 81 0F       CMPA  #$0F	* was it DOWN
+9113: 27 D4       BEQ   $90E9	* yes, min val?
+9115: 39          RTS  
 
 * unknown, seems to get bit pattern for LEDs?
+* handle keypresses?
 9116: 96 AE       LDA   $AE	* some variable
-9118: 81 0B       CMPA  #$0B	* 11?
+9118: 81 0B       CMPA  #$0B	* CANCEL/STOP
 911A: 26 08       BNE   $9124	* no, skip
 911C: BD AB 90    JSR   $AB90	* something to do with sequencer
 911F: BD 92 49    JSR   $9249	* clear a bunch of variables to zero
 9122: 20 07       BRA   $912B	* skip
 
-9124: 81 0C       CMPA  #$0C	* 12?
+9124: 81 0C       CMPA  #$0C	* PARAM
 9126: 26 13       BNE   $913B	* no, skip
 9128: BD 92 49    JSR   $9249	* clear a bunch of variables to zero
-912B: D6 8B       LDB   $8B	* some variable
-912D: BD 9D 2D    JSR   $9D2D	* call
+912B: D6 8B       LDB   $8B	* edit parameter
+912D: BD 9D 2D    JSR   $9D2D	* divide it by 10
 9130: CE FB 4D    LDU   #$FB4D	* LED patterns for 0-F
 9133: A6 C6       LDA   A,U	* get the values
 9135: E6 C5       LDB   B,U
@@ -2058,37 +2062,37 @@ ackkybd:
 9139: 4F          CLRA  
 913A: 39          RTS   
 
-913B: 81 0D       CMPA  #$0D
-913D: 26 09       BNE   $9148
-913F: BD 92 49    JSR   $9249
-9142: 0C 83       INC   $83
-9144: BD 99 8B    JSR   $998B
+913B: 81 0D       CMPA  #$0D	* VALUE
+913D: 26 09       BNE   $9148	* no, skip
+913F: BD 92 49    JSR   $9249	* clear a bunch of variables to zero
+9142: 0C 83       INC   $83	* some variable
+9144: BD 99 8B    JSR   $998B	* call
 9147: 39          RTS   
 
-9148: 81 0E       CMPA  #$0E
-914A: 26 0C       BNE   $9158
-914C: 0D 83       TST   $83
-914E: 27 F2       BEQ   $9142
-9150: 97 88       STA   $88
+9148: 81 0E       CMPA  #$0E	* UP
+914A: 26 0C       BNE   $9158	* no, skip
+914C: 0D 83       TST   $83	* some variable
+914E: 27 F2       BEQ   $9142	* 0, jump back to increment variable and call
+9150: 97 88       STA   $88	* some variable
 9152: 86 01       LDA   #$01
-9154: 97 84       STA   $84
+9154: 97 84       STA   $84	* editable? some variable
 9156: 20 12       BRA   $916A
 
-9158: 81 0F       CMPA  #$0F
-915A: 10 26 00 3A LBNE  $9198
-915E: 0D 83       TST   $83
-9160: 27 E0       BEQ   $9142
-9162: 97 88       STA   $88
-9164: 86 80       LDA   #$80
+9158: 81 0F       CMPA  #$0F	* DOWN
+915A: 10 26 00 3A LBNE  $9198	* no, skip
+915E: 0D 83       TST   $83	* some variable
+9160: 27 E0       BEQ   $9142	* 0, jump back to increment and call
+9162: 97 88       STA   $88	* some variable
+9164: 86 80       LDA   #$80	* editable flag?
 9166: 97 84       STA   $84
 9168: 20 00       BRA   $916A
 
 916A: 86 C8       LDA   #$C8
-916C: 97 87       STA   $87
+916C: 97 87       STA   $87	* decremented in timer handler
 916E: 96 87       LDA   $87
-9170: 97 32       STA   $32	* some variable
+9170: 97 32       STA   $32	* decremented in timer handler
 9172: BD 99 8B    JSR   $998B	* edit values
-9175: 7D 82 08    TST   $8208
+9175: 7D 82 08    TST   $8208	
 9178: 27 02       BEQ   $917C
 917A: 4F          CLRA  
 917B: 39          RTS   
@@ -2125,7 +2129,7 @@ ackkybd:
 91B3: 81 06       CMPA  #$06
 91B5: 26 06       BNE   $91BD
 91B7: BD AB 60    JSR   $AB60
-91BA: BD 96 F4    JSR   $96F4
+91BA: BD 96 F4    JSR   $96F4	* show "Sr"
 91BD: 4F          CLRA  
 91BE: 39          RTS   
 
@@ -2134,7 +2138,7 @@ ackkybd:
 91C3: BD 9F B4    JSR   $9FB4
 91C6: 0D BA       TST   $BA
 91C8: 2B 06       BMI   $91D0
-91CA: BD 92 49    JSR   $9249
+91CA: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
 91CD: 7E 91 2B    JMP   $912B
 
 91D0: 0F BA       CLR   $BA
@@ -2158,7 +2162,7 @@ ackkybd:
 91F1: BD 9E 83    JSR   $9E83
 91F4: 7D 80 07    TST   fdcerr
 91F7: 27 07       BEQ   $9200
-91F9: BD 92 49    JSR   $9249
+91F9: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
 91FC: BD 94 31    JSR   $9431	* set83898a
 91FF: 39          RTS   
 
@@ -2187,26 +2191,26 @@ ackkybd:
 922F: 31 AB       LEAY  D,Y
 9231: 10 9F A5    STY   $A5
 9234: BD 8E CF    JSR   $8ECF
-9237: 8D 10       BSR   $9249
+9237: 8D 10       BSR   $9249	* clear a bunch of variables back to zero
 9239: 16 FE EF    LBRA  $912B
 
 923C: 96 82       LDA   $82
 923E: 81 05       CMPA  #$05
 9240: 26 05       BNE   $9247
-9242: 8D 05       BSR   $9249
+9242: 8D 05       BSR   $9249	* clear a bunch of variables back to zero
 9244: 16 FE E4    LBRA  $912B
 
 9247: 4F          CLRA  
 9248: 39          RTS   
 
 * clear a bunch of variables to zero
-9249: 0F 82       CLR   $82
-924B: 0F 85       CLR   $85
-924D: 0F 83       CLR   $83
-924F: 0F 84       CLR   $84
-9251: 0F 33       CLR   $33
-9253: 0F 8A       CLR   $8A
-9255: 0F 89       CLR   $89
+9249: 0F 82       CLR   $82	* used by save routine?
+924B: 0F 85       CLR   $85	* used by save routine?
+924D: 0F 83       CLR   $83	* some variable
+924F: 0F 84       CLR   $84	* value editable flag/up/down
+9251: 0F 33       CLR   $33	* decremented in ISR handler
+9253: 0F 8A       CLR   $8A	* some variable
+9255: 0F 89       CLR   $89	* some variable
 9257: 39          RTS   
 
 9258: 10 8E FB 4D LDY   #$FB4D
@@ -2254,7 +2258,7 @@ ackkybd:
 
 92A8: 81 01       CMPA  #$01
 92AA: 10 26 00 88 LBNE  $9336
-92AE: BD 92 49    JSR   $9249
+92AE: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
 92B1: D6 AE       LDB   $AE
 92B3: E6 A5       LDB   B,Y
 92B5: D7 B4       STB   $B4
@@ -2276,38 +2280,39 @@ ackkybd:
 92D3: 39          RTS   
 
 * unknown, dispatcher?
-92D4: D7 8B       STB   $8B
-92D6: 1F 98       TFR   B,A
-92D8: 81 0B       CMPA  #$0B
-92DA: 26 08       BNE   $92E4
+* save handler
+92D4: D7 8B       STB   $8B	* edit parameter
+92D6: 1F 98       TFR   B,A	* keep it in A
+92D8: 81 0B       CMPA  #$0B	* 11 Save Lower
+92DA: 26 08       BNE   $92E4	* no, skip
 92DC: 5F          CLRB  
-92DD: D7 92       STB   $92
-92DF: C6 1C       LDB   #$1C
+92DD: D7 92       STB   $92	* some variable = 0
+92DF: C6 1C       LDB   #$1C	* 28
 92E1: 7E 92 FB    JMP   $92FB
 
-92E4: 81 0C       CMPA  #$0C
-92E6: 26 09       BNE   $92F1
+92E4: 81 0C       CMPA  #$0C	* 12 Save Upper
+92E6: 26 09       BNE   $92F1	* no, skip
 92E8: C6 01       LDB   #$01
-92EA: D7 92       STB   $92
+92EA: D7 92       STB   $92	* some variable = 1
 92EC: C6 7C       LDB   #$7C
 92EE: 7E 92 FB    JMP   $92FB
 
-92F1: 81 0D       CMPA  #$0D
+92F1: 81 0D       CMPA  #$0D	* 13 Save All
 92F3: 26 14       BNE   $9309
 92F5: C6 02       LDB   #$02
 92F7: D7 92       STB   $92
 92F9: C6 EE       LDB   #$EE
 92FB: 86 B6       LDA   #$B6
-92FD: DD B3       STD   $B3
+92FD: DD B3       STD   $B3	* contains either $b61c, $b67c or $b6ee, "SL, SU, SA"
 92FF: 86 02       LDA   #$02
 9301: 97 85       STA   $85
 9303: 97 82       STA   $82
 9305: BD 94 31    JSR   $9431	* set83898a
 9308: 39          RTS   
 
-9309: 81 0E       CMPA  #$0E
+9309: 81 0E       CMPA  #$0E	* 14 = Save Parameters
 930B: 26 10       BNE   $931D
-930D: CC B6 CE    LDD   #$B6CE
+930D: CC B6 CE    LDD   #$B6CE	* "SP"
 9310: DD B3       STD   $B3
 9312: BD 94 31    JSR   $9431	* set83898a
 9315: CC 09 04    LDD   #$0904
@@ -2325,8 +2330,9 @@ ackkybd:
 9329: BD 9F 9A    JSR   $9F9A
 932C: 39          RTS   
 
-932D: CC 2A 3A    LDD   #$2A3A
-9330: DD B3       STD   $B3
+* flash "no"?
+932D: CC 2A 3A    LDD   #$2A3A	* "no"
+9330: DD B3       STD   $B3	* LED pattern
 9332: BD 94 31    JSR   $9431	* set83898a
 9335: 39          RTS   
 
@@ -2412,10 +2418,10 @@ ackkybd:
 93C2: E6 A6       LDB   A,Y
 93C4: D7 B4       STB   $B4
 93C6: 4A          DECA  
-93C7: BD 92 49    JSR   $9249
+93C7: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
 93CA: C6 80       LDB   #$80
 93CC: D7 83       STB   $83
-93CE: 0D 16       TST   $16
+93CE: 0D 16       TST   $16	* link upper/lower
 93D0: 26 04       BNE   $93D6
 93D2: 0D A4       TST   $A4
 93D4: 27 10       BEQ   $93E6
@@ -2424,7 +2430,7 @@ ackkybd:
 93DA: 3D          MUL   
 93DB: C3 B7 6F    ADDD  #$B76F
 93DE: DD A5       STD   $A5
-93E0: 0D 16       TST   $16
+93E0: 0D 16       TST   $16	* link upper/lower
 93E2: 27 0C       BEQ   $93F0
 93E4: 96 8E       LDA   $8E
 93E6: 97 8F       STA   $8F
@@ -2438,7 +2444,7 @@ ackkybd:
 93F8: 1C AF       ANDCC #$AF
 93FA: D6 AE       LDB   $AE
 93FC: 5A          DECB  
-93FD: 0D 16       TST   $16
+93FD: 0D 16       TST   $16	* link upper/lower
 93FF: 27 04       BEQ   $9405
 9401: CB 0C       ADDB  #$0C
 9403: 20 0A       BRA   $940F
@@ -2471,6 +2477,7 @@ ackkybd:
 * 12 places
 * set $83 to $80 and $8A and $89 to 1
 * set83898a
+* seems to be involved in making the display flash?
 9431: CC 01 80    LDD   #$0180
 9434: 97 8A       STA   $8A	* $808a = 1
 9436: 97 89       STA   $89	* $8089 = 1
@@ -2581,7 +2588,7 @@ ackkybd:
 94FC: BD 97 95    JSR   $9795
 94FF: 97 93       STA   $93
 9501: BD 9F 6F    JSR   $9F6F
-9504: BD 92 49    JSR   $9249
+9504: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
 9507: CE FB 4D    LDU   #$FB4D
 950A: 96 93       LDA   $93
 950C: 27 0D       BEQ   $951B
@@ -2603,45 +2610,46 @@ ackkybd:
 9529: BD 91 16    JSR   $9116
 952C: 39          RTS   
 
-952D: 96 AE       LDA   $AE
-952F: 81 14       CMPA  #$14
+* decode keystrokes
+952D: 96 AE       LDA   $AE	* current keystroke
+952F: 81 14       CMPA  #$14	* UP
 9531: 10 25 00 AB LBCS  $95E0
-9535: 81 17       CMPA  #$17
-9537: 10 22 00 A5 LBHI  $95E0
-953B: 96 AE       LDA   $AE
-953D: 81 15       CMPA  #$15
-953F: 26 3B       BNE   $957C
-9541: 86 04       LDA   #$04
-9543: 97 85       STA   $85
-9545: 96 E7       LDA   $E7
+9535: 81 17       CMPA  #$17	* SAVE SEQ
+9537: 10 22 00 A5 LBHI  $95E0	* what is higher? there's only 24 keys
+953B: 96 AE       LDA   $AE	* current keystroke
+953D: 81 15       CMPA  #$15	* PLAY SEQ
+953F: 26 3B       BNE   $957C	* no, skip
+9541: 86 04       LDA   #$04	* some flag?
+9543: 97 85       STA   $85	* save routine uses this
+9545: 96 E7       LDA   $E7	* sequencer flag?
 9547: 81 00       CMPA  #$00
-9549: 26 06       BNE   $9551
-954B: BD 95 E1    JSR   $95E1
+9549: 26 06       BNE   $9551	* not zero, skip
+954B: BD 95 E1    JSR   $95E1	* call start sequencer?
 954E: 39          RTS   
 
 954F: 20 22       BRA   $9573
 
-9551: 81 02       CMPA  #$02
-9553: 26 09       BNE   $955E
+9551: 81 02       CMPA  #$02	* flag is 2?
+9553: 26 09       BNE   $955E	* no, skip
 9555: BD AB 90    JSR   $AB90	* something to do with sequencer
-9558: BD 95 E1    JSR   $95E1
+9558: BD 95 E1    JSR   $95E1	* call start sequencer?
 955B: 39          RTS   
 
 955C: 20 15       BRA   $9573
 
-955E: 81 04       CMPA  #$04
-9560: 26 11       BNE   $9573
-9562: BD AB 80    JSR   $AB80
-9565: CC 3A 7A    LDD   #$3A7A
-9568: DD B3       STD   $B3
+955E: 81 04       CMPA  #$04	* flag is 4?
+9560: 26 11       BNE   $9573	* no, skip
+9562: BD AB 80    JSR   $AB80	* call
+9565: CC 3A 7A    LDD   #$3A7A	* "od" = overdub?
+9568: DD B3       STD   $B3	* LED bit pattern
 956A: 86 80       LDA   #$80
-956C: 97 83       STA   $83
-956E: 0F 8A       CLR   $8A
-9570: 0F 89       CLR   $89
+956C: 97 83       STA   $83	* timer?
+956E: 0F 8A       CLR   $8A	* some variable
+9570: 0F 89       CLR   $89	* some variable
 9572: 39          RTS   
 
 9573: BD AB 90    JSR   $AB90	* something to do with sequencer
-9576: BD 95 E1    JSR   $95E1
+9576: BD 95 E1    JSR   $95E1	* call start sequencer?
 9579: 39          RTS   
 
 957A: 20 5D       BRA   $95D9
@@ -2656,7 +2664,7 @@ ackkybd:
 958A: BD AB 53    JSR   $AB53
 958D: 86 04       LDA   #$04
 958F: 97 82       STA   $82
-9591: 0F 8A       CLR   $8A
+9591: 0F 8A       CLR   $8A	* some variable
 9593: 0F 89       CLR   $89
 9595: 39          RTS   
 
@@ -2674,7 +2682,7 @@ ackkybd:
 95AB: 86 0A       LDA   #$0A
 95AD: 20 2A       BRA   $95D9
 
-95AF: 81 16       CMPA  #$16
+95AF: 81 16       CMPA  #$16	*
 95B1: 26 0C       BNE   $95BF
 95B3: 86 03       LDA   #$03
 95B5: 97 82       STA   $82
@@ -2702,42 +2710,46 @@ ackkybd:
 95DD: BD 94 31    JSR   $9431	* set83898a
 95E0: 39          RTS   
 
-* unknown
-95E1: BD AB 43    JSR   $AB43	* call
-95E4: 86 57       LDA   #$57	* 87?
-95E6: 97 8B       STA   $8B	* some variable
-95E8: 86 0D       LDA   #$0D	* 13?
-95EA: 97 AE       STA   $AE	* some variable
-95EC: BD 91 16    JSR   $9116	* call
+
+* start sequencer?
+* sets seq variables
+* then sets the edit parameter to Seq Tempo and fakes a VALUE keypress
+95E1: BD AB 43    JSR   $AB43	* call start sequencer?
+95E4: 86 57       LDA   #$57	* Param 87, Seq Tempo
+95E6: 97 8B       STA   $8B	* set edit parameter
+95E8: 86 0D       LDA   #$0D	* VALUE
+95EA: 97 AE       STA   $AE	* current keystroke
+95EC: BD 91 16    JSR   $9116	* handle keystroke
 95EF: 39          RTS   
 
-95F0: 96 AE       LDA   $AE
-95F2: 81 19       CMPA  #$19
-95F4: 26 09       BNE   $95FF
-95F6: BD 92 49    JSR   $9249
-95F9: BD 96 F4    JSR   $96F4
-95FC: 16 00 F4    LBRA  $96F3
+* unknown, keystrokes
+95F0: 96 AE       LDA   $AE	* current keystroke
+95F2: 81 19       CMPA  #$19	* no idea what $19 is
+95F4: 26 09       BNE   $95FF	* no, skip
+95F6: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
+95F9: BD 96 F4    JSR   $96F4	* show "Sr"
+95FC: 16 00 F4    LBRA  $96F3	* bra rts
 
-95FF: 81 1A       CMPA  #$1A
-9601: 10 26 00 0A LBNE  $960F
-9605: 86 0C       LDA   #$0C
-9607: 97 AE       STA   $AE
-9609: BD 91 16    JSR   $9116
-960C: 16 00 E4    LBRA  $96F3
+95FF: 81 1A       CMPA  #$1A	* no idea what $1A is
+9601: 10 26 00 0A LBNE  $960F	* no, skip
+9605: 86 0C       LDA   #$0C	* PARAM
+9607: 97 AE       STA   $AE	* save it
+9609: BD 91 16    JSR   $9116	* handle as if PARAM was pressed
+960C: 16 00 E4    LBRA  $96F3	* bra rts
 
-960F: 81 1B       CMPA  #$1B
-9611: 10 26 00 37 LBNE  $964C
-9615: 96 E7       LDA   $E7
-9617: 81 00       CMPA  #$00
-9619: 26 04       BNE   $961F
-961B: BD 95 E1    JSR   $95E1
+960F: 81 1B       CMPA  #$1B	* no idea what $1b is
+9611: 10 26 00 37 LBNE  $964C	* no, skip
+9615: 96 E7       LDA   $E7	* sequencer flag?
+9617: 81 00       CMPA  #$00	* 0?
+9619: 26 04       BNE   $961F	* no, skip
+961B: BD 95 E1    JSR   $95E1	* call start sequencer?
 961E: 39          RTS   
 
-961F: 81 06       CMPA  #$06
-9621: 26 0A       BNE   $962D
-9623: BD AB 60    JSR   $AB60
-9626: BD 92 49    JSR   $9249
-9629: BD 96 F4    JSR   $96F4
+961F: 81 06       CMPA  #$06	* keypad 6?
+9621: 26 0A       BNE   $962D	* no, skip
+9623: BD AB 60    JSR   $AB60	* call
+9626: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
+9629: BD 96 F4    JSR   $96F4	* call
 962C: 39          RTS   
 
 962D: 81 08       CMPA  #$08
@@ -2745,7 +2757,7 @@ ackkybd:
 9631: BD AB 90    JSR   $AB90	* something to do with sequencer
 9634: 96 27       LDA   $27
 9636: 27 04       BEQ   $963C
-9638: BD 95 E1    JSR   $95E1
+9638: BD 95 E1    JSR   $95E1	* call start sequencer?
 963B: 39          RTS   
 
 963C: 86 0C       LDA   #$0C
@@ -2756,7 +2768,7 @@ ackkybd:
 9644: BD AB 90    JSR   $AB90	* something to do with sequencer
 9647: 20 F3       BRA   $963C
 
-9649: 16 00 A7    LBRA  $96F3
+9649: 16 00 A7    LBRA  $96F3	* bra rts
 
 964C: 81 1C       CMPA  #$1C
 964E: 10 26 00 10 LBNE  $9662
@@ -2765,8 +2777,8 @@ ackkybd:
 9656: 27 04       BEQ   $965C
 9658: 81 02       CMPA  #$02
 965A: 26 03       BNE   $965F
-965C: BD 95 E1    JSR   $95E1
-965F: 16 00 91    LBRA  $96F3
+965C: BD 95 E1    JSR   $95E1	* call start sequencer?
+965F: 16 00 91    LBRA  $96F3	* bra rts
 
 9662: 81 1D       CMPA  #$1D
 9664: 10 26 00 0E LBNE  $9676
@@ -2775,14 +2787,14 @@ ackkybd:
 966C: 26 06       BNE   $9674
 966E: BD AB 45    JSR   $AB45
 9671: BD 95 E4    JSR   $95E4
-9674: 20 7D       BRA   $96F3
+9674: 20 7D       BRA   $96F3	* bra rts
 
 9676: 81 1E       CMPA  #$1E
 9678: 26 09       BNE   $9683
 967A: 86 0B       LDA   #$0B
 967C: 97 AE       STA   $AE
 967E: BD 91 16    JSR   $9116
-9681: 20 70       BRA   $96F3
+9681: 20 70       BRA   $96F3	* bra rts
 
 9683: 4D          TSTA  
 9684: 2B 01       BMI   $9687
@@ -2823,35 +2835,36 @@ ackkybd:
 
 96C5: C4 03       ANDB  #$03
 96C7: 5C          INCB  
-96C8: D7 AE       STB   $AE
-96CA: 96 16       LDA   $16
+96C8: D7 AE       STB   $AE	* current keypress
+96CA: 96 16       LDA   $16	* link upper/lower
 96CC: 34 02       PSHS  A
 96CE: 96 91       LDA   $91
 96D0: 26 06       BNE   $96D8
 96D2: 0F A4       CLR   $A4
-96D4: 0F 16       CLR   $16
+96D4: 0F 16       CLR   $16	* link upper/lower
 96D6: 20 0E       BRA   $96E6
 
 96D8: 81 01       CMPA  #$01
 96DA: 26 06       BNE   $96E2
 96DC: 97 A4       STA   $A4
-96DE: 0F 16       CLR   $16
+96DE: 0F 16       CLR   $16	* link upper/lower
 96E0: 20 04       BRA   $96E6
 
 96E2: 86 01       LDA   #$01
-96E4: 97 16       STA   $16
+96E4: 97 16       STA   $16	* link upper/lower
 96E6: 86 05       LDA   #$05
 96E8: 97 82       STA   $82
 96EA: 0F B3       CLR   $B3
 96EC: BD 96 B4    JSR   $96B4
 96EF: 35 02       PULS  A
-96F1: 97 16       STA   $16
+96F1: 97 16       STA   $16	* link upper/lower
 96F3: 39          RTS   
 
-* unknown
-96F4: CC B6 0A    LDD   #$B60A	* parameter table, strange offset
-96F7: DD B3       STD   $B3	* some variable
-96F9: 86 80       LDA   #$80	
+* show "Sr"
+* set timer?
+96F4: CC B6 0A    LDD   #$B60A	* "Sr"
+96F7: DD B3       STD   $B3	* LED bit pattern
+96F9: 86 80       LDA   #$80
 96FB: 97 83       STA   $83	* some variable
 96FD: 39          RTS   
 
@@ -3706,7 +3719,7 @@ ackkybd:
 * divide by ten by successive subtraction
 * returns a=quotient, b=remainder
 9D2D: 4F          CLRA  	* zero out a
-9D2E: C1 0A       CMPB  #$0A	* a=10?
+9D2E: C1 0A       CMPB  #$0A	* b=10?
 9D30: 25 05       BCS   $9D37	* less, end
 9D32: C0 0A       SUBB  #$0A	* subtract 10
 9D34: 4C          INCA
@@ -4183,7 +4196,7 @@ A0F0: 20 30       BRA   $A122	* jump
 * 3 = keys + ctrl + pc with confirm
 
 A0F2: 1A 50       ORCC  #$50	* mask interrupts
-A0F4: 96 23       LDA   $23	* Param84 some variable
+A0F4: 96 23       LDA   $23	* Param84 message filter
 A0F6: 81 02       CMPA  #$02	* 2?
 A0F8: 27 04       BEQ   $A0FE	* yes, skip
 A0FA: 81 03       CMPA  #$03	* 3?
@@ -4191,7 +4204,7 @@ A0FC: 26 0E       BNE   $A10C	* no, skip
 A0FE: 34 04       PSHS  B	* save B
 A100: C6 C0       LDB   #$C0	* MIDI program change?
 A102: D7 BB       STB   $BB	* some variable
-A104: DA 21       ORB   $21	* some variable
+A104: DA 21       ORB   $21	* MIDI channel
 A106: 8D 30       BSR   $A138	* call MIDI TX
 A108: 35 04       PULS  B	* get B
 A10A: 8D 2C       BSR   $A138	* call
@@ -4222,10 +4235,10 @@ A132: 8D 04       BSR   $A138
 A134: DC C2       LDD   $C2
 A136: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
-* based on $8022, put b in TX buffer
-A138: 96 22       LDA   $22	* some variable
-A13A: 27 01       BEQ   $A13D	* zero?
-A13C: 39          RTS   
+* put byte in TX buffer if not using MIDI through
+A138: 96 22       LDA   $22	* MIDI Through
+A13A: 27 01       BEQ   $A13D	* off? Skip ahead
+A13C: 39          RTS   	* MIDI Through on, return
 
 * put B in ringbuffer and enable TX interrupt
 A13D: 9E BC       LDX   $BC	* ring buffer store pointer
@@ -4290,7 +4303,7 @@ A1AB: 3B          RTI   		; return
 * stores it in $80c0
 * returns to the call before last
 A1AC: 35 06       PULS  A,B
-A1AE: DD C0       STD   $C0
+A1AE: DD C0       STD   $C0	* save return address
 A1B0: 39          RTS   
 
 A1B1: 35 06       PULS  A,B
@@ -4301,16 +4314,16 @@ A1B5: 39          RTS
 A1B6: AD 9F 80 C6 JSR   [$80C6,X]	; what does X point to here?
 A1BA: 20 ED       BRA   $A1A9		; finish
 
-A1BC: 9E BE       LDX   $BE		; get X from $80ce maybe
+A1BC: 9E BE       LDX   $BE		; ring buffer read pointer
 A1BE: A6 80       LDA   ,X+		; get byte from buffer
 A1C0: B7 E1 01    STA   $E101		; transmit
 A1C3: 8C 82 35    CMPX  #$8235		; compare with some value, possibly top of buffer?
 A1C6: 25 03       BCS   $A1CB		; it's fine
 A1C8: 8E 82 25    LDX   #$8225		; tx buffer?
-A1CB: 9C BC       CPX   $BC		; compare with $80BC?
+A1CB: 9C BC       CPX   $BC		; ring buffer TX pointer
 A1CD: 26 09       BNE   $A1D8
-A1CF: 96 22       LDA   $22
-A1D1: 26 00       BNE   $A1D3
+A1CF: 96 22       LDA   $22	* MIDI Through setting
+A1D1: 26 00       BNE   $A1D3	* on?
 A1D3: C6 95       LDB   #$95		; control word, enable rx int, rts low, tx int disabled, 8n1, /16
 A1D5: F7 E1 00    STB   $E100		; set control byte
 A1D8: 9F BE       STX   $BE
@@ -4338,7 +4351,7 @@ A1FF: 3B          RTI
 A200: 20 03       BRA   $A205
 
 A202: 7C 82 37    INC   $8237
-A205: 96 22       LDA   $22
+A205: 96 22       LDA   $22	* MIDI Through setting
 A207: 27 03       BEQ   $A20C
 A209: BD A1 3D    JSR   $A13D
 A20C: 1C BF       ANDCC #$BF
@@ -4472,10 +4485,10 @@ A2F7: 39          RTS
 A2F8: BD A1 AC    JSR   $A1AC
 A2FB: CE A2 F8    LDU   #$A2F8
 A2FE: DF C0       STU   $C0
-A300: 96 23       LDA   $23
-A302: 27 08       BEQ   $A30C
-A304: BD AD AF    JSR   $ADAF
-A307: BD 90 C0    JSR   $90C0
+A300: 96 23       LDA   $23	* MIDI message filter
+A302: 27 08       BEQ   $A30C	* 0? rts
+A304: BD AD AF    JSR   $ADAF	* ring buffer, A=0
+A307: BD 90 C0    JSR   $90C0	* calculate pitch bend amount
 A30A: DD 77       STD   $77
 A30C: 39          RTS   
 
@@ -5458,6 +5471,7 @@ AB31: DF EC       STU   $EC	* save sequence pointer
 AB33: 97 F1       STA   $F1	* save command
 AB35: 39          RTS   
 
+* put byte into sequence?
 AB36: FE B8 08    LDU   $B808	* start of sequence
 AB39: FF B8 04    STU   $B804	* sequence pointer?
 AB3C: A7 C0       STA   ,U+	* save byte
@@ -5465,16 +5479,17 @@ AB3E: DF EE       STU   $EE	* save U in some variable
 AB40: 0F F0       CLR   $F0	* clear some variable
 AB42: 39          RTS   
 
+* unknown, set up sequencer?
 AB43: 8D E7       BSR   $AB2C	* get byte from sequence
 AB45: 0F 36       CLR   $36
 AB47: 0F E9       CLR   $E9
 AB49: C6 02       LDB   #$02
-AB4B: D7 E7       STB   $E7
+AB4B: D7 E7       STB   $E7	* sequencer flag?
 AB4D: 39          RTS   
 
 * unknown
 AB4E: 86 04       LDA   #$04
-AB50: 97 E7       STA   $E7	* some variable
+AB50: 97 E7       STA   $E7	* sequencer flag?
 AB52: 39          RTS   
 
 AB53: DE E5       LDU   $E5
@@ -5482,7 +5497,7 @@ AB55: 33 5D       LEAU  $FFFD,U
 AB57: DF EC       STU   $EC
 AB59: 8D DB       BSR   $AB36
 AB5B: C6 06       LDB   #$06
-AB5D: D7 E7       STB   $E7
+AB5D: D7 E7       STB   $E7	* sequencer flag?
 AB5F: 39          RTS   
 
 * unknown
@@ -5502,23 +5517,23 @@ AB78: BD AD B2    JSR   $ADB2	* call some routine
 AB7B: D6 6B       LDB   $6B	* footswitch flag
 AB7D: 7E AD B6    JMP   $ADB6	* some routine
 
-AB80: 0F 36       CLR   $36
-AB82: 0F E9       CLR   $E9
-AB84: BD AC 10    JSR   $AC10
+AB80: 0F 36       CLR   $36	* incremented ever seccont interrupt
+AB82: 0F E9       CLR   $E9	* something to do with sequencer
+AB84: BD AC 10    JSR   $AC10	* call
 AB87: 8D A3       BSR   $AB2C	* get byte from sequence
-AB89: 8D AB       BSR   $AB36
-AB8B: C6 0A       LDB   #$0A
-AB8D: D7 E7       STB   $E7
+AB89: 8D AB       BSR   $AB36	* call
+AB8B: C6 0A       LDB   #$0A	* some value
+AB8D: D7 E7       STB   $E7	* sequencer flag?
 AB8F: 39          RTS   
 
 * called from lots of places
 * called from routine that sets up sampling?
 * something to do with sequencer?
-AB90: 96 E7       LDA   $E7     * some variable
-AB92: 27 7B       BEQ   $AC0F   * beq rts
-AB94: 0F E7       CLR   $E7     * some variable
-AB96: DE EE       LDU   $EE     * sequence pointer
-AB98: 81 06       CMPA  #$06    * is it 6, what does this even mean
+AB90: 96 E7       LDA   $E7     * sequencer flag?
+AB92: 27 7B       BEQ   $AC0F   * 0? finish
+AB94: 0F E7       CLR   $E7     * sequencer flag?
+AB96: DE EE       LDU   $EE     * sequence pointer?
+AB98: 81 06       CMPA  #$06    * seq flag=6?
 AB9A: 26 06       BNE   $ABA2   * no, jump
 AB9C: 86 FF       LDA   #$FF    
 AB9E: 20 32       BRA   $ABD2   * put byte in sequence
@@ -5527,7 +5542,7 @@ ABA0: 20 49       BRA   $ABEB
 
 ABA2: 81 08       CMPA  #$08
 ABA4: 26 3E       BNE   $ABE4
-ABA6: 96 F0       LDA   $F0
+ABA6: 96 F0       LDA   $F0	* some variable
 ABA8: 0D 24       TST   $24	* external seq clock
 ABAA: 27 26       BEQ   $ABD2	* off
 ABAC: 0D EB       TST   $EB	* some variable
@@ -5586,6 +5601,8 @@ AC0B: 81 61       CMPA  #$61
 AC0D: 25 EE       BCS   $ABFD
 AC0F: 39          RTS   
 
+* unknown, sequencer
+* insert a gap, or something?
 AC10: BE B8 06    LDX   $B806	* first byte of free seqram
 AC13: DE E5       LDU   $E5
 AC15: FF B8 06    STU   $B806	* first byte of free seqram
@@ -5775,7 +5792,7 @@ AD6A: 20 22       BRA   $AD8E	* jump rts
 AD6C: 81 00       CMPA  #$00	
 AD6E: 26 0A       BNE   $AD7A	* a!=0? jump
 AD70: BD A0 CF    JSR   $A0CF	* call
-AD73: BD 90 C0    JSR   $90C0	* call
+AD73: BD 90 C0    JSR   $90C0	* calculate pitch bend amount
 AD76: DD 70       STD   $70	* some variable
 AD78: 20 14       BRA   $AD8E	* jump rts
 

@@ -1,3 +1,8 @@
+AN1/AN0
+AN1 = low for record, high for play (controls output volume)
+AN0 = low for line/pitch wheel, high for compressed/mod wheel
+
+
 $8011 - dummy byte
 $8012 - master tune
 $8013 - pitch bend range
@@ -24,9 +29,15 @@ $8028 - pedal?
 $8029 - param 91
 $802a - param 92
 $802b - software version
-$8031
-$8032
-$8036
+$802e - toggled in timer ISR in ROM
+$802f - decremented in timer ISR in ROM
+$8030 - decremented in timer ISR as $8036 is incremented
+$8031 - if non-zero, decremented in ISR handler
+$8032 - if non-zero, decremented in ISR handler
+$8033 - decremented in ISR handler
+$8034 - 16-bit value fiddled with in ISR
+$8036 - incremented every second interrupt as $8030 is decremented, seq?
+$8037 - if non-zero, counted down in ISR handler
 $8038 - start of 32 bytes zeroed out
 $803b - stores X while setting up voice table
 $8039 - initially holds address of voice parameter table
@@ -48,23 +59,26 @@ $8063 - computed note?
 $8065 - key velocity
 $8066
 $8067
-$8068
+$8068 - stores something to do with pitch bend or new mod wheel val
+$8069 - 16-bit computed pitch bend
 $806b - cleared by sequencer/sustain sw.
-$806c - maybe sequence start/stop?
+$806c - maybe sequence start/stop? no, holds mod wheel val at $90b7
+$8070 - stores computed pitch bend amount, at $ad73
+$8077 - stores computed pitch bend amount, at $a30a
 $807d
 $807e
 $807f
 $8081
-$8082
-$808
+$8082 - save routine uses this
+$8083 - display timer?
 $8084 - value editable? cleared for 97, 98, 99 - poss. up/down value?
-$8085
+$8085 - save routine uses this
 $8087
-$8088
+$8088 - edit value buffer?
 $8089
 $808a
 $808b - edit parameter
-$8092
+$8092 - save routine uses this
 $8094 - wavesample start for editing
 $8096 - wavesample end for editing
 
@@ -87,13 +101,15 @@ $80aa - selected lower wavesample
 $80ab
 $80ac - variable to be displayed?
 $80ad
-$80ae
+$80ae - current keystroke?
 $80af
 $80b3 - LED bit patterns?
 $80ba - 
 $80bb - MIDI message to be sent?
 $80bc - ring buffer store pointer
 $80be - ring buffer read pointer?
+$80c0 - saves return address in routine at $a1ac
+$80c6 - saves return address in routine at $a1b1
 $80cf - sequence or sample to load?  can be 1, 2 or 3 for loading samples
 * maybe command?
 4, 5, 6 seems to be used for saving samples
@@ -112,12 +128,13 @@ $80e0 - upper/lower sample = 0/2?
 $80e1 - load/save in disk routines
 $80e2 - load/save directory sector?
 $80e3 - used in sector finder, offset?
+$80e5 - something for sequencer
 $80e7 - sequencer flag?
-$80e9
+$80e9 - something to do with sequencer
 $80ea - sequencer timing?
 $80eb - sequencer timing?
 $80ec
-$80ee - some kind of pointer
+$80ee - sequence pointer?
 $80f0 - sequencer timing?
 $8105 - set to $ff by routine at $875E
 $8106 - set to $ff by routine at $875E
@@ -132,10 +149,13 @@ $827A - address to fetch in ringbuffer
 $827C - $10 bytes for ringbuffer
 $828C - start of code?
 
+$9009 - previous pitch wheel value
 $900a - pitch wheel offset?
-$900c
-$900d
-$900e
+$900b - previous mod wheel value
+$900c - stores pitch wheel value
+$900d - used to compute pitch wheel average
+$900e - used to compute pitch wheel average
+
 $96fe - saves computed sampling filter cutoff
 
 $b800 - sequence memory
@@ -252,6 +272,7 @@ $0b
 $0c
 $0e = 
 $10 = tuning word
+$12
 $13 =
 $15 = detune?
 $16 = 
