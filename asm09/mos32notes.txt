@@ -61,16 +61,18 @@ $8067
 $8068 - stores something to do with pitch bend or new mod wheel val
 $8069 - 16-bit computed pitch bend
 $806b - cleared by sequencer/sustain sw.
-$806c - maybe sequence start/stop? no, holds mod wheel val at $90b7
+$806c - mod wheel val in at $90b7, read at $ab76
 $8070 - stores computed pitch bend amount, at $ad73
 $8072 - set at $ac40, cleared at $9f95, never seems to be used?
+$8076 - routine at $a30d stores received mixmod amt from B
 $8077 - stores computed pitch bend amount, at $a30a
 $8079
+$807a - routine at $a30d stores received lfo mod amt from B
 $807d
 $807e
 $807f
 $8081
-$8082 - save routine uses this
+$8082 - save routine uses this, flag byte read in keystroke routine
 $8083 - display timer?
 $8084 - value editable? cleared for 97, 98, 99 - poss. up/down value?
 $8085 - save routine uses this, load/save flag?
@@ -80,9 +82,9 @@ $8089
 $808a
 $808b - edit parameter
 $808c - bank to save to?
-$808d
-$8090
-$8091
+$808d - saves bank selection keystroke?
+$8090 - something to do with selecting save bank?
+$8091 - something to do with selecting save bank?
 $8092 - save routine uses this
 $8094 - wavesample start for editing
 $8096 - wavesample end for editing
@@ -108,12 +110,15 @@ $80ac - variable to be displayed?
 $80ad
 $80ae - current keystroke?
 $80af
+$80b2
 $80b3 - LED bit patterns?
+$80b5 - stores bit patterns?
 $80ba - 
-$80bb - MIDI message to be sent?
+$80bb - MIDI status byte for running status
 $80bc - ring buffer store pointer
 $80be - ring buffer read pointer?
 $80c0 - saves return address in routine at $a1ac
+$80c4
 $80c6 - saves return address in routine at $a1b1
 $80cf - sequence or sample to load?  can be 1, 2 or 3 for loading samples
 * maybe command?
@@ -152,9 +157,9 @@ $8225 - start of ring buffer
 $8234 - end of ring buffer
 $8235 - something to do with FIRQ?
 $8278 - address to store in ringbuffer
-$827A - address to fetch in ringbuffer
-$827C - $10 bytes for ringbuffer
-$828C - start of code?
+$827a - address to fetch in ringbuffer
+$827c - $10 bytes for ringbuffer
+$828c - start of code?
 
 $9009 - previous pitch wheel value
 $900a - pitch wheel offset?
@@ -228,8 +233,8 @@ $a6e8 - (2) load/save upper sounds
 $a69c - (2) load/save lower sounds
 $a5fc - (2) load/save sequence?
 $a5a1 - (2) load/save sequence?
-$a0f2 - (2) send MIDI program change?
-$a0e2 - (2) send MIDI control change?
+$a0f2 - (2) send MIDI program change
+$a0e2 - (2) send MIDI control change
 $a0cf - (2) send MIDI pitchbend message
 $a0c5 - (2) send MIDI note off
 $9f9a - (2) sets up some variables
@@ -237,7 +242,7 @@ $9d4b - (2) unknown
 $9cc1 - (2) unknown, display value pointed to by x
 $9cc5 -     unknown, display on/oF?
 $998b - (2) unknown, something to do with editing values?
-$90e9 - (2) unknown, jumps depending on value of $AE
+$90e9 - handle keypresses in $AE
 $90c0 - (2) unknown, something to do with pitch bend
 $8fc8 - called while setting loop params
 $8da1 - calculate filter envelope

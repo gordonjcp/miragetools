@@ -2,3 +2,4 @@
 go        lda #'*#
         jsr $8030
         bra go
+	clr $17,U
