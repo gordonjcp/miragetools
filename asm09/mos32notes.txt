@@ -68,7 +68,7 @@ $805e - set to $b2be, that strange list from the "put values in memory" routine
 $8061 - voice task? note parser loop? can be $8a25, $89ec, $89f6, $89a1, $82af
 $8063 - computed note?
 $8064
-$8065 - key velocity
+$8065 - key velocity? used for cutoff, too
 $8066
 $8067
 $8068 - stores something to do with pitch bend or new mod wheel val
@@ -308,16 +308,16 @@ $07
 $08 = velocity?
 $09 = 
 $0a = program for voice
-$0c = ?
+$0c = wavetable for voice?
 $0e = 
 $10 = tuning word
 $12
 $13 =
 $14 = 
 $15 = detune?
-$16 = 
+$16 = VCF offset
 $17 = 
-$18 = VCF offset
+$18 = 
 $1a = zero, set by stuff that fiddles with velocity?
 $1c = next task
 $1e = VCF Attack time A
@@ -329,8 +329,8 @@ $23 = VCF Sustain level
 $24 = VCF Release time A
 $25 = VCF Release time B
 $26 = voice velocity?
-$27 = resonance
-$28 = cutoff
+$27 = 
+$28 = resonance
 $29
 $2b = next task? initially set to enable ints and return
 $2d

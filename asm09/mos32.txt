@@ -360,7 +360,7 @@ osvec:
 8436: E7 08       STB   $0008,X
 8438: A6 27       LDA   $0007,Y
 843A: A7 05       STA   $0005,X
-843C: 6F 88 18    CLR   $18,X	* clear filter offset? Makes little sense
+843C: 6F 88 18    CLR   $18,X	* 
 843F: BD 87 38    JSR   $8738	* "mash values about"
 8442: 39          RTS   
 
@@ -868,6 +868,7 @@ startup875e2:
 87E7: CE 85 C9    LDU   #$85C9	* points to some function
 87EA: 20 08       BRA   $87F4
 
+* is $37 the offset of the interrupt into RAM?
 87EC: 1F 31       TFR   U,X	* keep U in X
 87EE: CE 85 B9    LDU   #$85B9	* points to some function
 87F1: 30 88 C9    LEAX  -$37,X	* subtract 37 from X, why 37?
@@ -910,7 +911,7 @@ startup875e2:
 8834: AF 24       STX   $0004,Y	* pointers in wavesample block?
 8836: ED 26       STD   $0006,Y
 8838: EF 22       STU   $0002,Y
-883A: AE A4       LDX   ,Y	* x contains address at start
+883A: AE A4       LDX   ,Y	* X = next entry
 883C: 9F 57       STX   $57	* save in some variable
 883E: 0A 5D       DEC   $5D	* count down some variable
 8840: 7F 82 07    CLR   $8207	* clear some variable
@@ -944,11 +945,11 @@ startup875e2:
 docinterrupt:
 8871: 4F          CLRA  	* clear A
 8872: 1F 02       TFR   D,Y	* Y = $00, ($ECE0)
-8874: EE A9 88 BB LDU   $88BB,Y	* pointer 
+8874: EE A9 88 BB LDU   $88BB,Y	* DOC quirk, add 0x41 for "real" address
 8878: 57          ASRB  
 8879: 10 8E EC 5F LDY   #$EC5F		
 887D: 31 A5       LEAY  B,Y
-887F: AD D4       JSR   [,U]
+887F: AD D4       JSR   [,U]	* jump to routine pointed to by value at U
 
 8881: 1C BF       ANDCC #$BF
 8883: 1A 40       ORCC  #$40
@@ -1013,10 +1014,10 @@ docinterrupt:
 88F5: EE A9 88 BC LDU   $88BC,Y
 88F9: 7E 87 EC    JMP   $87EC
 
-* 64-byte table
-* pairs of values incrementing by 66
+* voice interrupt vector pointers
+* 32 words, 16 pairs of words
+* these point to values in the voice parameter table
 88FC: B0 89 B0 89 
-
 8900: B0 94 B0 94 B0 D6 B0 D6 B0 E1 B0 E1 B1 23 B1 23 
 8910: B1 2E B1 2E B1 70 B1 70 B1 7B B1 7B B1 BD B1 BD 
 8920: B1 C8 B1 C8 B2 0A B2 0A B2 15 B2 15 B2 57 B2 57 
@@ -1259,12 +1260,13 @@ ackkybd:
 8AD4: ED 88 1A    STD   $1A,X	* something in voice table (cleared)
 
 * update voice filter task
-* what does A contain?
+* X points to voice parameter table
+* what does A contain, max filter?
 8AD7: 1C AF       ANDCC #$AF		; unmask IRQ and FIRQ
 8AD9: A1 88 27    CMPA  $27,X		; resonance (max is 40?)
 8ADC: 23 03       BLS   $8AE1		; less than stored value
-8ADE: A6 88 27    LDA   $27,X		; set A to stored resonance
-8AE1: E6 88 28    LDB   $28,X		; cutoff
+8ADE: A6 88 27    LDA   $27,X		; cutoff
+8AE1: E6 88 28    LDB   $28,X		; resonance
 8AE4: BD F5 E7    JSR   setfilterdac	; set DAC
 8AE7: 1A 50       ORCC  #$50		; mask interrupts
 8AE9: EC 88 29    LDD   $29,X		; address of next task?
@@ -1438,7 +1440,7 @@ ackkybd:
 8C3B: 96 1D       LDA   $1D	* lfo mod source
 8C3D: 81 09       CMPA  #$09	* poly aftertouch
 8C3F: 26 05       BNE   $8C46
-8C41: E6 A8 18    LDB   $18,Y	* filter offset?
+8C41: E6 A8 18    LDB   $18,Y	* 
 8C44: 20 02       BRA   $8C48
 
 8C46: E6 44       LDB   $0004,U	* if U is program-for-voice, osc mix?
@@ -1487,31 +1489,32 @@ ackkybd:
 
 * unknown
 * Y might point to voice params
+* U might point to wavesample params?
 8CA0: AE 2A       LDX   $000A,Y
 8CA2: A6 26       LDA   $0006,Y	* note?
 8CA4: 80 18       SUBA  #$18	* subtract 24
 8CA6: 2A 01       BPL   $8CA9	* too low?
 8CA8: 4F          CLRA  	* clamp
-8CA9: E6 08       LDB   $0008,X
-8CAB: 3D          MUL 		* (note-24)*[8]  
+8CA9: E6 08       LDB   $0008,X	* keyboard track
+8CAB: 3D          MUL 		* 
 8CAC: 46          RORA
 8CAD: 56          RORB		* /2  
-8CAE: 34 04       PSHS  B	* stack B
-8CB0: E6 A8 16    LDB   $16,Y
-8CB3: 1D          SEX   
+8CAE: 34 04       PSHS  B	* b = computed filter
+8CB0: E6 A8 16    LDB   $16,Y	* filter offset, if Y starts at $b052
+8CB3: 1D          SEX   	* extend sign bit, now it's 16 bit
 8CB4: EB E0       ADDB  ,S+	* add B to previously stacked B
-8CB6: 89 00       ADCA  #$00	* ?
-8CB8: EB 06       ADDB  $0006,X	* add the note back in
-8CBA: 89 00       ADCA  #$00	* ?
-8CBC: EB 4C       ADDB  $000C,U	* some voice param
-8CBE: 89 00       ADCA  #$00	* ?
+8CB6: 89 00       ADCA  #$00	* propagate carry
+8CB8: EB 06       ADDB  $0006,X	* cutoff
+8CBA: 89 00       ADCA  #$00	* propagate carry
+8CBC: EB 4C       ADDB  $000C,U	* relative filter freq
+8CBE: 89 00       ADCA  #$00	* propagate carry, sets zero?
 8CC0: 27 07       BEQ   $8CC9	* skip if zero
 8CC2: 2A 03       BPL   $8CC7	* below zero?
 8CC4: 5F          CLRB		* clamp
 8CC5: 20 02       BRA   $8CC9	* skip
 
-8CC7: C6 FF       LDB   #$FF	*
-8CC9: D7 65       STB   $65	* velocity
+8CC7: C6 FF       LDB   #$FF	* overflow, clamp
+8CC9: D7 65       STB   $65	* cutoff
 8CCB: A6 A8 1A    LDA   $1A,Y	* thing the envelope fiddles with
 8CCE: A0 A8 26    SUBA  $26,Y	* 
 8CD1: 9B 65       ADDA  $65	* add velocity
@@ -1531,16 +1534,16 @@ ackkybd:
 8CF3: 86 FF       LDA   #$FF	* clamp
 8CF5: A7 A8 23    STA   $23,Y	* store in VCF sustain
 8CF8: E7 A8 26    STB   $26,Y	* store velocity?
-8CFB: A6 4D       LDA   $000D,U	* ?
+8CFB: A6 4D       LDA   $000D,U	* max filter frequency
 8CFD: 8B 39       ADDA  #$39
-8CFF: A7 A8 27    STA   $27,Y	* resonance?
+8CFF: A7 A8 27    STA   $27,Y	* cutoff?
 8D02: 39          RTS   
 
 * voice assigner maybe?
 * Y probably points to voice
 * X points to program? program+1?
 8D03: AE 2A       LDX   $000A,Y * X points to program
-8D05: EE 2C       LDU   $000C,Y * Y points to ?
+8D05: EE 2C       LDU   $000C,Y * U points to wavesample
 8D07: B6 80 15    LDA   $8015	* keyboard balance
 8D0A: 8C B7 6F    CMPX  #$B76F	* some table?
 8D0D: 24 0C       BCC   $8D1B	* higher or same, skip
@@ -1573,8 +1576,8 @@ ackkybd:
 8D39: 81 10       CMPA  #$10
 8D3B: 24 01       BCC   $8D3E	* >=16
 8D3D: 57          ASRB  
-8D3E: E7 A8 15    STB   $15,Y	* osc mix?
-8D41: A6 07       LDA   $0007,X	* cutoff
+8D3E: E7 A8 15    STB   $15,Y	* detune amount?
+8D41: A6 07       LDA   $0007,X	* resonance
 8D43: A7 A8 28    STA   $28,Y
 8D46: A6 01       LDA   $0001,X	* LFO frequency
 8D48: A7 A8 13    STA   $13,Y
@@ -6429,7 +6432,9 @@ B96D: 39          RTS
 
 filterthing:
 *** this appears to do the filter tuning
-B96E: CE B0 50    LDU   #$B050	unknown - filter parameters?
+* why is the voice parameter table here given as $b050
+* and everywhere else $b052?
+B96E: CE B0 50    LDU   #$B050	* voice parameter table
 B971: 8E E4 18    LDX   #$E418	first DAC channel
 B974: C6 10       LDB   #$10	
 B976: BD F5 71    JSR   swponefilt sweep one filter
