@@ -792,6 +792,7 @@ timer2intend:
 *** b reg has offset (in 16-bit words) into table
 *** a reg has multiplier/shift value (0-7)
 *** 16-bit result returned in a & b (d) register
+* called from tuning routine?
 unknown1:
 	nega  
 	adda  #$09

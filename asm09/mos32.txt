@@ -216,7 +216,7 @@ osvec:
 833D: 86 40       LDA   #$40
 833F: A7 07       STA   $0007,X
 8341: 1F 12       TFR   X,Y
-8343: BD 8E 05    JSR   $8E05
+8343: BD 8E 05    JSR   $8E05	* calculate release times
 8346: 39          RTS   
 
 8347: AE 84       LDX   ,X
@@ -359,10 +359,11 @@ osvec:
 843F: BD 87 38    JSR   $8738	* "mash values about"
 8442: 39          RTS   
 
+* unknown
 8443: B6 81 04    LDA   $8104
 8446: 81 00       CMPA  #$00
 8448: 26 08       BNE   $8452
-844A: CE 80 3F    LDU   #$803F
+844A: CE 80 3F    LDU   #$803F	* pointer to something?
 844D: BD 87 22    JSR   $8722
 8450: 20 0E       BRA   $8460
 
@@ -417,6 +418,7 @@ osvec:
 84C2: 1C AF       ANDCC #$AF
 84C4: 39          RTS   
 
+* unknown
 84C5: AE C4       LDX   ,U
 84C7: EC 81       LDD   ,X++
 84C9: DD 49       STD   $49
@@ -646,9 +648,10 @@ osvec:
 867A: 39          RTS   
 
 * unknown, $87dd sets U to this
+* Y seems to point to voice parameter tables
 867B: A6 25       LDA   $0005,Y
 867D: BD 87 38    JSR   $8738
-8680: 10 9E 41    LDY   $41
+8680: 10 9E 41    LDY   $41	* where is this set, and to what?
 8683: 27 1A       BEQ   $869F
 8685: E6 27       LDB   $0007,Y
 8687: C5 01       BITB  #$01
@@ -656,11 +659,11 @@ osvec:
 868B: A1 25       CMPA  $0005,Y
 868D: 26 0B       BNE   $869A
 868F: 34 02       PSHS  A
-8691: BD 8E 05    JSR   $8E05
+8691: BD 8E 05    JSR   $8E05	* calculate release times
 8694: 86 40       LDA   #$40
 8696: A7 27       STA   $0007,Y
 8698: 35 02       PULS  A
-869A: 10 AE A4    LDY   ,Y
+869A: 10 AE A4    LDY   ,Y	* get next entry in voice table
 869D: 20 E4       BRA   $8683
 
 869F: 39          RTS   
@@ -674,7 +677,7 @@ osvec:
 86A9: EC E4       LDD   ,S
 86AB: 10 A3 24    CMPD  $0004,Y
 86AE: 26 1A       BNE   $86CA
-86B0: BD 8E 05    JSR   $8E05
+86B0: BD 8E 05    JSR   $8E05	* calculate release times
 86B3: 1F 21       TFR   Y,X
 86B5: 86 40       LDA   #$40
 86B7: A7 07       STA   $0007,X
@@ -694,13 +697,13 @@ osvec:
 86D7: EC E4       LDD   ,S
 86D9: 10 A3 24    CMPD  $0004,Y
 86DC: 26 03       BNE   $86E1
-86DE: BD 8E 05    JSR   $8E05
+86DE: BD 8E 05    JSR   $8E05	* calculate release times
 86E1: 10 9E 47    LDY   $47
 86E4: 27 0A       BEQ   $86F0
 86E6: EC E4       LDD   ,S
 86E8: 10 A3 24    CMPD  $0004,Y
 86EB: 26 03       BNE   $86F0
-86ED: BD 8E 05    JSR   $8E05
+86ED: BD 8E 05    JSR   $8E05	* calculate release times
 86F0: 35 30       PULS  X,Y
 86F2: BD 87 38    JSR   $8738
 86F5: 39          RTS   
@@ -732,6 +735,8 @@ osvec:
 8721: 39          RTS   
 
 * unknown
+* called with U=$803B, $803F or $8043
+* X = ?
 8722: 10 AE C4    LDY   ,U	* Y = (U)
 8725: 26 04       BNE   $872B	* skip if not 0
 8727: AF 5E       STX   $FFFE,U	* (U-2)=X
@@ -746,13 +751,14 @@ osvec:
 
 * not sure, called from 9 places
 * something to do with the keyboard?
+* Y contains voice parameter table
 8738: 1A 50       ORCC  #$50	* disable interrupts
 873A: 34 02       PSHS  A	* save A
 873C: B6 82 07    LDA   $8207	* some variable
 873F: 26 19       BNE   $875A	* not zero? finish
 8741: DE 57       LDU   $57	* some variable
-8743: 10 9F 57    STY   $57	* set it to what's in Y
-8746: EF A4       STU   ,Y	* save U to address in Y
+8743: 10 9F 57    STY   $57	* set it to current voice parameter table
+8746: EF A4       STU   ,Y	* save U to address in Y (next table?)
 8748: 96 5D       LDA   $5D	* some variable
 874A: 4C          INCA  
 874B: 97 5D       STA   $5D
@@ -1452,7 +1458,7 @@ ackkybd:
 8C68: 1D          SEX   
 8C69: E3 45       ADDD  $0005,U
 8C6B: E3 A8 10    ADDD  $10,Y
-8C6E: BD F5 14    JSR   unknown1
+8C6E: BD F5 14    JSR   unknown1	* odd lookup routine
 8C71: 34 06       PSHS  B,A
 8C73: EB A8 15    ADDB  $15,Y	* detune value?
 8C76: 89 00       ADCA  #$00
@@ -1527,50 +1533,50 @@ ackkybd:
 
 * voice assigner maybe?
 * Y probably points to voice
-* X points to program? program+1
-8D03: AE 2A       LDX   $000A,Y
-8D05: EE 2C       LDU   $000C,Y
+* X points to program? program+1?
+8D03: AE 2A       LDX   $000A,Y * X points to program
+8D05: EE 2C       LDU   $000C,Y * Y points to ?
 8D07: B6 80 15    LDA   $8015	* keyboard balance
 8D0A: 8C B7 6F    CMPX  #$B76F	* some table?
-8D0D: 24 0C       BCC   $8D1B	* skip
-8D0F: 48          ASLA  
-8D10: 81 80       CMPA  #$80	
-8D12: 22 04       BHI   $8D18
-8D14: 86 7F       LDA   #$7F
-8D16: 20 01       BRA   $8D19
+8D0D: 24 0C       BCC   $8D1B	* higher or same, skip
+8D0F: 48          ASLA 		* multiply by 2 
+8D10: 81 80       CMPA  #$80
+8D12: 22 04       BHI   $8D18	* >128, skip
+8D14: 86 7F       LDA   #$7F	* clamp
+8D16: 20 01       BRA   $8D19	* skip
 
 8D18: 40          NEGA  
-8D19: 20 05       BRA   $8D20
+8D19: 20 05       BRA   $8D20	* skip
 
-8D1B: 48          ASLA  
-8D1C: 2A 02       BPL   $8D20
-8D1E: 86 7F       LDA   #$7F
-8D20: 8B 20       ADDA  #$20
-8D22: E6 4B       LDB   $000B,U
+8D1B: 48          ASLA 		* keyboard balance * 2 
+8D1C: 2A 02       BPL   $8D20	* bit 7 set, skip
+8D1E: 86 7F       LDA   #$7F	* clamp
+8D20: 8B 20       ADDA  #$20	* add 32, why?
+8D22: E6 4B       LDB   $000B,U	* 
 8D24: 58          ASLB  
-8D25: 58          ASLB  
-8D26: 3D          MUL   
+8D25: 58          ASLB 		* multiply by 4 
+8D26: 3D          MUL   	* multiply by A
 8D27: 97 67       STA   $67	* some variable
-8D29: A6 28       LDA   $0008,Y
+8D29: A6 28       LDA   $0008,Y	* voice velocity?
 8D2B: 97 65       STA   $65	* key velocity
-8D2D: A6 26       LDA   $0006,Y
-8D2F: 80 24       SUBA  #$24
-8D31: 97 66       STA   $66	* note
-8D33: E6 03       LDB   $0003,X * osc mix
+8D2D: A6 26       LDA   $0006,Y * voice note
+8D2F: 80 24       SUBA  #$24	* subtract offset
+8D31: 97 66       STA   $66	* note, lowest is 0
+8D33: E6 03       LDB   $0003,X * detune
 8D35: C1 01       CMPB  #$01
 8D37: 27 05       BEQ   $8D3E	* 1?
 8D39: 81 10       CMPA  #$10
-8D3B: 24 01       BCC   $8D3Ea	* >=16
+8D3B: 24 01       BCC   $8D3E	* >=16
 8D3D: 57          ASRB  
 8D3E: E7 A8 15    STB   $15,Y	* osc mix?
 8D41: A6 07       LDA   $0007,X	* cutoff
 8D43: A7 A8 28    STA   $28,Y
-8D46: A6 01       LDA   $0001,X	* LFO depth
+8D46: A6 01       LDA   $0001,X	* LFO frequency
 8D48: A7 A8 13    STA   $13,Y
-8D4B: A6 02       LDA   $0002,X	* Detune
+8D4B: A6 02       LDA   $0002,X	* LFO Depth
 8D4D: A7 A8 14    STA   $14,Y
 8D50: 6F A8 12    CLR   $12,Y
-8D53: A6 05       LDA   $0005,X	* cutoff
+8D53: A6 05       LDA   $0005,X	* mix vel sens
 8D55: 27 0E       BEQ   $8D65
 8D57: 80 04       SUBA  #$04
 8D59: D6 65       LDB   $65	* velocity
@@ -1578,13 +1584,13 @@ ackkybd:
 8D5C: 58          ASLB  
 8D5D: 3D          MUL   
 8D5E: 4C          INCA  
-8D5F: AB 04       ADDA  $0004,X	* mix velocity sensitivity
+8D5F: AB 04       ADDA  $0004,X	* osc mix
 8D61: 24 02       BCC   $8D65	* too high
 8D63: 86 FF       LDA   #$FF	* clamp
 8D65: A7 A8 36    STA   $36,Y	* mix?
 8D68: 4F          CLRA  
 8D69: 5F          CLRB  
-8D6A: ED A8 29    STD   $29,Y
+8D6A: ED A8 29    STD   $29,Y	
 8D6D: ED A8 1A    STD   $1A,Y
 8D70: A7 A8 26    STA   $26,Y
 8D73: CC 8A 95    LDD   #$8A95
@@ -1678,38 +1684,37 @@ ackkybd:
 8E02: EC C6       LDD   A,U	* base address of table
 8E04: 39          RTS   
 
-* unknown
-* Y might have address of voice parameter block
-* in which case X contains DCA envelope
-8E05: AE 2A       LDX   $000A,Y	* DCA params
+* calculate release velocity
+* Y points to voice parameter table
+8E05: AE 2A       LDX   $000A,Y	* X holds program-for-voice addr
 8E07: CE F7 FD    LDU   #$F7FD	* points to envelope lookup table
 8E0A: CC 8A C7    LDD   #$8AC7	* envelope release task
 8E0D: ED A8 1C    STD   $1C,Y	* store in update routine
 8E10: CC 8B 49    LDD   #$8B49	* points to some routine
 8E13: ED A8 2B    STD   $2B,Y	* store in end routine?
-8E16: E6 29       LDB   $0009,Y	
-8E18: A6 88 15    LDA   $15,X
+8E16: E6 29       LDB   $0009,Y	* release velocity for voice?
+8E18: A6 88 15    LDA   $15,X	* VCF Release Velocity
 8E1B: 3D          MUL   
 8E1C: 40          NEGA  
-8E1D: AB 88 10    ADDA  $10,X	* initially 0?
+8E1D: AB 88 10    ADDA  $10,X	* VCF releasee
 8E20: 8D D4       BSR   $8DF6	* envelope lookup
-8E22: ED A8 24    STD   $24,Y
-8E25: E6 29       LDB   $0009,Y
-8E27: A6 88 1F    LDA   $1F,X
-8E2A: 3D          MUL   
+8E22: ED A8 24    STD   $24,Y	* VCF release word
+8E25: E6 29       LDB   $0009,Y	* release velocity for voice?
+8E27: A6 88 1F    LDA   $1F,X	* DCA release velocity
+8E2A: 3D          MUL
 8E2B: 40          NEGA  
-8E2C: AB 88 1A    ADDA  $1A,X
-8E2F: E6 A8 29    LDB   $29,Y
-8E32: 54          LSRB  
-8E33: E7 A8 2D    STB   $2D,Y
+8E2C: AB 88 1A    ADDA  $1A,X	* DCA release
+8E2F: E6 A8 29    LDB   $29,Y	* some voice variable
+8E32: 54          LSRB  	* divide by 2
+8E33: E7 A8 2D    STB   $2D,Y	* some voice variable
 8E36: 54          LSRB  
 8E37: 54          LSRB  
-8E38: 54          LSRB  
-8E39: C0 08       SUBB  #$08
-8E3B: 34 04       PSHS  B
-8E3D: A0 E0       SUBA  ,S+
-8E3F: 8D B5       BSR   $8DF6
-8E41: ED A8 33    STD   $33,Y
+8E38: 54          LSRB  	* divide by 8
+8E39: C0 08       SUBB  #$08	* subtract 8
+8E3B: 34 04       PSHS  B	* save B
+8E3D: A0 E0       SUBA  ,S+	* subtract top of stack from a and drop
+8E3F: 8D B5       BSR   $8DF6	* table lookup
+8E41: ED A8 33    STD   $33,Y	* DCA release word
 8E44: 39          RTS   
 
 8E45: E6 26       LDB   $0006,Y
@@ -5994,6 +5999,7 @@ AE41: 39          RTS
 * I suspect they are dead code because some of the jumps make no sense
 * they may have been prototype versions of ROM routines
 * they're certainly very similar.
+* I think these get clobbered by a stack?
 * Per Rainer Buchty's suggestion this may be better read from $AE44
 *AE42: AC FF 16 00 CPX   [$1600,S]
 *AE46: 2B 7C       BMI   $AEC4	* jumps into the middle of a loop without setup
@@ -6354,6 +6360,9 @@ B8F4: FF FF FF FF FF FF FF FF FF FF FF 00
 
 * list at $b987 = ae b9 90 0f af 31 90 1f af d1 90 e2 b0 51 ac 4f
 * last value points to upper byte of stack
+* initialises a bunch of stacks?
+* ends up with the address two bytes below pointed to by the first word containing the second
+* and the address stored in a table starting at $B2BE
 
 B900: CC 80 38    LDD   #$8038	// once again set up dp
 B903: 1F 8B       TFR   A,DP

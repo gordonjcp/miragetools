@@ -307,14 +307,15 @@ $07
 $08 = velocity?
 $09 = 
 $0a = program for voice
-$0b
-$0c
+$0c = ?
 $0e = 
 $10 = tuning word
 $12
 $13 =
+$14 = 
 $15 = detune?
 $16 = 
+$17 = 
 $18 = VCF offset
 $1a = zero, set by stuff that fiddles with velocity?
 $1c = next task
@@ -333,8 +334,23 @@ $29
 $2b = next task? initially set to enable ints and return
 $2d
 $2f
-$33
+$33 = DCA release?
+$3d
+$3f
+$4d
 
+$1c tasks:
+$8a95 - calculate envelope attack phase
+$8aae - calculate envelope decay phase
+$8ac7 - calculate envelope release phase
+$8ad7 - update filter for voice
+
+$2b tasks
+$8aef - unknown
+$8b0f - unknown
+$8b49 - unknown
+$8b81 - unknown
+$8bbe - unmask ints and return
 "9d38" params - all of these are "double" values
 36 cutoff
 70 relative filter
