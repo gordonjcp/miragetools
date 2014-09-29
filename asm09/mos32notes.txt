@@ -49,12 +49,13 @@ $8034 - 16-bit value fiddled with in ISR
 $8036 - incremented every second interrupt as $8030 is decremented, seq?
 $8037 - if non-zero, counted down in ISR handler
 $8038 - start of 32 bytes zeroed out
-$803b - stores X while setting up voice table
 $8039 - initially holds address of voice parameter table
+$803b - stores X while setting up voice table
 $803d - stores 16-bit value, pointed by U and set in $86f6
 $8040
 $8041
 $8045
+$8047
 $804d
 $804e - task list counter thing
 $804f - 7-byte table of values
@@ -300,7 +301,7 @@ table starts at $b052
 from $ae17 "zerofilter"
 $00 = next entry in table
 $02 = this entry?
-$04
+$04 = wavesample for voice?
 $05
 $06 = note
 $07

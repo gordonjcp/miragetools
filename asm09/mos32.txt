@@ -180,11 +180,11 @@ osvec:
 82EF: F7 81 06    STB   $8106
 82F2: 7E 84 23    JMP   $8423
 
-82F5: 9E 47       LDX   $47
-82F7: 27 21       BEQ   $831A
-82F9: D1 7D       CMPB  $7D
-82FB: 24 1D       BCC   $831A
-82FD: A7 05       STA   $0005,X
+82F5: 9E 47       LDX   $47	* some variable
+82F7: 27 21       BEQ   $831A	* 0? skip
+82F9: D1 7D       CMPB  $7D	* some variable
+82FB: 24 1D       BCC   $831A	* >=, skip
+82FD: A7 05       STA   $0005,X	
 82FF: E7 06       STB   $0006,X
 8301: 6F E2       CLR   ,-S
 8303: 8D 47       BSR   $834C
@@ -198,9 +198,11 @@ osvec:
 8314: F7 81 05    STB   $8105
 8317: 7E 84 23    JMP   $8423
 
-831A: 9E 3D       LDX   $3D
-831C: 27 2D       BEQ   $834B
-831E: 10 A3 05    CMPD  $0005,X
+* unknown, probably part of previous routine
+* X = ? probably voice parameter table
+831A: 9E 3D       LDX   $3D	* some variable
+831C: 27 2D       BEQ   $834B	* 0? rts
+831E: 10 A3 05    CMPD  $0005,X	
 8321: 26 24       BNE   $8347
 8323: D6 4D       LDB   $4D
 8325: E7 09       STB   $0009,X
@@ -225,36 +227,39 @@ osvec:
 834B: 39          RTS   
 
 * unknown
-834C: CE 80 4F    LDU   #$804F
+* clears A and B
+* loops around some table, eight times
+* if it runs out (b=64) then drop value from stack and return
+834C: CE 80 4F    LDU   #$804F	* some table?
 834F: 4F          CLRA  
 8350: 5F          CLRB  
-8351: A6 C0       LDA   ,U+
-8353: 26 0E       BNE   $8363
-8355: CB 08       ADDB  #$08
-8357: C1 40       CMPB  #$40
-8359: 26 F6       BNE   $8351
-835B: EE E4       LDU   ,S
-835D: 32 63       LEAS  $0003,S
-835F: 1C FE       ANDCC #$FE
-8361: 6E C4       JMP   ,U
+8351: A6 C0       LDA   ,U+	* get value
+8353: 26 0E       BNE   $8363	* 0, skip
+8355: CB 08       ADDB  #$08	* increment B by 8
+8357: C1 40       CMPB  #$40	* done it 8 times?
+8359: 26 F6       BNE   $8351	* no, loop
+835B: EE E4       LDU   ,S	* U contains return address
+835D: 32 63       LEAS  $0003,S	* unstack three bytes (return addr and ?)
+835F: 1C FE       ANDCC #$FE	* carry clear
+8361: 6E C4       JMP   ,U	* return to calling routine
 
-8363: 34 02       PSHS  A
-8365: 4F          CLRA  
-8366: 67 E4       ASR   ,S
-8368: 24 0C       BCC   $8376
-836A: E1 63       CMPB  $0003,S
-836C: 25 08       BCS   $8376
-836E: EE 61       LDU   $0001,S
-8370: 32 64       LEAS  $0004,S
-8372: 1A 01       ORCC  #$01
-8374: 6E C4       JMP   ,U
+8363: 34 02       PSHS  A	* save A
+8365: 4F          CLRA  	* clear A
+8366: 67 E4       ASR   ,S	* divide saved A by 2
+8368: 24 0C       BCC   $8376	* bottom bit 0?
+836A: E1 63       CMPB  $0003,S * compare with value on stack
+836C: 25 08       BCS   $8376	* less, skip
+836E: EE 61       LDU   $0001,S * return address
+8370: 32 64       LEAS  $0004,S	* unstack four bytes
+8372: 1A 01       ORCC  #$01	* carry set
+8374: 6E C4       JMP   ,U	* return
 
 8376: 5C          INCB  
 8377: 4C          INCA  
-8378: 81 08       CMPA  #$08
+8378: 81 08       CMPA  #$08	* a!=8, loop back
 837A: 26 EA       BNE   $8366
-837C: 32 61       LEAS  $0001,S
-837E: 20 D7       BRA   $8357
+837C: 32 61       LEAS  $0001,S	* unstack saved A
+837E: 20 D7       BRA   $8357	* loop back to B=64?
 
 8380: E6 24       LDB   $0004,Y
 8382: C0 24       SUBB  #$24
@@ -322,14 +327,14 @@ osvec:
 83FC: 7E 84 43    JMP   $8443
 
 83FF: 9E 41       LDX   $41
-8401: 27 0A       BEQ   $840D
+8401: 27 0A       BEQ   $840D	* 0? skip
 8403: 8D 2D       BSR   $8432	* call
-8405: CE 80 41    LDU   #$8041
+8405: CE 80 41    LDU   #$8041	* used in routine that calls release envs
 8408: BD 86 F6    JSR   $86F6
 840B: 20 36       BRA   $8443
 
 840D: 9E 3D       LDX   $3D
-840F: 27 FE       BEQ   $840F
+840F: 27 FE       BEQ   $840F	* 0? hang!
 8411: 8D 1F       BSR   $8432
 8413: CE 80 3D    LDU   #$803D
 8416: BD 86 F6    JSR   $86F6
@@ -578,7 +583,7 @@ osvec:
 
 85FC: 85 40       BITA  #$40
 85FE: 27 08       BEQ   $8608
-8600: CE 80 41    LDU   #$8041
+8600: CE 80 41    LDU   #$8041	* used in routine that calls release envs
 8603: BD 86 F6    JSR   $86F6
 8606: 20 01       BRA   $8609
 
@@ -652,19 +657,19 @@ osvec:
 867B: A6 25       LDA   $0005,Y
 867D: BD 87 38    JSR   $8738
 8680: 10 9E 41    LDY   $41	* where is this set, and to what?
-8683: 27 1A       BEQ   $869F
+8683: 27 1A       BEQ   $869F	* 0, rts
 8685: E6 27       LDB   $0007,Y
 8687: C5 01       BITB  #$01
-8689: 27 0F       BEQ   $869A
+8689: 27 0F       BEQ   $869A	* 0, skip to next entry
 868B: A1 25       CMPA  $0005,Y
-868D: 26 0B       BNE   $869A
+868D: 26 0B       BNE   $869A	* not the same, skip to next entry
 868F: 34 02       PSHS  A
 8691: BD 8E 05    JSR   $8E05	* calculate release times
 8694: 86 40       LDA   #$40
-8696: A7 27       STA   $0007,Y
+8696: A7 27       STA   $0007,Y * set to $40, why?
 8698: 35 02       PULS  A
 869A: 10 AE A4    LDY   ,Y	* get next entry in voice table
-869D: 20 E4       BRA   $8683
+869D: 20 E4       BRA   $8683	* loop around
 
 869F: 39          RTS   
 
