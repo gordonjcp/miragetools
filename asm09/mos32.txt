@@ -264,7 +264,9 @@ osvec:
 838A: 44          LSRA  
 838B: 44          LSRA  
 838C: C4 07       ANDB  #$07
-838E: 8E 80 F4    LDX   #$80F4
+838E: 8E 80 F4    LDX   #$80F4	* table of values
+* table at $80F4 runs
+* 01 02 04 08 10 20 40 80
 8391: E6 85       LDB   B,X
 8393: EA C6       ORB   A,U
 8395: E7 C6       STB   A,U
@@ -312,16 +314,16 @@ osvec:
 83EB: AE 84       LDX   ,X
 83ED: 20 F3       BRA   $83E2
 
-83EF: 9E 39       LDX   $39
-83F1: 27 0C       BEQ   $83FF
-83F3: BD 84 32    JSR   $8432
+83EF: 9E 39       LDX   $39	* voice parameter table?
+83F1: 27 0C       BEQ   $83FF	* 0? skip
+83F3: BD 84 32    JSR   $8432	* call
 83F6: CE 80 39    LDU   #$8039
 83F9: BD 86 F6    JSR   $86F6
 83FC: 7E 84 43    JMP   $8443
 
 83FF: 9E 41       LDX   $41
 8401: 27 0A       BEQ   $840D
-8403: 8D 2D       BSR   $8432
+8403: 8D 2D       BSR   $8432	* call
 8405: CE 80 41    LDU   #$8041
 8408: BD 86 F6    JSR   $86F6
 840B: 20 36       BRA   $8443
@@ -544,6 +546,7 @@ osvec:
 
 85C7: 20 02       BRA   $85CB
 
+* unknown, $87e7 sets U to this
 85C9: AE 24       LDX   $0004,Y
 85CB: A6 26       LDA   $0006,Y
 85CD: BD 87 38    JSR   $8738
@@ -642,6 +645,7 @@ osvec:
 8677: B7 81 05    STA   $8105
 867A: 39          RTS   
 
+* unknown, $87dd sets U to this
 867B: A6 25       LDA   $0005,Y
 867D: BD 87 38    JSR   $8738
 8680: 10 9E 41    LDY   $41
@@ -661,7 +665,8 @@ osvec:
 
 869F: 39          RTS   
 
-* unknown
+* unknown, $87e2 sets U to this
+* used to stop all voices?
 86A0: AE 24       LDX   $0004,Y
 86A2: 34 30       PSHS  Y,X
 86A4: 10 9E 3D    LDY   $3D
@@ -704,8 +709,8 @@ osvec:
 86F6: 34 40       PSHS  U	* save U
 86F8: 33 42       LEAU  $0002,U	* add 2
 86FA: 34 40       PSHS  U	* save U
-86FC: EE 02       LDU   $0002,X	* load u with X+2
-86FE: 27 10       BEQ   $8710	* jump
+86FC: EE 02       LDU   $0002,X	* load u with (X+2)
+86FE: 27 10       BEQ   $8710	* 0? skip
 8700: 10 AE 84    LDY   ,X	* get value at X in Y
 8703: 10 AF C4    STY   ,U	* save Y in address at U
 8706: 26 04       BNE   $870C	* skip if zero
@@ -733,13 +738,14 @@ osvec:
 8729: 20 02       BRA   $872D	* skip
 
 872B: AF A4       STX   ,Y	* (Y)=X
-872D: AF C4       STX   ,U	* (U)=X (aren't these the same?)
+872D: AF C4       STX   ,U	* (U)=X 
 872F: 10 AF 02    STY   $0002,X	* (X+2) = Y
 8732: CE 00 00    LDU   #$0000	* (X)=0
 8735: EF 84       STU   ,X
 8737: 39          RTS   
 
 * not sure, called from 9 places
+* something to do with the keyboard?
 8738: 1A 50       ORCC  #$50	* disable interrupts
 873A: 34 02       PSHS  A	* save A
 873C: B6 82 07    LDA   $8207	* some variable
@@ -755,7 +761,7 @@ osvec:
 8751: 96 64       LDA   $64	* some variable
 8753: 27 05       BEQ   $875A	* zero? finish
 8755: 0F 64       CLR   $64	* zero it
-8757: BD 89 76    JSR   $8976	* call
+8757: BD 89 76    JSR   $8976	* ackkybd
 875A: 1C AF       ANDCC #$AF	* finish, enable ints
 875C: 35 82       PULS  A,PC ;(PUL? PC=RTS)
 
@@ -925,9 +931,9 @@ startup875e2:
 8870: 39          RTS   	and jump to the first address
 
 docinterrupt:
-8871: 4F          CLRA  
-8872: 1F 02       TFR   D,Y
-8874: EE A9 88 BB LDU   $88BB,Y
+8871: 4F          CLRA  	* clear A
+8872: 1F 02       TFR   D,Y	* Y = $00, ($ECE0)
+8874: EE A9 88 BB LDU   $88BB,Y	* pointer 
 8878: 57          ASRB  
 8879: 10 8E EC 5F LDY   #$EC5F		
 887D: 31 A5       LEAY  B,Y
@@ -996,6 +1002,8 @@ docinterrupt:
 88F5: EE A9 88 BC LDU   $88BC,Y
 88F9: 7E 87 EC    JMP   $87EC
 
+* 64-byte table
+* pairs of values incrementing by 66
 88FC: B0 89 B0 89 
 
 8900: B0 94 B0 94 B0 D6 B0 D6 B0 E1 B0 E1 B1 23 B1 23 
@@ -1019,17 +1027,17 @@ irqentry1:
 irqentry2:
 8951: 85 02       BITA  #$02		ca1 interrupt?
 8953: 27 0D       BEQ   irqentry3	no, next
-8955: B6 E2 01    LDA   $E201		
-8958: 96 25       LDA   $25
-895A: 27 05       BEQ   $8961
-895C: 0C E9       INC   $E9
+8955: B6 E2 01    LDA   $E201	* get VIA IORA
+8958: 96 25       LDA   $25	* ext seq clock jack
+895A: 27 05       BEQ   $8961	* 0? rts
+895C: 0C E9       INC   $E9	* increment clock
 895E: BD A1 16    JSR   $A116	* send MIDI clock
 8961: 3B          RTI
 
 irqentry3:
-8962: F6 EC E0    LDB   $ECE0		DOC interrupt?
-8965: 2B 03       BMI   irqentryend	nope, finish up
-8967: 7E 88 71    JMP   $8871		yes, deal with it
+8962: F6 EC E0    LDB   $ECE0		* which osc triggered the int?
+8965: 2B 03       BMI   irqentryend	* none, finish up
+8967: 7E 88 71    JMP   $8871		* docinterrupt
 irqentryend:
 896A: 3B          RTI   
 
@@ -1056,6 +1064,7 @@ ackkybd:
 8987: 35 81       PULS  CC,PC 		sneaky trick to return
 
 * handle kybd shift register?
+* what is X set to, surely if it was non-zero the jump would fail
 8989: F6 E2 0A    LDB   $E20A	* fetch shift register
 898C: 1C BF       ANDCC #$BF	* enable interrupts
 898E: AD 9F 80 61 JSR   [$8061,X]	* jump to stored voice task
@@ -1073,29 +1082,29 @@ ackkybd:
 * parse MIDI?
 89A1: C1 90       CMPB  #$90	* note on?
 89A3: 26 07       BNE   $89AC	* no, next
-89A5: CC 8A 25    LDD   #$8A25	* 
+89A5: CC 8A 25    LDD   #$8A25	* set up note on?
 89A8: DD 61       STD   $61	* voice task?
 89AA: 20 3F       BRA   $89EB	* bra rts
 
 89AC: C1 80       CMPB  #$80	* note off?
 89AE: 26 07       BNE   $89B7	* no, next
-89B0: CC 89 EC    LDD   #$89EC	
+89B0: CC 89 EC    LDD   #$89EC	* set up note off?	
 89B3: DD 61       STD   $61	* voice task?
 89B5: 20 34       BRA   $89EB	* bra rts
 
 89B7: C1 B8       CMPB  #$B8	* not sure 
 89B9: 26 19       BNE   $89D4	* no, skip
-89BB: 96 28       LDA   $28	* some variable
+89BB: 96 28       LDA   $28	* pedal?
 89BD: 26 0E       BNE   $89CD	* non-zero
 89BF: 86 01       LDA   #$01	
-89C1: 97 6B       STA   $6B	* some variable
+89C1: 97 6B       STA   $6B	* footswitch flag
 89C3: C6 7F       LDB   #$7F
 89C5: BD A0 DA    JSR   $A0DA	* send MIDI sustain off
 89C8: BD AD B6    JSR   $ADB6	* call
 89CB: 20 05       BRA   $89D2	* bra rts
 
 89CD: 86 1B       LDA   #$1B	
-89CF: BD A4 04    JSR   $A404	* place byte in ringbuffer
+89CF: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 89D2: 20 17       BRA   $89EB	* bra rts
 
 89D4: C1 B9       CMPB  #$B9	
@@ -1110,7 +1119,7 @@ ackkybd:
 89E8: BD 87 DD    JSR   $87DD	* call
 89EB: 39          RTS   
 
-* note off?
+* set up note off?
 89EC: CB 24       ADDB  #$24
 89EE: D7 63       STB   $63
 89F0: CC 89 F6    LDD   #$89F6	* next task
@@ -1118,6 +1127,7 @@ ackkybd:
 89F5: 39          RTS   
 
 * look up log curve
+* note off velocity?
 89F6: 8E FB FE    LDX   #$FBFE	* log-ish scale in ROM
 89F9: E6 85       LDB   B,X
 89FB: 96 14       LDA   $14	* velocity sensitivity
@@ -1131,8 +1141,8 @@ ackkybd:
 8A0B: 96 63       LDA   $63	* note? velocity?
 8A0D: CE 89 A1    LDU   #$89A1	* note parser
 8A10: DF 61       STU   $61	* save it
-8A12: BD A0 C5    JSR   $A0C5	* call
-8A15: BD AD BC    JSR   $ADBC	* call
+8A12: BD A0 C5    JSR   $A0C5	* send MIDI note off
+8A15: BD AD BC    JSR   $ADBC	* put note in sequencer
 8A18: 96 63       LDA   $63
 8A1A: 8E 80 68    LDX   #$8068	* points to where modwheel is stored
 8A1D: 0D 1C       TST   $1C
@@ -1141,7 +1151,7 @@ ackkybd:
 
 8A24: 39          RTS   
 
-* note on?
+* set up note on?
 8A25: CB 24       ADDB  #$24
 8A27: D7 63       STB   $63
 8A29: CC 8A 2F    LDD   #$8A2F
@@ -1149,6 +1159,7 @@ ackkybd:
 8A2E: 39          RTS   
 
 * unknown, velocity?
+* note on velocity?
 8A2F: 8E FB F8    LDX   #$FBF8	* table of values in ROM
 8A32: E6 85       LDB   B,X	* get value
 8A34: 96 14       LDA   $14	* velocity sensitivity
@@ -1162,7 +1173,7 @@ ackkybd:
 8A44: 96 63       LDA   $63	* computed note
 8A46: CE 89 A1    LDU   #$89A1	* note parser
 8A49: DF 61       STU   $61	* voice task? 
-8A4B: BD A0 B9    JSR   $A0B9	* call
+8A4B: BD A0 B9    JSR   $A0B9	* send MIDI note on
 8A4E: BD AD BA    JSR   $ADBA	* call
 8A51: 96 63       LDA   $63	* computed note
 8A53: 8E 80 68    LDX   #$8068	* points to where modwheel is stored
@@ -1237,16 +1248,18 @@ ackkybd:
 8AD4: ED 88 1A    STD   $1A,X	* something in voice table (cleared)
 
 * update voice filter task
+* what does A contain?
 8AD7: 1C AF       ANDCC #$AF		; unmask IRQ and FIRQ
 8AD9: A1 88 27    CMPA  $27,X		; resonance (max is 40?)
-8ADC: 23 03       BLS   $8AE1		; less than 39
-8ADE: A6 88 27    LDA   $27,X		; clamp
+8ADC: 23 03       BLS   $8AE1		; less than stored value
+8ADE: A6 88 27    LDA   $27,X		; set A to stored resonance
 8AE1: E6 88 28    LDB   $28,X		; cutoff
 8AE4: BD F5 E7    JSR   setfilterdac	; set DAC
 8AE7: 1A 50       ORCC  #$50		; mask interrupts
 8AE9: EC 88 29    LDD   $29,X		; address of next task?
 8AEC: 6E 98 2B    JMP   [$2B,X]		; go to it and good luck
 
+* task pointer can be set to this
 8AEF: E3 88 2D    ADDD  $2D,X
 8AF2: 25 05       BCS   $8AF9
 8AF4: A1 88 2F    CMPA  $2F,X
@@ -1261,6 +1274,7 @@ ackkybd:
 8B0A: ED 88 29    STD   $29,X
 8B0D: 20 72       BRA   $8B81
 
+* task pointer can be set to this
 8B0F: A3 88 30    SUBD  $30,X
 8B12: 25 05       BCS   $8B19
 8B14: A1 88 32    CMPA  $32,X
@@ -1287,12 +1301,13 @@ ackkybd:
 8B44: ED 88 29    STD   $29,X
 8B47: 20 38       BRA   $8B81
 
+* task pointer can be set to this
 8B49: A3 88 33    SUBD  $33,X
 8B4C: 25 03       BCS   $8B51
 8B4E: 4D          TSTA  
 8B4F: 26 17       BNE   $8B68
-8B51: CC 8B BE    LDD   #$8BBE
-8B54: ED 88 2B    STD   $2B,X
+8B51: CC 8B BE    LDD   #$8BBE	* unmask ints and return
+8B54: ED 88 2B    STD   $2B,X	* task pointer?
 8B57: 5F          CLRB  
 8B58: 4F          CLRA  
 8B59: ED 88 29    STD   $29,X
@@ -1312,11 +1327,12 @@ ackkybd:
 8B79: A7 88 2D    STA   $2D,X
 8B7C: 35 02       PULS  A
 8B7E: ED 88 29    STD   $29,X
+* task pointer can be set to this
 8B81: E6 88 36    LDB   $36,X
 8B84: 26 11       BNE   $8B97
-8B86: D6 1E       LDB   $1E
-8B88: C1 09       CMPB  #$09
-8B8A: 26 05       BNE   $8B91
+8B86: D6 1E       LDB   $1E	* mix mod source
+8B88: C1 09       CMPB  #$09	* poly aftertouch
+8B8A: 26 05       BNE   $8B91	* no
 8B8C: E6 88 18    LDB   $18,X	* could be VCF offset?
 8B8F: 20 03       BRA   $8B94
 
@@ -1346,6 +1362,7 @@ ackkybd:
 8BB7: A7 61       STA   $0001,S
 8BB9: BD F6 DD    JSR   unknown9
 8BBC: 35 40       PULS  U
+* task pointer can be set to this
 8BBE: 1C AF       ANDCC #$AF	; unmask FIRQ and IRQ
 8BC0: 39          RTS   
 
@@ -1379,7 +1396,7 @@ ackkybd:
 * lookup table
 8BF1: 00 15 2B 40 55 6B 80 95 AB C0 D5 EB 
 
-8BFD: 8E 80 68    LDX   #$8068	*  points to where modwheel is stored
+8BFD: 8E 80 68    LDX   #$8068	* points to where modwheel is stored
 8C00: FC 80 11    LDD   $8011	* tuning in B?
 8C03: E3 01       ADDD  $0001,X	* add to tuning
 8C05: ED 05       STD   $0005,X	* save
@@ -1449,7 +1466,7 @@ ackkybd:
 8C84: CC 8A D7    LDD   #$8AD7	* update filter task
 8C87: ED A8 1C    STD   $1C,Y	* voice task pointer
 8C8A: 6F A8 1A    CLR   $1A,Y	* unknown
-8C8D: CC 8B BE    LDD   #$8BBE	* enable interrupts and return
+8C8D: CC 8B BE    LDD   #$8BBE	* unmask ints and return
 8C90: ED A8 2B    STD   $2B,Y	* next task?
 8C93: 6F A8 29    CLR   $29,Y	* unknown
 8C96: 31 A8 4D    LEAY  $4D,Y	* next voice, 77 bytes
@@ -1911,7 +1928,7 @@ ackkybd:
 901F: BD 88 5E    JSR   $885E	* handle some sort of task list?
 9022: 96 30       LDA   $30	* ISR counter, dec every 2nd int?
 9024: 2A F9       BPL   $901F
-9026: 0F 30       CLR   $30
+9026: 0F 30       CLR   $30	* decremented in isr as $36 increments
 9028: BD 90 39    JSR   $9039
 902B: BD 88 5E    JSR   $885E	* handle some sort of task list?
 902E: 96 30       LDA   $30	* ISR counter, dec every 2nd int?
@@ -2011,6 +2028,7 @@ ackkybd:
 90E0: 56          RORB  	* B/2 shifting in carry
 90E1: 39          RTS   
 
+* pointed to by weird list
 90E2: BD 9D 4B    JSR   $9D4B
 90E5: 8D 02       BSR   $90E9	* handle current keystroke
 90E7: 20 F9       BRA   $90E2
@@ -2724,7 +2742,7 @@ ackkybd:
 * start sequencer?
 * sets seq variables
 * then sets the edit parameter to Seq Tempo and fakes a VALUE keypress
-95E1: BD AB 43    JSR   $AB43	* call start sequencer?
+95E1: BD AB 43    JSR   $AB43	* call set up sequencer?
 95E4: 86 57       LDA   #$57	* Param 87, Seq Tempo
 95E6: 97 8B       STA   $8B	* set edit parameter
 95E8: 86 0D       LDA   #$0D	* VALUE
@@ -2733,8 +2751,9 @@ ackkybd:
 95EF: 39          RTS   
 
 * unknown, keystrokes
+* these are maybe sequencer commands from the footswitch etc?
 95F0: 96 AE       LDA   $AE	* current keystroke
-95F2: 81 19       CMPA  #$19	* no idea what $19 is
+95F2: 81 19       CMPA  #$19	* no idea what $19 is, start recording?
 95F4: 26 09       BNE   $95FF	* no, skip
 95F6: BD 92 49    JSR   $9249	* clear a bunch of variables back to zero
 95F9: BD 96 F4    JSR   $96F4	* show "rS"
@@ -2765,14 +2784,14 @@ ackkybd:
 962D: 81 08       CMPA  #$08
 962F: 26 13       BNE   $9644
 9631: BD AB 90    JSR   $AB90	* something to do with sequencer
-9634: 96 27       LDA   $27
-9636: 27 04       BEQ   $963C
+9634: 96 27       LDA   $27	* loop on/off
+9636: 27 04       BEQ   $963C	* 0? skip
 9638: BD 95 E1    JSR   $95E1	* call start sequencer?
 963B: 39          RTS   
 
-963C: 86 0C       LDA   #$0C
-963E: 97 AE       STA   $AE
-9640: BD 91 16    JSR   $9116
+963C: 86 0C       LDA   #$0C	* PARAM
+963E: 97 AE       STA   $AE	* store it in keystroke
+9640: BD 91 16    JSR   $9116	* handle keystroke
 9643: 39          RTS   
 
 9644: BD AB 90    JSR   $AB90	* something to do with sequencer
@@ -2780,23 +2799,23 @@ ackkybd:
 
 9649: 16 00 A7    LBRA  $96F3	* bra rts
 
-964C: 81 1C       CMPA  #$1C
-964E: 10 26 00 10 LBNE  $9662
-9652: 96 E7       LDA   $E7
+964C: 81 1C       CMPA  #$1C	*
+964E: 10 26 00 10 LBNE  $9662	* no, skip
+9652: 96 E7       LDA   $E7	* sequencer flag?
 9654: 81 00       CMPA  #$00
-9656: 27 04       BEQ   $965C
+9656: 27 04       BEQ   $965C	* 0, start seq?
 9658: 81 02       CMPA  #$02
-965A: 26 03       BNE   $965F
+965A: 26 03       BNE   $965F	* 2, rts
 965C: BD 95 E1    JSR   $95E1	* call start sequencer?
 965F: 16 00 91    LBRA  $96F3	* bra rts
 
 9662: 81 1D       CMPA  #$1D
-9664: 10 26 00 0E LBNE  $9676
-9668: 96 E7       LDA   $E7
+9664: 10 26 00 0E LBNE  $9676	* no, skip
+9668: 96 E7       LDA   $E7	* sequencer flags
 966A: 81 00       CMPA  #$00
-966C: 26 06       BNE   $9674
-966E: BD AB 45    JSR   $AB45
-9671: BD 95 E4    JSR   $95E4
+966C: 26 06       BNE   $9674	* nonzero, rts
+966E: BD AB 45    JSR   $AB45	* call
+9671: BD 95 E4    JSR   $95E4	* call
 9674: 20 7D       BRA   $96F3	* bra rts
 
 9676: 81 1E       CMPA  #$1E
@@ -2875,7 +2894,7 @@ ackkybd:
 
 * show "rS"
 * set timer?
-96F4: CC B6 0A    LDD   #$B60A	* "rS"
+96F4: CC B6 0A    LDD   #$B60A	* "Sr" ?
 96F7: DD B3       STD   $B3	* LED bit pattern
 96F9: 86 80       LDA   #$80
 96FB: 97 83       STA   $83	* some variable
@@ -3886,13 +3905,13 @@ ackkybd:
 9E35: 86 01       LDA   #$01
 9E37: 97 37       STA   $37	* if non-zero, counted down by ISR
 9E39: BD 88 5E    JSR   $885E	* task list?
-9E3C: BD A4 1A    JSR   $A41A	* get byte from ring buffer
+9E3C: BD A4 1A    JSR   $A41A	* get byte from keystroke ring buffer
 9E3F: 24 15       BCC   $9E56	* no byte available, skip
-9E41: 97 AE       STA   $AE	* save current keypress
+9E41: 97 AE       STA   $AE	* save current keystroke
 9E43: 86 01       LDA   #$01
-9E45: B7 82 08    STA   $8208
+9E45: B7 82 08    STA   $8208	* keystroke flag?
 9E48: BD 90 E9    JSR   $90E9	* handle current keystroke
-9E4B: 7F 82 08    CLR   $8208
+9E4B: 7F 82 08    CLR   $8208	* keystroke flag
 9E4E: 86 0F       LDA   #$0F
 9E50: 97 B1       STA   $B1
 9E52: 86 F0       LDA   #$F0
@@ -4046,7 +4065,7 @@ ackkybd:
 9F5E: 20 FE       BRA   $9F5E
 
 * seems to be called before sampling?
-* resets hardware
+* reset hardware
 9F60: 1A 50       ORCC  #$50	* mask interrupts
 9F62: BD AB 90    JSR   $AB90	* thing that gets called before sampling
 9F65: BD F1 BB    JSR   qchipsetup
@@ -4145,11 +4164,11 @@ A08F: CC A1 BC    LDD   #$A1BC	* no idea
 A092: DD C6       STD   $C6	* $80c6
 
 ; called from FIRQ ISR
-A094: CC A2 4A    LDD   #$A24A
+A094: CC A2 4A    LDD   #$A24A	* points at RTS
 A097: DD C0       STD   $C0
-A099: 7F 82 35    CLR   $8235	; clears variables for pointers
-A09C: 7F 82 36    CLR   $8236
-A09F: 7F 82 37    CLR   $8237
+A099: 7F 82 35    CLR   $8235	* RX buffer save pointer
+A09C: 7F 82 36    CLR   $8236	* RX buffer read pointer
+A09F: 7F 82 37    CLR   $8237	* some variable used in FIRQ ISR
 A0A2: 39          RTS   
 
 * unknown, do something to ring buffer?
@@ -4278,9 +4297,9 @@ A153: B6 E1 00    LDA   $E100		; status register
 A156: 2A 51       BPL   $A1A9		; bit 7 low if no interrupt
 A158: 85 30       BITA  #$30		; framing error or overrun?
 A15A: 27 1D       BEQ   $A179		; no, branch
-A15C: B6 82 37    LDA   $8237		
-A15F: 27 02       BEQ   $A163
-A161: 97 CE       STA   $CE
+A15C: B6 82 37    LDA   $8237	* some variable	used in FIRQ ISR
+A15F: 27 02       BEQ   $A163	* 0? don't store?
+A161: 97 CE       STA   $CE	* ACIA status byte?
 ; jumped to from routine that puts byte in buffer
 A163: BD A0 94    JSR   $A094		; clears buffer pointers?
 A166: B6 E1 01    LDA   $E101		; get byte
@@ -4295,21 +4314,21 @@ A179: 85 01       BITA  #$01		; receive data?
 A17B: 27 28       BEQ   $A1A5		; no, branch
 A17D: 8D 5C       BSR   $A1DB		; get byte into buffer
 A17F: 1A 40       ORCC  #$40		; mask fir
-A181: B6 82 36    LDA   $8236		; some variable
-A184: B1 82 35    CMPA  $8235		; pointer where incoming bytes go
+A181: B6 82 36    LDA   $8236		* RX buffer read pointer
+A184: B1 82 35    CMPA  $8235		* RX buffer save pointer
 A187: 27 0F       BEQ   $A198		; same? empty?
 A189: 8E 82 38    LDX   #$8238		; start of buffer
 A18C: E6 86       LDB   A,X		; get byte at pointer
 A18E: 4C          INCA  		; bump pointer
 A18F: 84 3F       ANDA  #$3F		; wrap
-A191: B7 82 36    STA   $8236		; save in some variable
+A191: B7 82 36    STA   $8236		; save in RX buffer read pointer
 A194: 8D 6F       BSR   $A205		
 A196: 20 E7       BRA   $A17F		; loop
 
-A198: 7F 82 37    CLR   $8237		
-A19B: 96 CE       LDA   $CE
+A198: 7F 82 37    CLR   $8237	* some variable used in FIRQ ISR		
+A19B: 96 CE       LDA   $CE	* ACIA status byte?
 A19D: 27 04       BEQ   $A1A3
-A19F: 0F CE       CLR   $CE
+A19F: 0F CE       CLR   $CE	* ACIA status byte?
 A1A1: 20 C0       BRA   $A163
 
 A1A3: 20 04       BRA   $A1A9		; jump to end
@@ -4352,7 +4371,7 @@ A1DA: 39          RTS
 
 ; put byte in buffer
 A1DB: F6 E1 01    LDB   $E101	; get byte in B
-A1DE: B6 82 37    LDA   $8237	; get some variable
+A1DE: B6 82 37    LDA   $8237	* some variable used in FIRQ ISR
 A1E1: 27 1F       BEQ   $A202	; zero?
 A1E3: B6 82 35    LDA   $8235	; get buffer pointer
 A1E6: 8E 82 38    LDX   #$8238	; address of buffer
@@ -4369,141 +4388,155 @@ A1FB: 32 62       LEAS  $0002,S
 A1FD: 35 76       PULS  A,B,X,Y,U
 A1FF: 3B          RTI   
 
+* handle incoming MIDI without incrementing $8237
 A200: 20 03       BRA   $A205
 
-A202: 7C 82 37    INC   $8237
+* handle incoming MIDI
+A202: 7C 82 37    INC   $8237	* some variable used in FIRQ ISR
 A205: 96 22       LDA   $22	* MIDI Through setting
-A207: 27 03       BEQ   $A20C
-A209: BD A1 3D    JSR   $A13D
+A207: 27 03       BEQ   $A20C	* off?
+A209: BD A1 3D    JSR   $A13D	* send byte
 A20C: 1C BF       ANDCC #$BF
 A20E: 5D          TSTB  
-A20F: 2B 04       BMI   $A215
-A211: 6E 9F 80 C0 JMP   [$80C0,X]
+A20F: 2B 04       BMI   $A215	* was B a status byte?
+A211: 6E 9F 80 C0 JMP   [$80C0,X]	* parse
 
-A215: D7 C5       STB   $C5
-A217: C4 70       ANDB  #$70
-A219: C1 70       CMPB  #$70
-A21B: 27 20       BEQ   $A23D
-A21D: D6 C5       LDB   $C5
-A21F: C4 0F       ANDB  #$0F
-A221: D7 C4       STB   $C4
-A223: 96 20       LDA   $20
-A225: 26 07       BNE   $A22E
-A227: D1 21       CMPB  $21
-A229: 27 03       BEQ   $A22E
-A22B: 7E A2 47    JMP   $A247
+A215: D7 C5       STB   $C5	* save status byte
+A217: C4 70       ANDB  #$70	* mask off everything except actual value
+A219: C1 70       CMPB  #$70	* $70 would match $f0-$ff, sysex/common
+A21B: 27 20       BEQ   $A23D	* sysex or syscommon byte
+A21D: D6 C5       LDB   $C5	* get status 
+A21F: C4 0F       ANDB  #$0F	* mask channel
+A221: D7 C4       STB   $C4	* save channel
+A223: 96 20       LDA   $20	* omni?
+A225: 26 07       BNE   $A22E	* yes
+A227: D1 21       CMPB  $21	* omni off but matches channel?
+A229: 27 03       BEQ   $A22E	* yes
+A22B: 7E A2 47    JMP   $A247	* no, end
 
-A22E: D6 C5       LDB   $C5
-A230: C4 70       ANDB  #$70
-A232: 57          ASRB  
-A233: 57          ASRB  
-A234: 57          ASRB  
-A235: 8E A3 D4    LDX   #$A3D4
-A238: EC 85       LDD   B,X
-A23A: DD C0       STD   $C0
+A22E: D6 C5       LDB   $C5	* get channel mode MIDI status
+A230: C4 70       ANDB  #$70	* get "type"
+A232: 57          ASRB
+A233: 57          ASRB 
+A234: 57          ASRB 		* divide by 8 giving multiple of 2
+A235: 8E A3 D4    LDX   #$A3D4	* pointer to parse routines
+* table runs
+* a24b, a268, a36b, a2a3, a395, a34a, a2f8, a24a
+* last value jumps to rts and is probably never called
+A238: EC 85       LDD   B,X	* get the offset
+A23A: DD C0       STD   $C0	* save in MIDI task variable
 A23C: 39          RTS   
 
-A23D: D6 C5       LDB   $C5
-A23F: C4 0F       ANDB  #$0F
-A241: 8E A3 E4    LDX   #$A3E4
-A244: 58          ASLB  
-A245: 6E 95       JMP   [B,X]
+A23D: D6 C5       LDB   $C5	* get sysex/syscommon MIDI status
+A23F: C4 0F       ANDB  #$0F	* get byte
+A241: 8E A3 E4    LDX   #$A3E4	* pointer to routines
+* table runs
+* a247, a247, a247, a247, a247, a247, a247, a247
+* a3b0, a247, a3be, a3c6, a3c2, a247, a3d3, a3d3
+A244: 58          ASLB  	* multiply by 2
+A245: 6E 95       JMP   [B,X]	* jump to routine
 
+* "nop"
+* used for sysex, quarterframe, spp, select, tune, end of sysex and two "undefined" messages
 A247: BD A1 AC    JSR   $A1AC
 A24A: 39          RTS   
 
-A24B: 8D 43       BSR   $A290
-A24D: BD A1 AC    JSR   $A1AC
-A250: CE A2 4B    LDU   #$A24B
-A253: DF C0       STU   $C0
-A255: C1 00       CMPB  #$00
-A257: 26 02       BNE   $A25B
-A259: C6 40       LDB   #$40
-A25B: 96 C4       LDA   $C4
-A25D: BD AD BC    JSR   $ADBC
-A260: 96 C4       LDA   $C4
-A262: 8E 80 76    LDX   #$8076
-A265: 7E 87 BF    JMP   $87BF
+* handle incoming MIDI note off
+A24B: 8D 43       BSR   $A290	* make sure value is in range
+A24D: BD A1 AC    JSR   $A1AC	* call funny routine, does this get byte
+A250: CE A2 4B    LDU   #$A24B	* point to this routine, again?
+A253: DF C0       STU   $C0	* save pointer
+A255: C1 00       CMPB  #$00	* 0?
+A257: 26 02       BNE   $A25B	* no
+A259: C6 40       LDB   #$40	* B now holds 64
+A25B: 96 C4       LDA   $C4	* A holds computed note
+A25D: BD AD BC    JSR   $ADBC	* put note off in sequencer
+A260: 96 C4       LDA   $C4	* computed note
+A262: 8E 80 76    LDX   #$8076	* table
+A265: 7E 87 BF    JMP   $87BF	* call
 
-A268: 8D 26       BSR   $A290
-A26A: BD A1 AC    JSR   $A1AC
-A26D: CE A2 68    LDU   #$A268
-A270: DF C0       STU   $C0
-A272: 96 C4       LDA   $C4
-A274: C1 00       CMPB  #$00
-A276: 26 0D       BNE   $A285
-A278: C6 40       LDB   #$40
-A27A: BD AD BC    JSR   $ADBC
-A27D: 96 C4       LDA   $C4
-A27F: 8E 80 76    LDX   #$8076
-A282: 7E 87 BF    JMP   $87BF
+* handle incoming MIDI note on
+A268: 8D 26       BSR   $A290	* make sure note value is in range
+A26A: BD A1 AC    JSR   $A1AC	* get byte?
+A26D: CE A2 68    LDU   #$A268	* point to this routine
+A270: DF C0       STU   $C0	* save pointer
+A272: 96 C4       LDA   $C4	* A holds computed note
+A274: C1 00       CMPB  #$00	* check B
+A276: 26 0D       BNE   $A285	* not 0
+A278: C6 40       LDB   #$40	* if B was 0, B is now 64
+A27A: BD AD BC    JSR   $ADBC	* put note off in sequencer
+A27D: 96 C4       LDA   $C4	* computed note
+A27F: 8E 80 76    LDX   #$8076	* table
+A282: 7E 87 BF    JMP   $87BF	* call
 
-A285: BD AD BA    JSR   $ADBA
-A288: 96 C4       LDA   $C4
-A28A: 8E 80 76    LDX   #$8076
-A28D: 7E 87 C4    JMP   $87C4
+A285: BD AD BA    JSR   $ADBA	* put note on in sequencer
+A288: 96 C4       LDA   $C4	* get computed note
+A28A: 8E 80 76    LDX   #$8076	* table
+A28D: 7E 87 C4    JMP   $87C4	* call
 
-A290: C1 24       CMPB  #$24
-A292: 24 04       BCC   $A298
-A294: CB 0C       ADDB  #$0C
-A296: 20 F8       BRA   $A290
+* check MIDI note number
+A290: C1 24       CMPB  #$24	* lower than 36, C2?
+A292: 24 04       BCC   $A298	* no
+A294: CB 0C       ADDB  #$0C	* yes, add an octave
+A296: 20 F8       BRA   $A290	* check it again
 
-A298: C1 60       CMPB  #$60
-A29A: 23 04       BLS   $A2A0
-A29C: C0 0C       SUBB  #$0C
-A29E: 20 F8       BRA   $A298
+A298: C1 60       CMPB  #$60	* higher than C7?
+A29A: 23 04       BLS   $A2A0	* no
+A29C: C0 0C       SUBB  #$0C	* yes, subtract an octave
+A29E: 20 F8       BRA   $A298	* check it again
 
-A2A0: D7 C4       STB   $C4
+A2A0: D7 C4       STB   $C4	* save computed note value
 A2A2: 39          RTS   
 
-* unknown
-A2A3: C1 40       CMPB  #$40
+* handle incoming MIDI control change
+A2A3: C1 40       CMPB  #$40	* sustain on/off
 A2A5: 26 06       BNE   $A2AD
-A2A7: CC A3 2B    LDD   #$A32B
+A2A7: CC A3 2B    LDD   #$A32B	* unknown, store sustain?
 A2AA: DD C0       STD   $C0
 A2AC: 39          RTS   
 
-A2AD: C1 60       CMPB  #$60
+A2AD: C1 60       CMPB  #$60	* data increment?
 A2AF: 26 11       BNE   $A2C2
 A2B1: 96 CD       LDA   $CD
 A2B3: 81 80       CMPA  #$80
 A2B5: 25 0B       BCS   $A2C2
-A2B7: BD A4 04    JSR   $A404	* put A in ringbuffer
+A2B7: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 A2BA: 0F CD       CLR   $CD
 A2BC: BD A1 AC    JSR   $A1AC
-A2BF: 7E A3 41    JMP   $A341
+A2BF: 7E A3 41    JMP   $A341	* thing that sets pointer to MIDI CC
 
-A2C2: D1 1D       CMPB  $1D
+A2C2: D1 1D       CMPB  $1D	* LFO mod source
 A2C4: 27 04       BEQ   $A2CA
-A2C6: D1 1E       CMPB  $1E
+A2C6: D1 1E       CMPB  $1E	* mix mod source
 A2C8: 26 08       BNE   $A2D2
-A2CA: D7 C4       STB   $C4
-A2CC: CC A3 0D    LDD   #$A30D	* pointer to some routine
+A2CA: D7 C4       STB   $C4	* store
+A2CC: CC A3 0D    LDD   #$A30D	* store received mod value
 A2CF: DD C0       STD   $C0	* some return address trick
 A2D1: 39          RTS   
 
-A2D2: CE A3 41    LDU   #$A341
+A2D2: CE A3 41    LDU   #$A341	* pointer to thing that sets pointer to CC
 A2D5: DF C0       STU   $C0
-A2D7: 96 21       LDA   $21
-A2D9: 91 C4       CMPA  $C4
-A2DB: 26 10       BNE   $A2ED
-A2DD: C1 7C       CMPB  #$7C
-A2DF: 26 04       BNE   $A2E5
-A2E1: 0F 20       CLR   $20
-A2E3: 20 0C       BRA   $A2F1
+A2D7: 96 21       LDA   $21	* midi channel
+A2D9: 91 C4       CMPA  $C4	* same channel?
+A2DB: 26 10       BNE   $A2ED	* no, skip
+A2DD: C1 7C       CMPB  #$7C	* omni off
+A2DF: 26 04       BNE   $A2E5	* no
+A2E1: 0F 20       CLR   $20	* turn off omni
+A2E3: 20 0C       BRA   $A2F1	* end
 
-A2E5: C1 7D       CMPB  #$7D
-A2E7: 26 04       BNE   $A2ED
-A2E9: D7 20       STB   $20
-A2EB: 20 04       BRA   $A2F1
+A2E5: C1 7D       CMPB  #$7D	* omni on
+A2E7: 26 04       BNE   $A2ED	* no
+A2E9: D7 20       STB   $20	* turn on omni
+A2EB: 20 04       BRA   $A2F1	* end
 
-A2ED: C1 7B       CMPB  #$7B
-A2EF: 26 06       BNE   $A2F7
-A2F1: 8E 80 76    LDX   #$8076
-A2F4: 7E 87 E2    JMP   $87E2
+A2ED: C1 7B       CMPB  #$7B	* all notes off
+A2EF: 26 06       BNE   $A2F7	* no
+A2F1: 8E 80 76    LDX   #$8076	* table
+A2F4: 7E 87 E2    JMP   $87E2	* call
 
 A2F7: 39          RTS   
 
+* handle incoming MIDI pitch bend
 A2F8: BD A1 AC    JSR   $A1AC
 A2FB: CE A2 F8    LDU   #$A2F8
 A2FE: DF C0       STU   $C0
@@ -4516,7 +4549,7 @@ A30C: 39          RTS
 
 * if MIDI continuous controllers are enabled,
 * store mod amount in either mix or lfo mod, depending
-A30D: 8D 32       BSR   $A341	* set $c0 to point at $a2a3 routine
+A30D: 8D 32       BSR   $A341	* thing that sets pointer to MIDI CC
 A30F: 96 23       LDA   $23	* MIDI message filter
 A311: 27 17       BEQ   $A32A	* 0? rts
 A313: 96 C4       LDA   $C4	* some variable
@@ -4533,7 +4566,7 @@ A327: BD AD B2    JSR   $ADB2	* call $adbc with A=1
 A32A: 39          RTS   
 
 * unknown
-A32B: 8D 14       BSR   $A341	* set $co to point to $a2a3 routine
+A32B: 8D 14       BSR   $A341	* thing that sets pointer to MIDI CC
 A32D: 96 23       LDA   $23	* MIDI message filter
 A32F: 27 0F       BEQ   $A340	* 0? rts
 A331: BD AD B6    JSR   $ADB6	* call
@@ -4544,28 +4577,32 @@ A33A: 8E 80 76    LDX   #$8076	*
 A33D: BD 87 DD    JSR   $87DD
 A340: 39          RTS   
 
-A341: CE A2 A3    LDU   #$A2A3	* pointer to some routine
+A341: CE A2 A3    LDU   #$A2A3	* pointer to MIDI control change routine
 A344: DF C0       STU   $C0	* fiddle return address
 A346: 39          RTS   
 
 A347: BD A1 AC    JSR   $A1AC
-A34A: 96 23       LDA   $23
+
+* handle incoming MIDI channel pressure
+A34A: 96 23       LDA   $23	* MIDI message filter
 A34C: 10 27 FE F7 LBEQ  $A247
 A350: 58          ASLB  
-A351: 96 1F       LDA   $1F
+A351: 96 1F       LDA   $1F	* aftertouch level
 A353: 3D          MUL   
 A354: 1F 89       TFR   A,B
-A356: 96 1D       LDA   $1D
-A358: 81 08       CMPA  #$08
-A35A: 26 02       BNE   $A35E
-A35C: D7 7A       STB   $7A
-A35E: 96 1E       LDA   $1E
-A360: 81 08       CMPA  #$08
-A362: 26 02       BNE   $A366
-A364: D7 76       STB   $76
-A366: 20 DF       BRA   $A347
+A356: 96 1D       LDA   $1D	* LFO mod source
+A358: 81 08       CMPA  #$08	* aftertouch?
+A35A: 26 02       BNE   $A35E	* no, skip
+A35C: D7 7A       STB   $7A	* LFO mod amount
+A35E: 96 1E       LDA   $1E	* mix mod source
+A360: 81 08       CMPA  #$08	* aftertouch?
+A362: 26 02       BNE   $A366	* no, skip
+A364: D7 76       STB   $76	* mix mod amount
+A366: 20 DF       BRA   $A347	* why branch, why not fall through?
 
 A368: BD A1 AC    JSR   $A1AC
+
+* handle poly pressure?
 A36B: 96 23       LDA   $23
 A36D: 10 27 FE D6 LBEQ  $A247
 A371: D7 C4       STB   $C4
@@ -4586,6 +4623,8 @@ A38D: BD 87 D8    JSR   $87D8
 A390: 20 D6       BRA   $A368
 
 A392: BD A1 AC    JSR   $A1AC
+
+* handle incoming MIDI program change
 A395: C1 2F       CMPB  #$2F
 A397: 22 F9       BHI   $A392
 A399: CA 80       ORB   #$80
@@ -4593,7 +4632,7 @@ A39B: 96 23       LDA   $23
 A39D: 81 02       CMPA  #$02
 A39F: 26 07       BNE   $A3A8
 A3A1: 1F 98       TFR   B,A
-A3A3: BD A4 04    JSR   $A404	* put A in ringbuffer
+A3A3: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 A3A6: 20 06       BRA   $A3AE
 
 A3A8: 81 03       CMPA  #$03
@@ -4601,26 +4640,30 @@ A3AA: 26 02       BNE   $A3AE
 A3AC: D7 CD       STB   $CD
 A3AE: 20 E2       BRA   $A392
 
-A3B0: 96 25       LDA   $25
-A3B2: 26 09       BNE   $A3BD
-A3B4: 96 24       LDA   $24
-A3B6: 27 05       BEQ   $A3BD
-A3B8: 0C E9       INC   $E9
+* handle incoming MIDI sequencer clock
+A3B0: 96 25       LDA   $25	* ext seq clock jack
+A3B2: 26 09       BNE   $A3BD	* nonzero, rts
+A3B4: 96 24       LDA   $24	* ext seq clock
+A3B6: 27 05       BEQ   $A3BD	* zero, rts
+A3B8: 0C E9       INC   $E9	* some variable, MIDI clocks?
 A3BA: BD A1 16    JSR   $A116	* send MIDI clock
 A3BD: 39          RTS   
 
-A3BE: 86 1C       LDA   #$1C
+* handle incoming MIDI realtime start
+A3BE: 86 1C       LDA   #$1C	* fake keypress
 A3C0: 20 06       BRA   $A3C8
 
-A3C2: 86 1E       LDA   #$1E
+* handle incoming MIDI stop
+A3C2: 86 1E       LDA   #$1E	* fake keypress
 A3C4: 20 02       BRA   $A3C8
 
-A3C6: 86 1D       LDA   #$1D
-A3C8: D6 24       LDB   $24
-A3CA: 27 07       BEQ   $A3D3
-A3CC: D6 25       LDB   $25
-A3CE: 26 03       BNE   $A3D3
-A3D0: BD A4 04    JSR   $A404	* put A in ringbuffer
+* handle incoming MIDI realtime continue
+A3C6: 86 1D       LDA   #$1D	* fake keypress
+A3C8: D6 24       LDB   $24	* ext sequencer clock
+A3CA: 27 07       BEQ   $A3D3	* off, skip
+A3CC: D6 25       LDB   $25	* ext seq clock jack
+A3CE: 26 03       BNE   $A3D3	* on, skip
+A3D0: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 A3D3: 39          RTS   
 
 A3D4: A2 4B A2 68 A3 6B A2 A3 A3 95 A3 4A 
@@ -4629,6 +4672,7 @@ A3E0: A2 F8 A2 4A A2 47 A2 47 A2 47 A2 47 A2 47 A2 47
 A3F0: A2 47 A2 47 A3 B0 A2 47 A3 BE A3 C6 A3 C2 A2 47 
 A400: A3 D3 A3 D3 
 
+* keystroke ring buffer
 * ring buffer, stores A in memory pointed to by $8278
 A404: 34 01       PSHS  CC	* save state
 A406: 1A 10       ORCC  #$10	* mask /INT
@@ -4640,7 +4684,7 @@ A412: 8E 82 7C    LDX   #$827C	* wrap around
 A415: BF 82 78    STX   $8278	* save pointer back
 A418: 35 81       PULS  CC,PC ;(PUL? PC=RTS)	* return
 
-* get byte from ring buffer 
+* get byte from keystroke ring buffer 
 * returns with carry set if there's a byte or clear if not
 A41A: BE 82 7A    LDX   $827A	* read pointer
 A41D: BC 82 78    CPX   $8278	* write pointer
@@ -5507,8 +5551,8 @@ AB42: 39          RTS
 
 * unknown, set up sequencer?
 AB43: 8D E7       BSR   $AB2C	* get byte from sequence
-AB45: 0F 36       CLR   $36
-AB47: 0F E9       CLR   $E9
+AB45: 0F 36       CLR   $36	* incremented every second int
+AB47: 0F E9       CLR   $E9	* seq clock count?
 AB49: C6 02       LDB   #$02
 AB4B: D7 E7       STB   $E7	* sequencer flag?
 AB4D: 39          RTS   
@@ -5665,35 +5709,37 @@ AC48: 8E 80 6F    LDX   #$806F
 AC4B: BD 87 DD    JSR   $87DD
 AC4E: 39          RTS   
 
+* unknown
+* something to do with long sequences?
 AC4F: CC D8 00    LDD   #$D800
-AC52: FD C0 00    STD   $C000
-AC55: 10 B3 C0 00 CMPD  $C000
-AC59: 26 04       BNE   $AC5F
+AC52: FD C0 00    STD   $C000	* store at base of sequence expander
+AC55: 10 B3 C0 00 CMPD  $C000	* did it store?
+AC59: 26 04       BNE   $AC5F	* no, skip
 AC5B: 97 E4       STA   $E4
 AC5D: DD E5       STD   $E5
-AC5F: 96 E7       LDA   $E7
-AC61: 27 3B       BEQ   $AC9E
-AC63: D6 24       LDB   $24
-AC65: 26 20       BNE   $AC87
-AC67: 81 04       CMPA  #$04
-AC69: 27 1A       BEQ   $AC85
-AC6B: 81 06       CMPA  #$06
+AC5F: 96 E7       LDA   $E7	* sequencer flat?
+AC61: 27 3B       BEQ   $AC9E	* 0, skip
+AC63: D6 24       LDB   $24	* seq ext clock
+AC65: 26 20       BNE   $AC87	* nonzero, skip
+AC67: 81 04       CMPA  #$04	* flag?
+AC69: 27 1A       BEQ   $AC85	* =4, skip over
+AC6B: 81 06       CMPA  #$06	* =6, skip over
 AC6D: 27 16       BEQ   $AC85
-AC6F: 0D 36       TST   $36
-AC71: 27 12       BEQ   $AC85
-AC73: D6 E8       LDB   $E8
-AC75: DB 26       ADDB  $26
-AC77: D7 E8       STB   $E8
-AC79: 24 06       BCC   $AC81
-AC7B: BD AC A3    JSR   $ACA3
+AC6F: 0D 36       TST   $36	* incremented every second int
+AC71: 27 12       BEQ   $AC85	* 0, skip
+AC73: D6 E8       LDB   $E8	* some variable, seq
+AC75: DB 26       ADDB  $26	* add 38?
+AC77: D7 E8       STB   $E8	* store
+AC79: 24 06       BCC   $AC81	* carry?
+AC7B: BD AC A3    JSR   $ACA3	no
 AC7E: BD A1 16    JSR   $A116	* send MIDI clock
-AC81: 0A 36       DEC   $36
-AC83: 20 EC       BRA   $AC71
+AC81: 0A 36       DEC   $36	* decrement
+AC83: 20 EC       BRA   $AC71	* loop back
 
-AC85: 20 17       BRA   $AC9E
+AC85: 20 17       BRA   $AC9E	* jump to end
 
-AC87: 0D E9       TST   $E9
-AC89: 27 13       BEQ   $AC9E
+AC87: 0D E9       TST   $E9	* seq clocks?
+AC89: 27 13       BEQ   $AC9E	* 0, end
 AC8B: BD AC A3    JSR   $ACA3
 AC8E: 96 EA       LDA   $EA
 AC90: 4C          INCA  
@@ -5708,7 +5754,7 @@ AC9C: 20 EB       BRA   $AC89
 AC9E: BD 88 5E    JSR   $885E
 ACA1: 20 BC       BRA   $AC5F
 
-ACA3: 96 E7       LDA   $E7	* some variable
+ACA3: 96 E7       LDA   $E7	* sequencer flag?
 ACA5: 81 02       CMPA  #$02	* 2?
 ACA7: 26 0D       BNE   $ACB6	* no, jump
 ACA9: 0D F1       TST   $F1	* some variable
@@ -5803,11 +5849,11 @@ AD43: 33 5D       LEAU  $FFFD,U	* u-=3
 AD45: DF EC       STU   $EC	* save
 AD47: BD AB 90    JSR   $AB90	* something to do with sequencer
 AD4A: 86 1A       LDA   #$1A	* 26?
-AD4C: BD A4 04    JSR   $A404	* put value in ringbuffer
+AD4C: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 AD4F: 20 3D       BRA   $AD8E	* jump rts
 AD51: 81 03       CMPA  #$03	
 AD53: 23 17       BLS   $AD6C	* a<3, jump
-AD55: BD A0 C5    JSR   $A0C5	* call
+AD55: BD A0 C5    JSR   $A0C5	* send MIDI note off
 AD58: 10 8E 8E 4D LDY   #$8E4D	* middle of a routine
 AD5C: E6 A6       LDB   A,Y	
 AD5E: C4 7F       ANDB  #$7F
@@ -5859,20 +5905,22 @@ ADAC: 39          RTS
 
 ADAD: 20 0D       BRA   $ADBC
 
+* store bend message in sequencer
 ADAF: 4F          CLRA  
 ADB0: 20 0A       BRA   $ADBC
 
+* store modwheel message in sequencer
 ADB2: 86 01       LDA   #$01
 ADB4: 20 06       BRA   $ADBC
 
-* unknown
+* store sustain message in sequencer
 ADB6: 86 03       LDA   #$03
 ADB8: 20 02       BRA   $ADBC
 
-* unknown
+* store note on into sequencer?
 ADBA: 8A 80       ORA   #$80
 
-* unknown
+* store note into sequencer?
 ADBC: 34 01       PSHS  CC	* save state
 ADBE: 1A 50       ORCC  #$50	* mask interrupts
 ADC0: DE EE       LDU   $EE	* some variable
@@ -5882,11 +5930,11 @@ ADC7: 35 01       PULS  CC	* restore state
 ADC9: 34 04       PSHS  B	* save B
 ADCB: BD AB 90    JSR   $AB90	* something to do with sequencer?
 ADCE: 86 1A       LDA   #$1A	* 26
-ADD0: BD A4 04    JSR   $A404	* stuff it in ringbuffer
+ADD0: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 ADD3: 35 84       PULS  B,PC ;(PUL? PC=RTS)
 
 ADD5: ED C4       STD   ,U	* (U)=A,B
-ADD7: 96 E7       LDA   $E7	* some variable
+ADD7: 96 E7       LDA   $E7	* sequencer flag
 
 ADD9: 81 08       CMPA  #$08	* 8?
 ADDB: 26 0C       BNE   $ADE9	* no, skip
@@ -5917,7 +5965,7 @@ AE07: DF EE       STU   $EE	* some variable
 AE09: 34 04       PSHS  B	* save B
 AE0B: BD AB 60    JSR   $AB60	* call
 AE0E: 86 19       LDA   #$19	* 25
-AE10: BD A4 04    JSR   $A404	* put it in ringbuffer
+AE10: BD A4 04    JSR   $A404	* put A in keystroke ringbuffer
 AE13: 35 04       PULS  B	* restore B
 AE15: 35 81       PULS  CC,PC ;(PUL? PC=RTS)
 
@@ -5932,7 +5980,7 @@ AE20: 11 83 E4 20 CMPU  #$E420		; done all filters?
 AE24: 26 F7       BNE   zerofilter2	; no, continue
 AE26: CE B0 52    LDU   #$B052		* voice table
 AE29: CC 8A D7    LDD   #$8AD7		* update filter task
-AE2C: 8E 8B BE    LDX   #$8BBE		; "unmask IRQ and FIRQ and return"
+AE2C: 8E 8B BE    LDX   #$8BBE		* unmask ints and return
 zerofilter3:
 AE2F: ED C8 1C    STD   $1C,U		* set voice task
 AE32: AF C8 2B    STX   $2B,U		; store address of unmask routine
@@ -6306,6 +6354,7 @@ B8F4: FF FF FF FF FF FF FF FF FF FF FF 00
 
 * list at $b987 = ae b9 90 0f af 31 90 1f af d1 90 e2 b0 51 ac 4f
 * last value points to upper byte of stack
+
 B900: CC 80 38    LDD   #$8038	// once again set up dp
 B903: 1F 8B       TFR   A,DP
 B905: 10 8E B2 BE LDY   #$B2BE	// $b2be is in that big block of data
@@ -6357,10 +6406,10 @@ B95C: FB 90 0D    ADDB  $900D	add previous value to B
 B95F: 89 00       ADCA  #$00	carry into A
 B961: FB 90 0E    ADDB  $900E	add first value into B
 B964: 89 00       ADCA  #$00	carry into A
-B966: 47          ASRA  	bit 0 of A into carry
-B967: 56          RORB  	divide by two, keeping carry from A
-B968: 47          ASRA  	bit 0 of a into carry again
-B969: 56          RORB  	divide by two again
+B966: 47          ASRA  	* 16 bit divide by four
+B967: 56          RORB  	
+B968: 47          ASRA  	
+B969: 56          RORB  	
 B96A: F7 90 0A    STB   $900A	save
 B96D: 39          RTS   
 

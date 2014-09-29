@@ -2,6 +2,16 @@ AN1/AN0
 AN1 = low for record, high for play (controls output volume)
 AN0 = low for line/pitch wheel, high for compressed/mod wheel
 
+"funny" keypresses:
+$1c = start
+$1d = continue
+$1e = stop
+(from MIDI parser)
+
+Mod sources
+0 = off, 1 = modwheel, 2 = breath controller, 4 = foot pedal
+6 = data entry slider, 7 = volume pedal, 8 = aftertouch, 9 = poly at
+
 $8011 - dummy byte
 $8012 - master tune
 $8013 - pitch bend range
@@ -17,6 +27,7 @@ $801c - local on/off
 $801d - lfo mod source
 $801e - mix mod source
 $801f - aftertouch
+$8020 - omni on/off?
 $8021 - param 82, MIDI channel
 $8022 - param 83, MIDI through
 $8023 - param 84, MIDI message filter
@@ -40,7 +51,7 @@ $8037 - if non-zero, counted down in ISR handler
 $8038 - start of 32 bytes zeroed out
 $803b - stores X while setting up voice table
 $8039 - initially holds address of voice parameter table
-$803d
+$803d - stores 16-bit value, pointed by U and set in $86f6
 $8040
 $8041
 $8045
@@ -53,8 +64,9 @@ $8059
 $805b - set if $8059 is nonzero?
 $805d - set to $1f along with $8207 when linked list is constructed
 $805e - set to $b2be, that strange list from the "put values in memory" routine
-$8061 - voice task? note parser loop?
+$8061 - voice task? note parser loop? can be $8a25, $89ec, $89f6, $89a1, $82af
 $8063 - computed note?
+$8064
 $8065 - key velocity
 $8066
 $8067
@@ -64,10 +76,10 @@ $806b - cleared by sequencer/sustain sw.
 $806c - mod wheel val in at $90b7, read at $ab76
 $8070 - stores computed pitch bend amount, at $ad73
 $8072 - set at $ac40, cleared at $9f95, never seems to be used?
-$8076 - routine at $a30d stores received mixmod amt from B
+$8076 - mix mod amount
 $8077 - stores computed pitch bend amount, at $a30a
-$8079
-$807a - routine at $a30d stores received lfo mod amt from B
+$8079 - set at $a336, cleared at $9f91, never read?
+$807a - LFO mod amount
 $807d
 $807e
 $807f
@@ -117,9 +129,11 @@ $80ba -
 $80bb - MIDI status byte for running status
 $80bc - ring buffer store pointer
 $80be - ring buffer read pointer?
-$80c0 - saves return address in routine at $a1ac
-$80c4
+$80c0 - MIDI task variable?
+$80c4 - incoming MIDI channel, also used for corrected note? temp?
+$80c5 - incoming MIDI status
 $80c6 - saves return address in routine at $a1b1
+$80ce - ACIA status byte
 $80cf - sequence or sample to load?  can be 1, 2 or 3 for loading samples
 * maybe command?
 4, 5, 6 seems to be used for saving samples
@@ -138,9 +152,11 @@ $80e0 - upper/lower sample = 0/2?
 $80e1 - load/save in disk routines
 $80e2 - load/save directory sector?
 $80e3 - used in sector finder, offset?
-$80e5 - something for sequencer
+$80e4 - set to $c0 in $ac4f if there's a sequence expander
+$80e5 - set to $c000 if there's a sequence expander
 $80e7 - sequencer flag?
-$80e9 - something to do with sequencer
+$80e8
+$80e9 - sequencer clocks?
 $80ea - sequencer timing?
 $80eb - sequencer timing?
 $80ec
@@ -150,14 +166,16 @@ $8105 - set to $ff by routine at $875E
 $8106 - set to $ff by routine at $875E
 $8107 - linked list, 8 bytes per entry, 30 entries
 $8207 - unknown
-$8208
+$8208 - keystroke flag?
 $821f
 $8223
 $8225 - start of ring buffer
 $8234 - end of ring buffer
-$8235 - something to do with FIRQ?
-$8278 - address to store in ringbuffer
-$827a - address to fetch in ringbuffer
+$8235 - RX buffer save pointer?
+$8236 - RX buffer read pointer?
+$8237 - something to do with FIRQ, MIDI?
+$8278 - address to store in keystroke ringbuffer
+$827a - address to fetch in keystroke ringbuffer
 $827c - $10 bytes for ringbuffer
 $828c - start of code?
 
@@ -184,7 +202,8 @@ $9249 - (10) clear a bunch of variables to zero
 $a1ac - (9) weird, pops return address into $80c0 and rts
 $885e - (9) task list?
 $8738 - (9) mashes variables about, task list?
-$a404 - (7) writes values to ringbuffer between $827c and $828c
+$a404 - (7) writes values to keystroke ringbuffer between $827c and $828c
+$a41a -     gets value from keystroke ringbuffer between $827c and $828c
 $9d38 - (7) unknown, sets two variables
 $86f6 - (7) unknown, looks task list-y
 $aad2 - (6) something to do with setting up trk/sect for load/save
@@ -196,7 +215,9 @@ $9a85 - (5) table lookup, voice parameters?
 $986c - (5) possibly gets wavesample start and end into vars?
 $9116 - (5) seems to get bit pattern for LEDs?
 $8e05 - (5) unknown, looks up something in ROM, does various calculations
-$87dd - (5) unknown, called from FIRQ ISR, sets U to $867B
+$87dd - (5) sets U to $867b
+$87e2 -     sets U to $86a0
+$87e7 -     sets U to $85c9
 $9f6f - (4) reset a bunch of stuff including some variables
 $9876 - (4) gets byte from sample RAM, unknown variables
 $875e - (4) called during startup?
@@ -259,6 +280,12 @@ $ad8f - unknown
 $ac27 - copy some byte?
 $99ce - select through edit parameters
 $9116 - LED patterns?
+$8a25 - set up note on?
+$89ec - set up note off?
+$89f6 - log curve, note off velocity?
+$a138 - check for MIDI through and fall through to...
+$a13d - put B in TX ringbuffer and send
+
 
 
 wavesample params
@@ -304,6 +331,9 @@ $27 = resonance
 $28 = cutoff
 $29
 $2b = next task? initially set to enable ints and return
+$2d
+$2f
+$33
 
 "9d38" params - all of these are "double" values
 36 cutoff
