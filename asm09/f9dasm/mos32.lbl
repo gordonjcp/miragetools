@@ -68,18 +68,19 @@ data ab2a-ab2b
 
 label ac4f	task3_code_D
 
-label ae42 task0_BOS
-comm ae42 bottom of task0 stack -- below doesn't necessarily disassemble!
+rmb ae42-b051
 
+comm ae42 stack frames for all 4 tasks
+label ae42	task0_BOS
 label aeb9	task0_TOS
+
 label af31	task1_TOS
-label af63	task2_BOS
+#label af63	task2_BOS
 label afd1	task2_TOS
-
-data af63-af6f
-data af70-b835
-
 label b051	task3_TOS
+
+data b051-b835
+
 
 label B089 irq_hdlr_osc00_01
 label B094 irq_hdlr_osc02_03
