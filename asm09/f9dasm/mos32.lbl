@@ -2,7 +2,7 @@ org 8000
 
 code 8008-8010
 hex 8000-8007
-commentline 8000 Ensoniq Mirage OS 3.2
+comm 8000 Ensoniq Mirage OS 3.2
 
 code 8008-8010
 label 8008 irqvec
@@ -14,29 +14,133 @@ data 8020-828b
 
 word 88fc-893b
 label 88fc oscirq_vectors
-commentline 32 oscillator IRQ vectors as 16 pairs
+comm 32 oscillator IRQ vectors as 16 pairs
 
 label 893c irqentry
 
 data 8bf1-8bfc
 data 8e71-8e7f
 data 8e80-8eae
-data 8eaf
-data 8eb0-8ece
+
+word 8eaf-8ece
+label 8eaf vectors_8eaf
+label 8ebf vectors_8ebf
+
 data 8ff9-8fff
 data 9000-900e
+
+label 900a	adc_result
+label 900c	adc_buf1
+label 900d	adc_buf2
+label 900e	adc_buf3
+
+label 900f	task0_code_D
+label 901f	task1_code_D
+label 90e2	task2_code_D
+
 data 9d4a
 data 9ff3-a07d
 
 label A151 firqentry
 
-data a3d4-a3df
-data a3e0-a403
+label A247 vec012345679D_a3e4
+
+label A24A vec7_a3d4
+label A24B vec0_a3d4
+label A268 vec1_a3d4
+label A2A3 vec3_a3d4
+label A2F8 vec6_a3d4
+label A36B vec2_a3d4
+label A395 vec4_a3d4
+label A34A vec5_a3d4
+
+label a3b0 vec8_a3e4
+label a3be vecA_a3e4
+label a3c6 vecB_a3e4
+label a3c2 vecC_a3e4
+label a3d3 vecEF_a3e4
+
+word a3d4-a403
+label a3d4 vectors_a3d4
+label a3e4 vectors_a3e4
+
 data ab2a-ab2b
+
+label ac4f	task3_code_D
+
+label ae42 task0_BOS
+comm ae42 bottom of task0 stack -- below doesn't necessarily disassemble!
+
+label aeb9	task0_TOS
+label af31	task1_TOS
+label af63	task2_BOS
+label afd1	task2_TOS
+
 data af63-af6f
 data af70-b835
 
-commentline b052 8 voice data sets per 77 bytes
+label b051	task3_TOS
+
+label B089 irq_hdlr_osc00_01
+label B094 irq_hdlr_osc02_03
+label B0D6 irq_hdlr_osc04_05
+label B0E1 irq_hdlr_osc06_07
+label B123 irq_hdlr_osc08_09
+label B12E irq_hdlr_osc10_11
+label B170 irq_hdlr_osc12_13
+label B17B irq_hdlr_osc14_15
+label B1BD irq_hdlr_osc16_17
+label B1C8 irq_hdlr_osc18_19
+label B20A irq_hdlr_osc20_21
+label B215 irq_hdlr_osc22_23
+label B257 irq_hdlr_osc24_25
+label B262 irq_hdlr_osc26_27
+label B2A4 irq_hdlr_osc28_29
+label B2AF irq_hdlr_osc30_31
+
+comm b31e these have the form pointer cur / pointer next / pointer cur / pointer next / 5 bytes / be1e / 9 bytes
+label B31E vec0_via_8eaf
+label B336 vec1_via_8eaf
+label B34E vec2_via_8eaf
+label B366 vec3_via_8eaf
+label B37E vec4_via_8eaf
+label B396 vec5_via_8eaf
+label B3AE vec6_via_8eaf
+label B3C6 vec7_via_8eaf
+
+comm b58f these have the form pointer cur / pointer next / pointer cur / pointer next / 5 bytes / be1e / 9 bytes
+label B58F vec0_via_8ebf
+label B5A7 vec1_via_8ebf
+label B5BF vec2_via_8ebf
+label B5D7 vec3_via_8ebf
+label B5EF vec4_via_8ebf
+label B607 vec5_via_8ebf
+label B61F vec6_via_8ebf
+label B637 vec7_via_8ebf
+
+label b3d3	data0_b31e
+label b3fe	data1_b336
+label b41e	data2_b34e
+label b43e	data3_b366
+label b45e	data4_b37e
+label b47e	data5_b396
+label b49e	data6_b3ae
+label b4be	data7_b3c6
+label b4fe	dataX_b3XX_end
+        
+label b64f	data0_b85f
+label b651	data0_next_init
+label b66f	data1_b5a7
+label b68f	data2_b5bf
+label b6af	data3_b5d7
+label b6cf	data4_b5ef
+label b6ef	data5_b607
+label b70f	data6_b61f
+label b72f	data7_b637
+label b74f	dataX_b6XX_end
+
+comm b052 8 voice data sets per 77 bytes
+label b050 voice1_data_offs2
 label b052 voice1_data
 label b09f voice2_data
 label b0ec voice3_data
@@ -48,14 +152,37 @@ label b26d voice8_data
 
 label b2ba voiceX_data_end
 
-ascii b836-b86c
-ascii b86d-b8b3
+word b2be-b2c5
+label b2be	context_storage
+comm b2be holds four task pointers
+
+label b4fe tab_b4fe_step36
+label b76f tab_b76f_step36
+
+word b804-b809
+label b804 vec_b804
+label b806 vec_sysmsg
+label b808 vec_b808
+label b80a ptr_b80a
+label b835 data_sysmsg
+
+char b836-b86c
+
+char b86d-b8b3
 data b8b4-b8ff
 
+code b900-b986
 label B920 osentry
+label b96e tune_all_filters
 
-data b987-b98f
-data b990-bfff
+word b987-b996
+label b987 vectors_b987
+comm b987 4 sets of S/D vectors, D get pushed to stack, S gets stored to b2be/c0/c2/c4
+
+
+label b997 unused_area
+unused b997-bfff
+
 
 ; ----------------------------------------------------------------------
 ; peripherals
@@ -91,6 +218,12 @@ label 0xe803 FDC_data
 
 ; DOC oscillator registers
 label 0xec00 DOC_frl
+label 0xec20 DOC_frh
+label 0xec40 DOC_vol
+label 0xec60 DOC_wds
+label 0xec80 DOC_apt
+label 0xeca0 DOC_ctr
+label 0xecc0 DOC_rts
 
 ; DOC individual registers
 label 0xece0 DOC_oir
@@ -104,59 +237,59 @@ label 0xec7f DOC_rts_base
 ; ROM routines
 ; ----------------------------------------------------------------------
  
-label f000 fdcreadsector
-label f013 fdcskipsector
-label f024 fdcwritesector
-label f037 fdcfillsector
-label f04a fdcreadtrack
-label f058 fdcwritetrack
-label f066 fdcrestore
-label f06f fdcseektrack
-label f07d fdcseekin
-label f086 fdcseekout
-label f08f fdcforceinterrupt
-label f0a7 countdown
-label f0b0 nmivec
-label f0f0 coldstart
-label f146 runopsys
-label f15d hwsetup
-label f1bb qchipsetup
-label f1e5 clearram
-label f20d loadopsys
-label f2af readsysparams
-label f306 checkos
-label f33c showerrcode
-label f38c preparefd
-label f3ac loadossector
-label f3f1 gototrack
-label f413 seterrcode
-label f425 saveparams
-label f437 restoreparams
-label f448 readsector
-label f476 writesector
-label f4a4 gototrack2
-label f4c6 enablefd
-label f4d6 disablefd
-label f4df timer2int
-label f514 unknown1
-label f52d unknown2
-label f541 unknown3
-label f55b copybytes
-label f564 swapbytes
-label 0xf571 tune_filters
-label 0xf5be get_filter_response
-label 0xf5dc set_VCF_0xff_B
-label 0xf5e7 set_VCF_A_B
-label 0xf5f1 set_DOC_freq_call_hdlrU
-label 0xf6dd set_DOC_volume_call_hdlrD
+label f000 ROM_fdcreadsector
+label f013 ROM_fdcskipsector
+label f024 ROM_fdcwritesector
+label f037 ROM_fdcfillsector
+label f04a ROM_fdcreadtrack
+label f058 ROM_fdcwritetrack
+label f066 ROM_fdcrestore
+label f06f ROM_fdcseektrack
+label f07d ROM_fdcseekin
+label f086 ROM_fdcseekout
+label f08f ROM_fdcforceinterrupt
+label f0a7 ROM_countdown
+label f0b0 ROM_nmivec
+label f0f0 ROM_coldstart
+label f146 ROM_runopsys
+label f15d ROM_hwsetup
+label f1bb ROM_qchipsetup
+label f1e5 ROM_clearram
+label f20d ROM_loadopsys
+label f2af ROM_readsysparams
+label f306 ROM_checkos
+label f33c ROM_showerrcode
+label f38c ROM_preparefd
+label f3ac ROM_loadossector
+label f3f1 ROM_gototrack
+label f413 ROM_seterrcode
+label f425 ROM_saveparams
+label f437 ROM_restoreparams
+label f448 ROM_readsector
+label f476 ROM_writesector
+label f4a4 ROM_gototrack2
+label f4c6 ROM_enablefd
+label f4d6 ROM_disablefd
+label f4df ROM_timer2int
+label f514 ROM_unknown1
+label f52d ROM_unknown2
+label f541 ROM_unknown3
+label f55b ROM_copybytes
+label f564 ROM_swapbytes
+label 0xf571 ROM_tune_filters
+label 0xf5be ROM_get_filter_response
+label 0xf5dc ROM_set_VCF_0xff_B
+label 0xf5e7 ROM_set_VCF_A_B
+label 0xf5f1 ROM_set_DOC_freq_call_hdlrU
+label 0xf6dd ROM_set_DOC_volume_call_hdlrD
 label 0xf77d  ROM_8bit_exp
 label 0xf7fd  ROM_16bit_1exp
 label 0xf84d  ROM_8bit_log
-label 0xf8cd  XX_ROM_8bit_sinpos
-label 0xf8ce  XX_ROM_8bit_sin
+label 0xf8cd  ROM_8bit_sinpos_XX
+label 0xf8ce  ROM_8bit_sin_XX
 label 0xfb4d  ROM_LED_hexnum
 label 0xfb5d  ROM_LED_symbols
-label 0xfb68  keycode_xcode
+label 0xfb68  ROM_keycode_xcode
 label 0xfb88  ROM_ts_sysparam
 label 0xfb8c  ROM_ts_osflags
 label 0xfb90  ROM_ts_lower
@@ -173,14 +306,8 @@ label 0xfbf4  ROM_unknwon_fbf4
 label 0xfbf8  ROM_8bit_atanh
 label 0xfbfe  ROM_8bit_atanh_offs
 
-label fc7f resetvec
-label fc91 ospanic
+label fc7f ROM_resetvec
+label fc91 ROM_ospanic
 
-label 0xff10 word_d15
+label ff10 ROM_word_d15
 
-label 0xec20 DOC_frh
-label 0xec40 DOC_vol
-label 0xec60 DOC_wds
-label 0xec80 DOC_apt
-label 0xeca0 DOC_ctr
-label 0xecc0 DOC_rts
