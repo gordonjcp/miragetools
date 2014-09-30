@@ -12,6 +12,34 @@ label 800e osvec
 data 8011-801f
 data 8020-828b
 
+word 805e-805f
+
+word 80a5-80a8
+label 80a5 vec_80a5
+label 80a7 vec_80a7
+
+word 80bc-80bf
+
+word 80c0-80c1
+label 80c0 ptr_UART_rxhdlr
+
+word 80c6-80c7
+label 80c6 ptr_UART_txhdlr
+
+word 80ec-80ef
+
+
+label 80f4 tab_setbit_0to7
+label 80fc tab_clrbit_0to7
+
+label 8225 via_80bc_80be
+
+word 8278-827b
+label 8278	vec_to_8280
+label 827a	vec_to_827c
+label 8280	via_8278
+label 827c	via_827a
+
 word 88fc-893b
 label 88fc oscirq_vectors
 comm 32 oscillator IRQ vectors as 16 pairs
@@ -43,9 +71,11 @@ data 9ff3-a07d
 
 label A151 firqentry
 
+label a1bc UART_txhdlr
+
 label A247 vec012345679D_a3e4
 
-label A24A vec7_a3d4
+label A24A vec7_a3d4_UART_parser_done_XX
 label A24B vec0_a3d4
 label A268 vec1_a3d4
 label A2A3 vec3_a3d4
@@ -64,7 +94,8 @@ word a3d4-a403
 label a3d4 vectors_a3d4
 label a3e4 vectors_a3e4
 
-data ab2a-ab2b
+word ab2a-ab2b
+label ab2a via_80ee
 
 label ac4f	task3_code_D
 
@@ -82,6 +113,18 @@ label b051	task3_TOS
 data b051-b835
 
 
+comm b052 8 voice data sets per 77 bytes
+label b050 voice1_data_offs2
+label b052 voice1_data
+label b09f voice2_data
+label b0ec voice3_data
+label b139 voice4_data
+label b186 voice5_data
+label b1d3 voice6_data
+label b220 voice7_data
+label b26d voice8_data
+label b2ba voiceX_data_end
+
 label B089 irq_hdlr_osc00_01
 label B094 irq_hdlr_osc02_03
 label B0D6 irq_hdlr_osc04_05
@@ -98,6 +141,10 @@ label B257 irq_hdlr_osc24_25
 label B262 irq_hdlr_osc26_27
 label B2A4 irq_hdlr_osc28_29
 label B2AF irq_hdlr_osc30_31
+
+word b2be-b2c5
+label b2be	context_storage
+comm b2be holds four task pointers
 
 comm b31e these have the form pointer cur / pointer next / pointer cur / pointer next / 5 bytes / be1e / 9 bytes
 label B31E vec0_via_8eaf
@@ -119,6 +166,7 @@ label B607 vec5_via_8ebf
 label B61F vec6_via_8ebf
 label B637 vec7_via_8ebf
 
+
 label b3d3	data0_b31e
 label b3fe	data1_b336
 label b41e	data2_b34e
@@ -127,7 +175,7 @@ label b45e	data4_b37e
 label b47e	data5_b396
 label b49e	data6_b3ae
 label b4be	data7_b3c6
-label b4fe	dataX_b3XX_end
+label b4fe tab_b4fe_step36
         
 label b64f	data0_b85f
 label b651	data0_next_init
@@ -140,25 +188,9 @@ label b70f	data6_b61f
 label b72f	data7_b637
 label b74f	dataX_b6XX_end
 
-comm b052 8 voice data sets per 77 bytes
-label b050 voice1_data_offs2
-label b052 voice1_data
-label b09f voice2_data
-label b0ec voice3_data
-label b139 voice4_data
-label b186 voice5_data
-label b1d3 voice6_data
-label b220 voice7_data
-label b26d voice8_data
-
-label b2ba voiceX_data_end
-
-word b2be-b2c5
-label b2be	context_storage
-comm b2be holds four task pointers
-
-label b4fe tab_b4fe_step36
 label b76f tab_b76f_step36
+
+label b7a2 via_ab2a
 
 word b804-b809
 label b804 vec_b804
