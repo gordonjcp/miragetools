@@ -118,21 +118,55 @@ void get_os(int fd, char *filename) {
 	// get the OS from disk, and save as a binary image
 	
 	char buffer[16384];
-	FILE *out;
-	get_os_sectors(fd, buffer);
-	
-	out=fopen(filename,"w");
-	if(!out) {
-		printf("cannot open %s\n", filename);
-		exit(1);
-	}
+	FILE *out, *in;
+	int track;
 
-	if (fwrite(buffer, 1, 16384, out) != 16384) {
-		printf("error writing %s\n", filename);
+	// from disk
+	if(fd!=-1) {
+		get_os_sectors(fd, buffer);
+	
+		out=fopen(filename,"w");
+		if(!out) {
+			fprintf(stderr,"cannot open %s\n", filename);
+			exit(1);
+		}
+
+		if (fwrite(buffer, 1, 16384, out) != 16384) {
+			fprintf(stderr,"error writing %s\n", filename);
+			fclose(out);
+			exit(1);
+		}
 		fclose(out);
-		exit(1);
+	} 
+	
+	// from disk image
+	else {
+		in=fopen(filename,"r");
+		if(!in) {
+			fprintf(stderr, "cannot open %s\n", filename);
+			exit(1);
+		}
+		
+		// 0x8000-0xabff
+		if( fread(buffer, 1, 11264, in) != 11264)
+		{
+dumpfile_readfail:
+			fprintf(stderr, "error reading %s\n", filename);
+			fclose(in);
+			exit(-1);
+		}
+		
+		// remaining short tracks
+		for(track=2; track<=11; track++)
+		{
+			fseek(in, 5120, SEEK_CUR);
+			if( fread(buffer+11264+(track-2)*512, 1, 512, in) != 512)
+				goto dumpfile_readfail;
+		}
+
+		// cough it out
+		fwrite(buffer, 1, 16384, stdout);
 	}
-	fclose(out);
 }
 
 void put_os(int fd, char *filename) {
@@ -143,7 +177,7 @@ void put_os(int fd, char *filename) {
 
 	in=fopen(filename,"r");
 	if(!in) {
-		printf("cannot open %s\n", filename);
+		fprintf(stderr,"cannot open %s\n", filename);
 		exit(1);
 	}
 
@@ -152,7 +186,7 @@ void put_os(int fd, char *filename) {
 		// that it isn't a Motorola S-REC file	
 
 		if (fread(buffer, 1, 16384, in) != 16384) {
-			printf("error reading %s\n", filename);
+			fprintf(stderr,"error reading %s\n", filename);
 			fclose(in);
 			exit(1);
 		}
@@ -163,8 +197,11 @@ void put_os(int fd, char *filename) {
 		load_srec(in, buffer);
 		
 	}
-	
-	put_os_sectors(fd, buffer);
+
+	if(fd!=-1)
+		put_os_sectors(fd, buffer);
+	else
+		fprintf(stderr,"Unsupported scheme. L8r.\n");
 }
 
 
