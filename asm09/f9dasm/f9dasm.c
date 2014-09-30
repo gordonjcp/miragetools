@@ -1734,7 +1734,7 @@ if (T & 0x80)
         if ((W < 0x80) || (W >= 0xff80))
           sprintf(buf, "%s,%c", signed_string((int)(short)W, 4, (word)(PC - 2)), R);
         else
-          sprintf(buf, "%s,%c", signed_string((int)(short)W, 4, (word)(PC - 2)), R);
+          sprintf(buf, "%s,%c", number_string((int)(short)W, 4, (word)(PC - 2)), R);  // RB: this was "signed_string"
         }
       break;
     case 0x0B:
