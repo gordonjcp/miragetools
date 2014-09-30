@@ -1,0 +1,186 @@
+org 8000
+
+code 8008-8010
+hex 8000-8007
+commentline 8000 Ensoniq Mirage OS 3.2
+
+code 8008-8010
+label 8008 irqvec
+label 800b firqvec
+label 800e osvec
+
+data 8011-801f
+data 8020-828b
+
+word 88fc-893b
+label 88fc oscirq_vectors
+commentline 32 oscillator IRQ vectors as 16 pairs
+
+label 893c irqentry
+
+data 8bf1-8bfc
+data 8e71-8e7f
+data 8e80-8eae
+data 8eaf
+data 8eb0-8ece
+data 8ff9-8fff
+data 9000-900e
+data 9d4a
+data 9ff3-a07d
+
+label A151 firqentry
+
+data a3d4-a3df
+data a3e0-a403
+data ab2a-ab2b
+data af63-af6f
+data af70-b835
+
+commentline b052 8 voice data sets per 77 bytes
+label b052 voice1_data
+label b09f voice2_data
+label b0ec voice3_data
+label b139 voice4_data
+label b186 voice5_data
+label b1d3 voice6_data
+label b220 voice7_data
+label b26d voice8_data
+
+label b2ba voiceX_data_end
+
+ascii b836-b86c
+ascii b86d-b8b3
+data b8b4-b8ff
+
+label B920 osentry
+
+data b987-b98f
+data b990-bfff
+
+; ----------------------------------------------------------------------
+; peripherals
+; ----------------------------------------------------------------------
+
+label 0xe100 UART_csr
+label 0xe101 UART_data
+
+label 0xe200 VIA_dr_b
+label 0xe201 VIA_dr_a
+label 0xe202 VIA_ddr_b
+label 0xe203 VIA_ddr_a
+label 0xe204 VIA_t1c_lsb
+label 0xe205 VIA_t1c_msb
+label 0xe206 VIA_t1_lsb 
+label 0xe207 VIA_t2_msb 
+label 0xe208 VIA_t2c_lsb
+label 0xe209 VIA_t2c_msb
+label 0xe20a VIA_shr
+label 0xe20b VIA_aux
+label 0xe20c VIA_pcr
+label 0xe20d VIA_isr
+label 0xe20e VIA_ier
+label 0xe20f VIA_data
+
+label 0xe418 MUX_base
+label 0xe41F VCF_base
+
+label 0xe800 FDC_status
+label 0xe801 FDC_track 
+label 0xe802 FDC_sector
+label 0xe803 FDC_data  
+
+; DOC oscillator registers
+label 0xec00 DOC_frl
+
+; DOC individual registers
+label 0xece0 DOC_oir
+label 0xece1 DOC_oer
+label 0xece2 DOC_adc
+
+label 0xec5f DOC_control_base
+label 0xec7f DOC_rts_base
+
+; ----------------------------------------------------------------------
+; ROM routines
+; ----------------------------------------------------------------------
+ 
+label f000 fdcreadsector
+label f013 fdcskipsector
+label f024 fdcwritesector
+label f037 fdcfillsector
+label f04a fdcreadtrack
+label f058 fdcwritetrack
+label f066 fdcrestore
+label f06f fdcseektrack
+label f07d fdcseekin
+label f086 fdcseekout
+label f08f fdcforceinterrupt
+label f0a7 countdown
+label f0b0 nmivec
+label f0f0 coldstart
+label f146 runopsys
+label f15d hwsetup
+label f1bb qchipsetup
+label f1e5 clearram
+label f20d loadopsys
+label f2af readsysparams
+label f306 checkos
+label f33c showerrcode
+label f38c preparefd
+label f3ac loadossector
+label f3f1 gototrack
+label f413 seterrcode
+label f425 saveparams
+label f437 restoreparams
+label f448 readsector
+label f476 writesector
+label f4a4 gototrack2
+label f4c6 enablefd
+label f4d6 disablefd
+label f4df timer2int
+label f514 unknown1
+label f52d unknown2
+label f541 unknown3
+label f55b copybytes
+label f564 swapbytes
+label 0xf571 tune_filters
+label 0xf5be get_filter_response
+label 0xf5dc set_VCF_0xff_B
+label 0xf5e7 set_VCF_A_B
+label 0xf5f1 set_DOC_freq_call_hdlrU
+label 0xf6dd set_DOC_volume_call_hdlrD
+label 0xf77d  ROM_8bit_exp
+label 0xf7fd  ROM_16bit_1exp
+label 0xf84d  ROM_8bit_log
+label 0xf8cd  XX_ROM_8bit_sinpos
+label 0xf8ce  XX_ROM_8bit_sin
+label 0xfb4d  ROM_LED_hexnum
+label 0xfb5d  ROM_LED_symbols
+label 0xfb68  keycode_xcode
+label 0xfb88  ROM_ts_sysparam
+label 0xfb8c  ROM_ts_osflags
+label 0xfb90  ROM_ts_lower
+label 0xfb9c  ROM_ts_upper
+label 0xfba8  ROM_ts_shortseq
+label 0xfbc8  ROM_ts_longseq
+label 0xfbd4  ROM_unknown_fbd4
+label 0xfbdf  ROM_unknoqn_fbdf
+label 0xfbe2  ROM_bitmask_0to7
+label 0xfbea  ROM_bitmask_0to2
+label 0xfbed  ROM_unknown_fbed
+label 0xfbf0  ROM_unknown_fbf0
+label 0xfbf4  ROM_unknwon_fbf4
+label 0xfbf8  ROM_8bit_atanh
+label 0xfbfe  ROM_8bit_atanh_offs
+
+label fc7f resetvec
+label fc91 ospanic
+
+label 0xff10 word_d15
+
+label 0xec20 DOC_frh
+label 0xec40 DOC_vol
+label 0xec60 DOC_wds
+label 0xec80 DOC_apt
+label 0xeca0 DOC_ctr
+label 0xecc0 DOC_rts
