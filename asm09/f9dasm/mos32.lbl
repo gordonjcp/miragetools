@@ -1,4 +1,5 @@
 org 8000
+setdp 80
 
 code 8008-8010
 hex 8000-8007
@@ -9,14 +10,34 @@ label 8008 irqvec
 label 800b firqvec
 label 800e osvec
 
-data 8011-801f
-data 8020-828b
+data 8011-828b
+label 8012 osparm_tuning
+label 8013 osparm_bendrange
+label 8014 osparm_velosens
+label 8015 osparm_upperlower
 
-word 805e-805f
+label 8021 MIDI_channel
+label 8022 MIDI_thru_enabled
+
+word 805e-8062
+label 805e	context_ptr
+label 8061	kbd_parser_ptr
+label 806b	kbd_pedal_state_01
+label 8079	kdb_pedal_state_40
 
 word 80a5-80a8
 label 80a5 vec_80a5
 label 80a7 vec_80a7
+
+label 80bb MIDI_cmd
+
+word 80bc-80bf
+label 80bc MIDI_txbuf_msg_start
+label 80be MIDI_txbuf_msg_end
+label 80c2 MIDI_txcmd_params
+label 80c3 MIDI_txcmd_param2
+label 80c4 MIDI_rxcmd_channel
+label 80c5 MIDI_rxcmd
 
 word 80bc-80bf
 
@@ -26,25 +47,53 @@ label 80c0 ptr_UART_rxhdlr
 word 80c6-80c7
 label 80c6 ptr_UART_txhdlr
 
+label 80d5 disk_first_trk
+label 80d6 disk_first_sec
+label 80d7 disk_last_trk
+label 80d8 disk_last_sec
+
 word 80ec-80ef
 
 
 label 80f4 tab_setbit_0to7
 label 80fc tab_clrbit_0to7
 
-label 8225 via_80bc_80be
-
+label 8225 MIDI_txbuf_base
+label 8235 MIDI_txbuf_len
+label 8236 MIDI_rxbuf_len
+label 8237 MIDI_rx_pending
+label 8238 MIDI_rxbuf_base
 word 8278-827b
 label 8278	vec_to_8280
 label 827a	vec_to_827c
 label 8280	via_8278
 label 827c	via_827a
 
+label 885e	context_switch
+
 word 88fc-893b
 label 88fc oscirq_vectors
 comm 32 oscillator IRQ vectors as 16 pairs
 
-label 893c irqentry
+label 893c IRQ_entry
+label 894a IRQ_chk_VIA_timer
+label 8951 IRQ_chk_VIA_dra
+label 8962 IRQ_chk_DOC
+label 896a IRQ_exit
+label 896b	kbd_init_parser
+label 8989 IRQ_VIA_isr
+label 8871 IRQ_DOC
+
+label 8976 	kbd_ctrl_ack
+label 89a1 	kbd_ctrl_parse
+label 8a25	kbd_note_on
+label 89ac	kbd_chk_note_off
+label 89b7	kbd_chk_pedal_on
+label 89d4	kbd_chk_pedal_off
+label 89eb	kbd_parser_exit
+
+label 89ec	kbd_note_off
+label 89f6	kbd_scale_velocity
 
 data 8bf1-8bfc
 data 8e71-8e7f
@@ -68,36 +117,63 @@ label 90e2	task2_code_D
 
 data 9d4a
 data 9ff3-a07d
+label a07e MIDI_init_rxtx
+label a094 MIDI_init_rx
+label a0a3 MIDI_chk_msg_len_save
+label a0a5 MIDI_chk_msg_len
+label a0ac MIDI_chk_long_msg
+label a0b5 MIDI_chk_msg_exit
+label a0b9 MIDI_do_note_on
+label a0c5 MIDI_do_note_off
+label a0cf MIDI_set_pwheel_to_B
+label a0da MIDI_set_pedal_to_B
+label a0e2 MIDI_set_mwheel_to_B
+label a0e8 MIDI_do_ctrlr_msg
+label a0fe MIDI_set_pchng_to_B
 
-label A151 firqentry
+label a116 MIDI_do_timing_clock
+
+label a122 MIDI_do_3byte_cmd
+label a138 MIDI_txbyte
+label a13d MIDI_byte_to_txbuf
+label a149 MIDI_txbuf_overflow
+
+label A151 FIRQ_entry
 
 label a1bc UART_txhdlr
 
-label A247 vec012345679D_a3e4
+label a215 UART_rx_chk_for_cmd
+label a22e UART_rx_channel_message
+label a2eb UART_rx_system_message
+label A247 UART_rx_skip_message
 
-label A24A vec7_a3d4_UART_parser_done_XX
-label A24B vec0_a3d4
-label A268 vec1_a3d4
-label A2A3 vec3_a3d4
-label A2F8 vec6_a3d4
-label A36B vec2_a3d4
-label A395 vec4_a3d4
-label A34A vec5_a3d4
+label A24A UART_rx_parser_exit
+label A24B UART_rx_parser_note_off
+label A268 UART_rx_parser_note_on
+label A2A3 UART_rx_parser_ctrlr
+label A2F8 UART_rx_parser_pitbend
+label A36B UART_rx_parser_polyprs
+label A395 UART_rx_parser_progchn
+label A34A UART_rx_parser_chnlprs
 
-label a3b0 vec8_a3e4
-label a3be vecA_a3e4
-label a3c6 vecB_a3e4
-label a3c2 vecC_a3e4
-label a3d3 vecEF_a3e4
+label a3b0 UART_rx_parser_timing_clk
+label a3be UART_rx_parser_seq_start
+label a3c6 UART_rx_parser_seq_cont
+label a3c2 UART_rx_parser_seq_stop
+label a3d3 UART_rx_parser_sense_rst
 
 word a3d4-a403
-label a3d4 vectors_a3d4
-label a3e4 vectors_a3e4
+label a3d4 MIDI_rx_chnlmsg_parsers
+label a3e4 MIDI_rx_systmsg_parsers
+
+label a404 pedal_handler_if_8028_not_zero
 
 word ab2a-ab2b
 label ab2a via_80ee
 
 label ac4f	task3_code_D
+
+label adb6 pedal_handler_2
 
 rmb ae42-b051
 
@@ -145,6 +221,7 @@ label B2AF irq_hdlr_osc30_31
 word b2be-b2c5
 label b2be	context_storage
 comm b2be holds four task pointers
+label b2c6 	context_storage_end
 
 comm b31e these have the form pointer cur / pointer next / pointer cur / pointer next / 5 bytes / be1e / 9 bytes
 label B31E vec0_via_8eaf
