@@ -4429,7 +4429,7 @@ for (pc = 0x0000; pc <= 0xFFFF; pc++)   /* inside the used area              */
           fprintf(out, "%s\n", commentlines[pc]);
           }
         }
-      fprintf(out, "%-7s EQU     $%04X", p, pc);
+      fprintf(out, "%-24s\tEQU\t$%04X", p, pc);
       if (emitComments && lcomments[pc])
         fprintf(out, "%21c %s", cCommChar, lcomments[pc]);
       fprintf(out, "\n");
