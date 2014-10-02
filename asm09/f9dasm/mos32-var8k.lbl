@@ -52,7 +52,7 @@ label 803f	vector_803f_U
 label 8041 	vector_8041_U
 label 8043 	vector_8043_U
 
-label 804e 	flag_804e_0_disbles_call_8059_task
+label 804e 	flag_804e_0_disables_call_8059_task
 label 804d 	flag_804e_copy_of_+05,Y
 
 word 804f-8050
@@ -65,14 +65,22 @@ word 8059-805c
 label 8059 	task_vector_8059
 label 805b 	task_vector_805b
 
+label 805d	kbd_msg_byte_count
+
 word 805e-805f
 label 805e context_ptr
 label 8060 DOC_irq_cnt
 
 word 8061-8062
 label 8061 kbd_parser_ptr
-label 8068 	vector_8068_X
-label 806b kbd_pedal_state_01
+label 8063 kbd_normalized_note
+
+label 8068 val_modwheel
+label 8069 val_pitchwheel
+label 806a	val_pitchwheel_related
+label 806b kbd_flag_damper_pedal_onoff
+label 806c	val_modwheel_related
+
 label 806f 	vector_806f_X
 label 8076 	vector_8076_X
 label 8079 kdb_pedal_state_40
@@ -117,11 +125,11 @@ word 80ec-80ef
 label 80f4 tab_setbit_0to7
 label 80fc tab_clrbit_0to7
 
-label 8107	field_8107_via_D
+label 8107	field_248_bytes_8107_via_D
 
-label 8209	data_8209_via_X
-label 820c	data_820c_via_X
-label 820f	data_820f_via_X
+label 8209	table_10_20_00
+label 820c	table_02_00_01
+label 820f	table_04_08_0c|05_09_0d|06_0a_0e|07_0b_0f|80_81_82_83
 
 label 8225 MIDI_txbuf_base
 label 8235 MIDI_txbuf_len
@@ -129,10 +137,10 @@ label 8236 MIDI_rxbuf_len
 label 8237 MIDI_rx_pending
 label 8238 MIDI_rxbuf_base
 word 8278-827b
-label 8278 	vec_to_8280
-label 827a 	vec_to_827c
-label 8280 	data_via_8278
-label 827c 	data_via_827a
+label 8278 	vec_to_8280_seemingly_static
+label 827a 	vec_to_827c_seemingly_static
+label 8280 	data_via_8278_static_zero_changed_relative?
+label 827c 	table_10_11_01_0a
 
 word 88fc-893b
 label 88fc oscirq_vectors
