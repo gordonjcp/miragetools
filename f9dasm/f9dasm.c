@@ -2186,10 +2186,10 @@ switch (M)
     switch (W)
       {
       case 0x4456 :
-        sprintf(buffer, mnemo[_lsrd].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_lsrd].mne); PC++;
         break;
       case 0x5849 :
-        sprintf(buffer, mnemo[_asld].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_asld].mne); PC++;
         break;
       default :
         sprintf(buffer,"%s", I);
@@ -2207,16 +2207,16 @@ switch (M)
     switch (W)                          /* examine for special CC settings   */
       {
       case 0x1a01 :
-        sprintf(buffer, mnemo[_sec].mne);
+        sprintf(buffer, "%s", mnemo[_sec].mne);
         break;
       case 0x1a02 :
-        sprintf(buffer, mnemo[_sev].mne);
+        sprintf(buffer, "%s", mnemo[_sev].mne);
         break;
       case 0x1a04 :
-        sprintf(buffer, mnemo[_sez].mne);
+        sprintf(buffer, "%s", mnemo[_sez].mne);
         break;
       case 0x1a10 :
-        sprintf(buffer, mnemo[_sei].mne);
+        sprintf(buffer, "%s", mnemo[_sei].mne);
         break;
       case 0x1a40 :
         sprintf(buffer, "SEF");
@@ -2225,16 +2225,16 @@ switch (M)
         sprintf(buffer, "SEIF");
         break;
       case 0x1cfe :
-        sprintf(buffer, mnemo[_clc].mne);
+        sprintf(buffer, "%s", mnemo[_clc].mne);
         break;
       case 0x1cfd :
-        sprintf(buffer, mnemo[_clv].mne);
+        sprintf(buffer, "%s", mnemo[_clv].mne);
         break;
       case 0x1cfb :
         sprintf(buffer, "CLZ");
         break;
       case 0x1cef :
-        sprintf(buffer, mnemo[_cli].mne);
+        sprintf(buffer, "%s", mnemo[_cli].mne);
         break;
       case 0x1cbf :
         sprintf(buffer, "CLF");
@@ -2243,7 +2243,7 @@ switch (M)
         sprintf(buffer, "CLIF");
         break;
       case 0x3cff :
-        sprintf(buffer, mnemo[_wai].mne);
+        sprintf(buffer, "%s", mnemo[_wai].mne);
         break;
       default :
         sprintf(buffer, "%-7s #%s", I, number_string(T, 2, (word)(PC - 1)));
@@ -2289,10 +2289,10 @@ switch (M)
     switch (W)
       {
       case 0x3001 :
-        sprintf(buffer, mnemo[_inx].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_inx].mne); PC++;
         break;
       case 0x301f :
-        sprintf(buffer, mnemo[_dex].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_dex].mne); PC++;
         break;
       case 0x3121 :
         sprintf(buffer, "INY"); PC++;
@@ -2301,10 +2301,10 @@ switch (M)
         sprintf(buffer, "DEY"); PC++;
         break;
       case 0x3261 :
-        sprintf(buffer, mnemo[_ins].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_ins].mne); PC++;
         break;
       case 0x327f :
-        sprintf(buffer, mnemo[_des].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_des].mne); PC++;
         break;
       case 0x3341 :
         sprintf(buffer, "INU"); PC++;
@@ -2374,10 +2374,10 @@ switch (M)
     switch (W)
       {
       case 0x1f14 :
-        sprintf(buffer, mnemo[_txs].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_txs].mne); PC++;
         break;
       case 0x1f41 :
-        sprintf(buffer, mnemo[_tsx].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_tsx].mne); PC++;
         break;
 /* hairy - some assemblers expand TAB to TAB + TSTA...
    but there's no guarantee.
@@ -2385,7 +2385,7 @@ switch (M)
         sprintf(buffer, "TAB"); PC++;
         break; */
       case 0x1f8a :
-        sprintf(buffer, mnemo[_tap].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_tap].mne); PC++;
         break;
 /* hairy - some assemblers expand TBA to TBA + TSTA...
    but there's no guarantee.
@@ -2393,7 +2393,7 @@ switch (M)
         sprintf(buffer, "TBA"); PC++;
         break; */
       case 0x1fa8 :
-        sprintf(buffer, mnemo[_tpa].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_tpa].mne); PC++;
         break;
       default :
         T = ARGBYTE(PC); PC++;
@@ -2418,21 +2418,21 @@ switch (M)
         switch (W)
           {
           case 0xa0e0 :
-            sprintf(buffer, mnemo[_sba].mne); PC += 3;
+            sprintf(buffer, "%s", mnemo[_sba].mne); PC += 3;
             break;
           case 0xa1e0 :
-            sprintf(buffer, mnemo[_cba].mne); PC += 3;
+            sprintf(buffer, "%s", mnemo[_cba].mne); PC += 3;
             break;
           case 0xabe0 :
-            sprintf(buffer,  mnemo[_aba].mne); PC += 3;
+            sprintf(buffer,  "%s", mnemo[_aba].mne); PC += 3;
             break;
           default:
-            sprintf(buffer, mnemo[_pshb].mne); PC++;
+            sprintf(buffer, "%s", mnemo[_pshb].mne); PC++;
             break;
           }
         break;
       case 0x3402 :
-        sprintf(buffer, mnemo[_psha].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_psha].mne); PC++;
         break;
       case 0x3406 :
         sprintf(buffer, "PSHD"); PC++;
@@ -2444,10 +2444,10 @@ switch (M)
         sprintf(buffer, "PSHY"); PC++;
         break;
       case 0x3502 :
-        sprintf(buffer, mnemo[_pula].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_pula].mne); PC++;
         break;
       case 0x3504 :
-        sprintf(buffer, mnemo[_pulb].mne); PC++;
+        sprintf(buffer, "%s", mnemo[_pulb].mne); PC++;
         break;
       case 0x3506 :
         sprintf(buffer, "PULD"); PC++;
