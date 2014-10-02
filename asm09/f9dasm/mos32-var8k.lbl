@@ -1,0 +1,101 @@
+
+hex 8000-8007
+comm 8000 Ensoniq Mirage OS 3.2
+
+
+data 8011-828b
+label 8012 osparm_tuning
+label 8013 osparm_bendrange
+label 8014 osparm_velosens
+label 8015 osparm_upperlower
+
+word 801c-801d
+label 801c	vector_801c_X
+label 8020
+label 8021 MIDI_channel
+label 8022 MIDI_thru_enabled
+
+word 8023-8024
+label 8023 	vector_8023_X
+
+label 8038 	flag_8038_0_marks_empty_8059_task
+
+word 8039-8044
+label 8039	vector_8039_U
+label 803b	vector_803b_U
+label 803d	vector_803d_U
+label 803f	vector_803f_U
+label 8041 	vector_8041_U
+label 8043 	vector_8043_U
+
+label 804e 	flag_804e_0_disbles_call_8059_task
+label 804d 	flag_804e_copy_of_+05,Y
+
+word 804f-8050
+label 804f 	table_base_804f
+
+word 8056-8057
+label 8056 	vector_8056_U
+
+word 8059-805c
+label 8059 	task_vector_8059
+label 805b 	task_vector_805b
+
+word 805e-805f
+label 805e context_ptr
+label 8060 DOC_irq_cnt
+
+word 8061-8062
+label 8061 kbd_parser_ptr
+label 8068 	vector_8068_X
+label 806b kbd_pedal_state_01
+label 8079 kdb_pedal_state_40
+
+word 80a5-80a8
+label 80a5 	vec_80a5
+label 80a7 	vec_80a7
+
+label 80bb MIDI_cmd
+
+word 80bc-80bf
+label 80bc MIDI_txbuf_msg_start
+label 80be MIDI_txbuf_msg_end
+label 80c2 MIDI_txcmd_params
+label 80c3 MIDI_txcmd_param2
+label 80c4 MIDI_rxcmd_channel
+label 80c5 MIDI_rxcmd
+
+label 80cf MIDI_program_number
+
+word 80bc-80bf
+
+word 80c0-80c1
+label 80c0 ptr_UART_rxhdlr
+
+word 80c6-80c7
+label 80c6 ptr_UART_txhdlr
+
+label 80d5 disk_first_trk
+label 80d6 disk_first_sec
+label 80d7 disk_last_trk
+label 80d8 disk_last_sec
+
+word 80ec-80ef
+
+label 80f4 tab_setbit_0to7
+label 80fc tab_clrbit_0to7
+
+label 8225 MIDI_txbuf_base
+label 8235 MIDI_txbuf_len
+label 8236 MIDI_rxbuf_len
+label 8237 MIDI_rx_pending
+label 8238 MIDI_rxbuf_base
+word 8278-827b
+label 8278 	vec_to_8280
+label 827a 	vec_to_827c
+label 8280 	via_8278
+label 827c 	via_827a
+
+word 88fc-893b
+label 88fc oscirq_vectors
+comm 32 oscillator IRQ vectors as 16 pairs

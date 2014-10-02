@@ -1,0 +1,49 @@
+; ----------------------------------------------------------------------
+; Ensoniq Mirage peripheral address definitions
+; ----------------------------------------------------------------------
+
+label 0xe100 UART_csr
+label 0xe101 UART_data
+
+label 0xe200 VIA_dr_b
+label 0xe201 VIA_dr_a
+label 0xe202 VIA_ddr_b
+label 0xe203 VIA_ddr_a
+label 0xe204 VIA_t1c_lsb
+label 0xe205 VIA_t1c_msb
+label 0xe206 VIA_t1_lsb 
+label 0xe207 VIA_t2_msb 
+label 0xe208 VIA_t2c_lsb
+label 0xe209 VIA_t2c_msb
+label 0xe20a VIA_shr
+label 0xe20b VIA_aux
+label 0xe20c VIA_pcr
+label 0xe20d VIA_isr
+label 0xe20e VIA_ier
+label 0xe20f VIA_data
+
+label 0xe418 MUX_base
+label 0xe41F VCF_base
+
+label 0xe800 FDC_status
+label 0xe801 FDC_track 
+label 0xe802 FDC_sector
+label 0xe803 FDC_data  
+
+; DOC oscillator registers
+label 0xec00 DOC_frl
+label 0xec20 DOC_frh
+label 0xec40 DOC_vol
+label 0xec60 DOC_wds
+label 0xec80 DOC_apt
+label 0xeca0 DOC_ctr
+label 0xecc0 DOC_rts
+
+; DOC individual registers
+label 0xece0 DOC_oir
+label 0xece1 DOC_oer
+label 0xece2 DOC_adc
+
+label 0xec5f DOC_control_base
+label 0xec7f DOC_rts_base
+
