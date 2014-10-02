@@ -4,6 +4,9 @@
 ;
 ; stuff that resides before the main program code
 ; does not necessarily include "in-place" variables of code section
+;
+; tabbed labels are still unclear / presumed
+
 
 hex 8000-8007
 comm 8000 Ensoniq Mirage OS 3.2
@@ -24,13 +27,13 @@ label 8019 	word_8019_X
 label 801a 	word_801a_X
 label 801b 	word_801b_X
 label 801c	word_801c_X
-label 801d	word_801d_X
-label 801e	word_801e_X
+label 801d osparm_lfomod_src
+label 801e osparm_mixmod_src
 label 801f	word_801f_X
 
-label 8020	word_8020_X
+label 8020 MIDI_flag_omni_poly
 label 8021 MIDI_channel
-label 8022 MIDI_thru_enabled
+label 8022 MIDI_flag_thru_enabled
 
 label 8023 	word_8023_X
 label 8024 	word_8024_X
@@ -82,7 +85,10 @@ label 806b kbd_flag_damper_pedal_onoff
 label 806c	val_modwheel_related
 
 label 806f 	vector_806f_X
-label 8076 	vector_8076_X
+
+label 8076 	table_8076_X
+comm 8076 entry 3: MIDI rx related
+
 label 8079 kdb_pedal_state_40
 
 label 809f	809f_via_X
@@ -92,26 +98,25 @@ label 80a5 	vec_80a5
 label 80a7 	vec_80a7
 label 80a9 	vector_80a9_X
 label 80aa 	vector_80aa_X
-
+label 80ae panel_button
 label 80bb MIDI_cmd
 
 word 80bc-80bf
 label 80bc MIDI_txbuf_msg_start
 label 80be MIDI_txbuf_msg_end
-label 80c2 MIDI_txcmd_params
-label 80c3 MIDI_txcmd_param2
-label 80c4 MIDI_rxcmd_channel
-label 80c5 MIDI_rxcmd
-
-label 80cf MIDI_program_number
-
-word 80bc-80bf
 
 word 80c0-80c1
 label 80c0 ptr_UART_rxhdlr
+label 80c2 MIDI_txcmd_params
+label 80c3 MIDI_txcmd_param2
+label 80c4 MIDI_rxcmd_param1
+label 80c5 MIDI_rxcmd
 
 word 80c6-80c7
 label 80c6 ptr_UART_txhdlr
+
+label 80ce MIDI_bytecount
+label 80cf MIDI_program_number
 
 label 80d2 	vector_80d2_X
 
