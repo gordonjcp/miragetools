@@ -5,211 +5,259 @@
 ;	may also contain "in-place" variables
 ;	read last, therefore overrides any previous label definitions!
 
+label 82ae	code_82ae_via_U
+label 857f	code_857f_via_U
+label 85b9	code_85b9_via_U
+label 85c9	code_85c9_via_U
+label 867b	code_867b_via_U
+label 86a0	code_86a0_via_U
+
 label 885e context_switch
 
-label 893c	IRQ_entry
-label 894a	IRQ_chk_VIA_timer
-label 8951	IRQ_chk_VIA_dra
-label 8962	IRQ_chk_DOC
-label 896a	IRQ_exit
-label 896b	kbd_init_parser
-label 8989	IRQ_VIA_isr
-label 8871	IRQ_DOC
+label 88a5	rts_88a5_via_DX
+label 88a6	code_88a6_via_D
+label 88c2	code_88c2_via_D
+label 88de	code_88de_via_D
+label 88e3	code_88e3_via_D
 
-label 8976 	kbd_ctrl_ack
-label 8a25	kbd_note_on
-label 89a0	kbd_irq_exit
-label 89a1 	kbd_ctrl_parse
-label 89ac	kbd_chk_note_off
-label 89b7	kbd_chk_pedal_on
-label 89d4	kbd_chk_pedal_off
-label 89eb	kbd_parser_exit
+label 893c IRQ_entry
+label 894a IRQ_chk_VIA_timer
+label 8951 IRQ_chk_VIA_dra
+label 8962 IRQ_chk_DOC
+label 896a IRQ_exit
+label 896b kbd_init_parser
+label 8989 IRQ_VIA_isr
+label 8871 IRQ_DOC
 
-label 89ec	kbd_note_off
-label 89f6	kbd_scale_velocity
+label 8976 kbd_ctrl_ack
+label 8a25 kbd_note_on
+label 89a0 kbd_irq_exit
+label 89a1 kbd_ctrl_parse
+label 89ac kbd_chk_note_off
+label 89b7 kbd_chk_pedal_on
+label 89d4 kbd_chk_pedal_off
+label 89eb kbd_parser_exit
+
+label 89ec kbd_note_off
+label 89f6 kbd_scale_velocity
+
+label 8a2f	code_8a2f_via_D
+label 8a95	code_8a95_via_D
+label 8ac7	code_8ac7_via_D
+label 8aae	code_8aae_via_D
+label 8aef	code_8aef_via_D
+label 8b0f	code_8b0f_via_D
+label 8b49	code_8b49_via_D
+label 8bbe	code_8bbe_via_DX
+
 
 data 8bf1-8bfc
+label 8bf1	data_8bf1_via_X
+
 data 8e71-8e7f
+label 8e71	data_8e71_via_U
+
 data 8e80-8eae
 
 word 8eaf-8ece
-label 8eaf vectors_8eaf
-label 8ebf vectors_8ebf
+label 8eaf 	vectors_8eaf
+label 8ebf 	vectors_8ebf
+
+label 8ff1	code_8ff1_via_X
 
 data 8ff9-8fff
+label 8ff9	data_8ff9 via_X
+
+
 data 9000-900e
+label 900a adc_result
+label 900c adc_buf1
+label 900d adc_buf2
+label 900e adc_buf3
 
-label 900a	adc_result
-label 900c	adc_buf1
-label 900d	adc_buf2
-label 900e	adc_buf3
-
-label 900f	task0_code_D
-label 901f	task1_code_D
-label 90e2	task2_code_D
+label 900f 	task0_code_D
+label 901f 	task1_code_D
+label 90e2 	task2_code_D
 
 data 9d4a
+
 data 9ff3-a07d
-label a07e	MIDI_init_rxtx
-label a094	MIDI_init_rx
-label a0a3	MIDI_chk_msg_len_save
-label a0a5	MIDI_chk_msg_len
-label a0ac	MIDI_chk_long_msg
-label a0b5	MIDI_chk_msg_exit
-label a0b9	MIDI_do_note_on
-label a0c5	MIDI_do_note_off
-label a0cf	MIDI_set_pwheel_to_B
-label a0da	MIDI_set_pedal_to_B
-label a0e2	MIDI_set_mwheel_to_B
-label a0e8	MIDI_do_ctrlr_msg
-label a0fe	MIDI_set_pchng_to_B
+label 9ff3	data_9ff3_via_U
+label a057	data_a057_via_X
+label a077	data_a077_via_U
 
-label a116	MIDI_do_timing_clock
+label a07e MIDI_init_rxtx
+label a094 MIDI_init_rx
+label a0a3 MIDI_chk_msg_len_save
+label a0a5 MIDI_chk_msg_len
+label a0ac MIDI_chk_long_msg
+label a0b5 MIDI_chk_msg_exit
+label a0b9 MIDI_do_note_on
+label a0c5 MIDI_do_note_off
+label a0cf MIDI_set_pwheel_to_B
+label a0da MIDI_set_pedal_to_B
+label a0e2 MIDI_set_mwheel_to_B
+label a0e8 MIDI_do_ctrlr_msg
+label a0fe MIDI_set_pchng_to_B
 
-label a122	MIDI_do_3byte_cmd
-label a138	MIDI_txbyte
-label a13d	MIDI_byte_to_txbuf
-label a149	MIDI_txbuf_overflow
+label a116 MIDI_do_timing_clock
 
-label a151	FIRQ_entry
+label a122 MIDI_do_3byte_cmd
+label a138 MIDI_txbyte
+label a13d MIDI_byte_to_txbuf
+label a149 MIDI_txbuf_overflow
 
-label a1bc	UART_txhdlr
+label a151 FIRQ_entry
 
-label a215	UART_rx_chk_for_cmd
-label a22e	UART_rx_channel_message
-label a2eb	UART_rx_system_message
-label a247	UART_rx_skip_message
+label a1bc UART_txhdlr
 
-label a24A	UART_rx_parser_exit
-label a24B	UART_rx_parser_note_off
-label a268	UART_rx_parser_note_on
-label a2A3	UART_rx_parser_ctrlr
-label a2F8	UART_rx_parser_pitbend
-label a36B	UART_rx_parser_polyprs
-label a395	UART_rx_parser_progchn
-label a34A	UART_rx_parser_chnlprs
+label a215 UART_rx_chk_for_cmd
+label a22e UART_rx_channel_message
+label a2eb UART_rx_system_message
+label a247 UART_rx_skip_message
 
-label a3b0	UART_rx_parser_timing_clk
-label a3be	UART_rx_parser_seq_start
-label a3c6	UART_rx_parser_seq_cont
-label a3c2	UART_rx_parser_seq_stop
-label a3d3	UART_rx_parser_sense_rst
+label a24A UART_rx_parser_exit
+label a24B UART_rx_parser_note_off
+label a268 UART_rx_parser_note_on
+label a2A3 UART_rx_parser_ctrlr
+label a2F8 UART_rx_parser_pitbend
+
+label a30d	code_a30d_via_D
+label a32b	code_a32b_via_D
+
+label a36B UART_rx_parser_polyprs
+label a395 UART_rx_parser_progchn
+label a34A UART_rx_parser_chnlprs
+
+label a3b0 UART_rx_parser_timing_clk
+label a3be UART_rx_parser_seq_start
+label a3c6 UART_rx_parser_seq_cont
+label a3c2 UART_rx_parser_seq_stop
+label a3d3 UART_rx_parser_sense_rst
 
 word a3d4-a403
-label a3d4	MIDI_rx_chnlmsg_parsers
-label a3e4	MIDI_rx_systmsg_parsers
+label a3d4 MIDI_rx_vec_chnlmsg_parsers
+label a3e4 MIDI_rx_vec_systmsg_parsers
 
 label a404 pedal_handler_if_8028_not_zero
 
-label a4d4	load_samples
+label a4d4 load_samples
 
 word ab2a-ab2b
-label ab2a via_80ee
+label ab2a 	word_via_80ee
 
-label ac4f task3_code_D
+label ac4f 	task3_code_D
 
-label adb6 pedal_handler_2
+label adb6 	pedal_handler_2
 
 rmb ae42-b051
 
 comm ae42 stack frames for all 4 tasks
-label ae42 	task0_BOS
-label aeb9	task0_TOS
+label ae42 task0_BOS
+label aeb9 task0_TOS
 
-label af31	task1_TOS
+label af31 task1_TOS
 #label af63 task2_BOS
-label afd1	task2_TOS
-label b051	task3_TOS
+label afd1 task2_TOS
+label b051 task3_TOS
 
 data b051-b835
 
-
 comm b052 8 voice data sets per 77 bytes
-label b050	voice1_data_offs2
-label b052	voice1_data
-label b09f	voice2_data
-label b0ec	voice3_data
-label b139	voice4_data
-label b186	voice5_data
-label b1d3	voice6_data
-label b220	voice7_data
-label b26d	voice8_data
-label b2ba	voiceX_data_end
+label b050 voice1_data_offs2
+label b052 voice1_data
+label b09f voice2_data
+label b0ec voice3_data
+label b139 voice4_data
+label b186 voice5_data
+label b1d3 voice6_data
+label b220 voice7_data
+label b26d voice8_data
+label b2ba voiceX_data_end
 
-label B089	irq_hdlr_osc00_01
-label B094	irq_hdlr_osc02_03
-label B0D6	irq_hdlr_osc04_05
-label B0E1	irq_hdlr_osc06_07
-label B123	irq_hdlr_osc08_09
-label B12E	irq_hdlr_osc10_11
-label B170	irq_hdlr_osc12_13
-label B17B	irq_hdlr_osc14_15
-label B1BD	irq_hdlr_osc16_17
-label B1C8	irq_hdlr_osc18_19
-label B20A	irq_hdlr_osc20_21
-label B215	irq_hdlr_osc22_23
-label B257	irq_hdlr_osc24_25
-label B262	irq_hdlr_osc26_27
-label B2A4	irq_hdlr_osc28_29
-label B2AF	irq_hdlr_osc30_31
+label B089 irq_hdlr_osc00_01
+label B094 irq_hdlr_osc02_03
+label B0D6 irq_hdlr_osc04_05
+label B0E1 irq_hdlr_osc06_07
+label B123 irq_hdlr_osc08_09
+label B12E irq_hdlr_osc10_11
+label B170 irq_hdlr_osc12_13
+label B17B irq_hdlr_osc14_15
+label B1BD irq_hdlr_osc16_17
+label B1C8 irq_hdlr_osc18_19
+label B20A irq_hdlr_osc20_21
+label B215 irq_hdlr_osc22_23
+label B257 irq_hdlr_osc24_25
+label B262 irq_hdlr_osc26_27
+label B2A4 irq_hdlr_osc28_29
+label B2AF irq_hdlr_osc30_31
 
 word b2be-b2c5
-label b2be	context_storage
+label b2be context_storage
 comm b2be holds four task pointers
-label b2c6 	context_storage_end
+label b2c6 context_storage_end
+
+label b31d	data_b31d_via_X
 
 comm b31e these have the form pointer cur / pointer next / pointer cur / pointer next / 5 bytes / be1e / 9 bytes
-label B31E vec0_via_8eaf
-label B336 vec1_via_8eaf
-label B34E vec2_via_8eaf
-label B366 vec3_via_8eaf
-label B37E vec4_via_8eaf
-label B396 vec5_via_8eaf
-label B3AE vec6_via_8eaf
-label B3C6 vec7_via_8eaf
+label B31E 	vec0_via_8eaf
+label B336 	vec1_via_8eaf
+label B34E 	vec2_via_8eaf
+label B366 	vec3_via_8eaf
+label B37E 	vec4_via_8eaf
+label B396 	vec5_via_8eaf
+label B3AE 	vec6_via_8eaf
+label B3C6 	vec7_via_8eaf
+
+
+label b58e	data_b58e_via_X
 
 comm b58f these have the form pointer cur / pointer next / pointer cur / pointer next / 5 bytes / be1e / 9 bytes
-label B58F vec0_via_8ebf
-label B5A7 vec1_via_8ebf
-label B5BF vec2_via_8ebf
-label B5D7 vec3_via_8ebf
-label B5EF vec4_via_8ebf
-label B607 vec5_via_8ebf
-label B61F vec6_via_8ebf
-label B637 vec7_via_8ebf
+label B58F 	vec0_via_8ebf
+label B5A7 	vec1_via_8ebf
+label B5BF 	vec2_via_8ebf
+label B5D7 	vec3_via_8ebf
+label B5EF 	vec4_via_8ebf
+label B607 	vec5_via_8ebf
+label B61F 	vec6_via_8ebf
+label B637 	vec7_via_8ebf
 
 
-label b3d3 data0_b31e
-label b3fe data1_b336
-label b41e data2_b34e
-label b43e data3_b366
-label b45e data4_b37e
-label b47e data5_b396
-label b49e data6_b3ae
-label b4be data7_b3c6
-label b4fe tab_b4fe_step36
+label b3d3 	data0_via_b31e
+label b3fe 	data1_via_b336
+label b41e 	data2_via_b34e
+label b43e 	data3_via_b366
+label b45e 	data4_via_b37e
+label b47e 	data5_via_b396
+label b49e 	data6_via_b3ae
+label b4be 	data7_via_b3c6
+label b4fe 	tab_b4fe_step36
+
+label b60a	data_b60a_via_D
 	  
-label b64f data0_b85f
-label b651 data0_next_init
-label b66f data1_b5a7
-label b68f data2_b5bf
-label b6af data3_b5d7
-label b6cf data4_b5ef
-label b6ef data5_b607
-label b70f data6_b61f
-label b72f data7_b637
-label b74f dataX_b6XX_end
+label b64f	data0_via_b85f
+label b651	data0_next_init
+label b66f	data1_via_b5a7
+label b68e	b68e_via_D
+label b68f	data2_via_b5bf
+label b6af	data3_via_b5d7
+label b6ce	b6ce_via_D
+label b6cf	data4_via_b5ef
+label b6ef	data5_via_b607
+label b70f	data6_via_b61f
+label b72f	data7_via_b637
+label b74f	dataX_b6XX_end
 
-label b76f tab_b76f_step36
+label b76f	tab_b76f_step36
 
-label b7a2 via_ab2a
+label b7a2	data_via_ab2a
 
 word b804-b809
-label b804 vec_b804
-label b806 vec_sysmsg
-label b808 vec_b808
-label b80a ptr_b80a
-label b835 data_sysmsg
+label b804	vec_b804
+label b806	vec_sysmsg
+label b808	vec_b808
+label b80a	ptr_b80a
+label b835	data_sysmsg
 
 char b836-b86c
 
@@ -221,11 +269,10 @@ label B920 osentry
 label b96e tune_all_filters
 
 word b987-b996
-label b987 vectors_b987
+label b987 	vectors_b987
 comm b987 4 sets of S/D vectors, D get pushed to stack, S gets stored to b2be/c0/c2/c4
 
-
-label b997 unused_area
+label b997 OSRAM_unused
 unused b997-bfff
 
 

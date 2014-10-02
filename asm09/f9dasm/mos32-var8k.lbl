@@ -1,22 +1,46 @@
+; ----------------------------------------------------------------------
+; --- Ensoniq Mirage MASOS3.2 variable/data structures definitions -----
+; ----------------------------------------------------------------------
+;
+; stuff that resides before the main program code
+; does not necessarily include "in-place" variables of code section
 
 hex 8000-8007
 comm 8000 Ensoniq Mirage OS 3.2
 
-
 data 8011-828b
+label 8005 	word_8006_D
+label 8006 	word_8006_X
+label 8007 	word_8007_X
+label 8011 	word_8011_X
 label 8012 osparm_tuning
 label 8013 osparm_bendrange
 label 8014 osparm_velosens
 label 8015 osparm_upperlower
+label 8016 	word_8016_X
+label 8017 	word_8017_X
+label 8018 	word_8018_X
+label 8019 	word_8019_X
+label 801a 	word_801a_X
+label 801b 	word_801b_X
+label 801c	word_801c_X
+label 801d	word_801d_X
+label 801e	word_801e_X
+label 801f	word_801f_X
 
-word 801c-801d
-label 801c	vector_801c_X
-label 8020
+label 8020	word_8020_X
 label 8021 MIDI_channel
 label 8022 MIDI_thru_enabled
 
-word 8023-8024
-label 8023 	vector_8023_X
+label 8023 	word_8023_X
+label 8024 	word_8024_X
+label 8025 	word_8025_X
+label 8026 	word_8026_X
+label 8027 	word_8027_X
+label 8028 	word_8028_X
+label 8029 	word_8029_X
+label 802a 	word_802a_X
+label 802b 	word_802b_X
 
 label 8038 	flag_8038_0_marks_empty_8059_task
 
@@ -49,11 +73,17 @@ word 8061-8062
 label 8061 kbd_parser_ptr
 label 8068 	vector_8068_X
 label 806b kbd_pedal_state_01
+label 806f 	vector_806f_X
+label 8076 	vector_8076_X
 label 8079 kdb_pedal_state_40
 
-word 80a5-80a8
+label 809f	809f_via_X
+
+word 80a5-80ab
 label 80a5 	vec_80a5
 label 80a7 	vec_80a7
+label 80a9 	vector_80a9_X
+label 80aa 	vector_80aa_X
 
 label 80bb MIDI_cmd
 
@@ -75,6 +105,8 @@ label 80c0 ptr_UART_rxhdlr
 word 80c6-80c7
 label 80c6 ptr_UART_txhdlr
 
+label 80d2 	vector_80d2_X
+
 label 80d5 disk_first_trk
 label 80d6 disk_first_sec
 label 80d7 disk_last_trk
@@ -85,6 +117,12 @@ word 80ec-80ef
 label 80f4 tab_setbit_0to7
 label 80fc tab_clrbit_0to7
 
+label 8107	field_8107_via_D
+
+label 8209	data_8209_via_X
+label 820c	data_820c_via_X
+label 820f	data_820f_via_X
+
 label 8225 MIDI_txbuf_base
 label 8235 MIDI_txbuf_len
 label 8236 MIDI_rxbuf_len
@@ -93,9 +131,10 @@ label 8238 MIDI_rxbuf_base
 word 8278-827b
 label 8278 	vec_to_8280
 label 827a 	vec_to_827c
-label 8280 	via_8278
-label 827c 	via_827a
+label 8280 	data_via_8278
+label 827c 	data_via_827a
 
 word 88fc-893b
 label 88fc oscirq_vectors
 comm 32 oscillator IRQ vectors as 16 pairs
+
