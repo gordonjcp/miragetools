@@ -140,7 +140,7 @@ SYS_firqvec:
 ;------------------------------------------------------------------------
 
 SYS_osvec:
-        JMP     osentry                  ;800E: 7E B9 20 
+        JMP     OS_entry                 ;800E: 7E B9 20 
 ;------------------------------------------------------------------------
 
 word_8011_X:
@@ -179,22 +179,22 @@ word_801b_X:
 word_801c_X:
         FCB     $01                      ;801C: 01 
 
-word_801d_X:
+osparm_lfomod_src:
         FCB     $01                      ;801D: 01 
 
-word_801e_X:
+osparm_mixmod_src:
         FCB     $01                      ;801E: 01 
 
 word_801f_X:
         FCB     $7E                      ;801F: 7E 
 
-word_8020_X:
+MIDI_flag_omni_poly:
         FCB     $01                      ;8020: 01 
 
 MIDI_channel:
         FCB     $00                      ;8021: 00 
 
-MIDI_thru_enabled:
+MIDI_flag_thru_enabled:
         FCB     $00                      ;8022: 00 
 
 word_8023_X:
@@ -315,7 +315,8 @@ M8070:	FCB     $00,$00                  ;8070: 00 00
 M8072:	FCB     $00                      ;8072: 00 
 M8073:	FCB     $00,$00,$32              ;8073: 00 00 32 
 
-vector_8076_X:
+; entry 3: MIDI rx related
+table_8076_X:
         FCB     $00                      ;8076: 00 
 M8077:	FCB     $00,$00                  ;8077: 00 00 
 
@@ -371,7 +372,9 @@ vector_80a9_X:
         FDB     M0000                    ;80A9: 00 00 
 M80AB:	FDB     M0000                    ;80AB: 00 00 
 M80AD:	FCB     $11                      ;80AD: 11 
-M80AE:	FCB     $0B                      ;80AE: 0B 
+
+panel_button:
+        FCB     $0B                      ;80AE: 0B 
 M80AF:	FCB     $F0                      ;80AF: F0 
 M80B0:	FCB     $0F                      ;80B0: 0F 
 M80B1:	FCB     $0F                      ;80B1: 0F 
@@ -402,7 +405,7 @@ MIDI_txcmd_params:
 MIDI_txcmd_param2:
         FCB     $00                      ;80C3: 00 
 
-MIDI_rxcmd_channel:
+MIDI_rxcmd_param1:
         FCB     $00                      ;80C4: 00 
 
 MIDI_rxcmd:
@@ -412,7 +415,9 @@ ptr_UART_txhdlr:
         FDB     UART_txhdlr              ;80C6: A1 BC 
         FCB     $00,$00,$00,$00,$00      ;80C8: 00 00 00 00 00 
 M80CD:	FCB     $00                      ;80CD: 00 
-M80CE:	FCB     $00                      ;80CE: 00 
+
+MIDI_bytecount:
+        FCB     $00                      ;80CE: 00 
 
 MIDI_program_number:
         FCB     $FF                      ;80CF: FF 
@@ -661,7 +666,7 @@ Z831C:	BEQ     Z834B                    ;831C: 27 2D
 Z833D:	LDA     #$40                     ;833D: 86 40 
         STA     $07,X                    ;833F: A7 07 
         TFR     X,Y                      ;8341: 1F 12 
-        JSR     Z8E05                    ;8343: BD 8E 05 
+        JSR     calc_release_times       ;8343: BD 8E 05 
 Z8346:	RTS                              ;8346: 39 
 ;------------------------------------------------------------------------
 Z8347:	LDX     ,X                       ;8347: AE 84 
@@ -785,8 +790,8 @@ Z841B:	BEQ     Z842F                    ;841B: 27 12
         BPL     Z842D                    ;8421: 2A 0A 
 Z8423:	LDU     $0C,X                    ;8423: EE 0C 
         TFR     X,Y                      ;8425: 1F 12 
-        JSR     Z8BCD                    ;8427: BD 8B CD 
-        JMP     Z8C34                    ;842A: 7E 8C 34 
+        JSR     soundengine_calc_tuning_from_note ;8427: BD 8B CD 
+        JMP     soundengine_lfo          ;842A: 7E 8C 34 
 ;------------------------------------------------------------------------
 Z842D:	BRA     Z8460                    ;842D: 20 31 
 ;------------------------------------------------------------------------
@@ -822,7 +827,7 @@ Z8460:	LDA     #$80                     ;8460: 86 80
         JSR     Z8E45                    ;8466: BD 8E 45 
         JSR     Z8D03                    ;8469: BD 8D 03 
         LDU     $0C,Y                    ;846C: EE 2C 
-        JSR     Z8BCD                    ;846E: BD 8B CD 
+        JSR     soundengine_calc_tuning_from_note ;846E: BD 8B CD 
         LDU     $0C,Y                    ;8471: EE 2C 
         LDX     $0E,Y                    ;8473: AE 2E 
         ORCC    #$10                     ;8475: 1A 10 
@@ -836,7 +841,7 @@ Z8460:	LDA     #$80                     ;8460: 86 80
         STA     $24,X                    ;848A: A7 88 24 
         CLR     $17,Y                    ;848D: 6F A8 17 
         PSHS    X                        ;8490: 34 10 
-        JSR     Z8C34                    ;8492: BD 8C 34 
+        JSR     soundengine_lfo          ;8492: BD 8C 34 
         LDU     $0C,Y                    ;8495: EE 2C 
         LDX     $0E,Y                    ;8497: AE 2E 
         JSR     Z8A78                    ;8499: BD 8A 78 
@@ -1100,7 +1105,7 @@ Z8683:	BEQ     Z869F                    ;8683: 27 1A
         CMPA    $05,Y                    ;868B: A1 25 
         BNE     Z869A                    ;868D: 26 0B 
         PSHS    A                        ;868F: 34 02 
-        JSR     Z8E05                    ;8691: BD 8E 05 
+        JSR     calc_release_times       ;8691: BD 8E 05 
         LDA     #$40                     ;8694: 86 40 
         STA     $07,Y                    ;8696: A7 27 
         PULS    A                        ;8698: 35 02 
@@ -1118,7 +1123,7 @@ Z86A7:	BEQ     Z86CF                    ;86A7: 27 26
         LDD     ,S                       ;86A9: EC E4 
         CMPD    $04,Y                    ;86AB: 10 A3 24 
         BNE     Z86CA                    ;86AE: 26 1A 
-        JSR     Z8E05                    ;86B0: BD 8E 05 
+        JSR     calc_release_times       ;86B0: BD 8E 05 
         TFR     Y,X                      ;86B3: 1F 21 
         LDA     #$40                     ;86B5: 86 40 
         STA     $07,X                    ;86B7: A7 07 
@@ -1138,13 +1143,13 @@ Z86CF:	JSR     Z8667                    ;86CF: BD 86 67
         LDD     ,S                       ;86D7: EC E4 
         CMPD    $04,Y                    ;86D9: 10 A3 24 
         BNE     Z86E1                    ;86DC: 26 03 
-        JSR     Z8E05                    ;86DE: BD 8E 05 
+        JSR     calc_release_times       ;86DE: BD 8E 05 
 Z86E1:	LDY     M8047                    ;86E1: 10 9E 47 
         BEQ     Z86F0                    ;86E4: 27 0A 
         LDD     ,S                       ;86E6: EC E4 
         CMPD    $04,Y                    ;86E8: 10 A3 24 
         BNE     Z86F0                    ;86EB: 26 03 
-        JSR     Z8E05                    ;86ED: BD 8E 05 
+        JSR     calc_release_times       ;86ED: BD 8E 05 
 Z86F0:	PULS    Y,X                      ;86F0: 35 30 
         JSR     Z8738                    ;86F2: BD 87 38 
         RTS                              ;86F5: 39 
@@ -1247,37 +1252,55 @@ Z8797:	TFR     X,D                      ;8797: 1F 10
         STD     ,U                       ;87BC: ED C4 
         RTS                              ;87BE: 39 
 ;------------------------------------------------------------------------
-Z87BF:	LDU     #code_82ae_via_U         ;87BF: CE 82 AE 
+
+hook_task_82ae:
+        LDU     #code_82ae_via_U         ;87BF: CE 82 AE 
         BRA     Z87D3                    ;87C2: 20 0F 
 ;------------------------------------------------------------------------
 Z87C4:	PSHS    A                        ;87C4: 34 02 
         LDA     kbd_msg_byte_count       ;87C6: 96 5D 
         CMPA    #$04                     ;87C8: 81 04 
-        BHI     Z87CE                    ;87CA: 22 02 
+        BHI     hook_task_8380           ;87CA: 22 02 
         PULS    PC,A                     ;87CC: 35 82 
 ;------------------------------------------------------------------------
-Z87CE:	PULS    A                        ;87CE: 35 02 
+
+hook_task_8380:
+        PULS    A                        ;87CE: 35 02 
         LDU     #code_8380_via_U         ;87D0: CE 83 80 
 Z87D3:	EXG     X,D                      ;87D3: 1E 10 
-        JMP     Z87F7                    ;87D5: 7E 87 F7 
+        JMP     hook_task_in_U           ;87D5: 7E 87 F7 
 ;------------------------------------------------------------------------
-Z87D8:	LDU     #code_857f_via_U         ;87D8: CE 85 7F 
+
+hook_task_857f:
+        LDU     #code_857f_via_U         ;87D8: CE 85 7F 
         BRA     Z87D3                    ;87DB: 20 F6 
 ;------------------------------------------------------------------------
-Z87DD:	LDU     #code_867b_via_U         ;87DD: CE 86 7B 
-        BRA     Z87F7                    ;87E0: 20 15 
+
+hook_task_867b:
+        LDU     #code_867b_via_U         ;87DD: CE 86 7B 
+        BRA     hook_task_in_U           ;87E0: 20 15 
 ;------------------------------------------------------------------------
-Z87E2:	LDU     #code_86a0_via_U         ;87E2: CE 86 A0 
-        BRA     Z87F7                    ;87E5: 20 10 
+
+hook_task_86a0:
+        LDU     #code_86a0_via_U         ;87E2: CE 86 A0 
+        BRA     hook_task_in_U           ;87E5: 20 10 
 ;------------------------------------------------------------------------
-Z87E7:	LDU     #code_85c9_via_U         ;87E7: CE 85 C9 
-        BRA     Z87F4                    ;87EA: 20 08 
+
+hook_task_85c9:
+        LDU     #code_85c9_via_U         ;87E7: CE 85 C9 
+        BRA     hook_task_in_U_with_A_from_$19,X ;87EA: 20 08 
 ;------------------------------------------------------------------------
-Z87EC:	TFR     U,X                      ;87EC: 1F 31 
+
+hook_task_85b9:
+        TFR     U,X                      ;87EC: 1F 31 
         LDU     #code_85b9_via_U         ;87EE: CE 85 B9 
         LEAX    -$37,X                   ;87F1: 30 88 C9 
-Z87F4:	LDA     $19,X                    ;87F4: A6 88 19 
-Z87F7:	PSHS    CC                       ;87F7: 34 01 
+
+hook_task_in_U_with_A_from_$19,X:
+        LDA     $19,X                    ;87F4: A6 88 19 
+
+hook_task_in_U:
+        PSHS    CC                       ;87F7: 34 01 
         ORCC    #$50                     ;87F9: 1A 50 
         JSR     Z881F                    ;87FB: BD 88 1F 
         LDX     task_vector_805b         ;87FE: 9E 5B 
@@ -1424,7 +1447,7 @@ code_88e3_via_D:
         ANDB    #$F8                     ;88F1: C4 F8 
         TFR     D,Y                      ;88F3: 1F 02 
         LDU     $88BC,Y                  ;88F5: EE A9 88 BC 
-        JMP     Z87EC                    ;88F9: 7E 87 EC 
+        JMP     hook_task_85b9           ;88F9: 7E 87 EC 
 ;------------------------------------------------------------------------
 
 oscirq_vectors:
@@ -1579,7 +1602,7 @@ kbd_chk_pedal_off:
         JSR     MIDI_set_pedal_to_B      ;89DF: BD A0 DA 
         JSR     pedal_handler_2          ;89E2: BD AD B6 
         LDX     #val_modwheel            ;89E5: 8E 80 68 
-        JSR     Z87DD                    ;89E8: BD 87 DD 
+        JSR     hook_task_867b           ;89E8: BD 87 DD 
 
 kbd_parser_exit:
         RTS                              ;89EB: 39 
@@ -1617,7 +1640,7 @@ kbd_set_off_vel:
         LDX     #val_modwheel            ;8A1A: 8E 80 68 
         TST     word_801c_X              ;8A1D: 0D 1C 
         BEQ     kbd_exit_scale_off_vel   ;8A1F: 27 03 
-        JMP     Z87BF                    ;8A21: 7E 87 BF 
+        JMP     hook_task_82ae           ;8A21: 7E 87 BF 
 ;------------------------------------------------------------------------
 
 kbd_exit_scale_off_vel:
@@ -1693,42 +1716,42 @@ invoke_hdlr_[1C,X]_data_1A,X:
         JMP     [$1C,X]                  ;8A92: 6E 98 1C 
 ;------------------------------------------------------------------------
 
-code_8a95_via_D:
+EG_VCF_attack_phase:
         ADDD    $1E,X                    ;8A95: E3 88 1E 
         BCS     Z8A9F                    ;8A98: 25 05 
         CMPA    $20,X                    ;8A9A: A1 88 20 
         BCS     Z8AA9                    ;8A9D: 25 0A 
-Z8A9F:	LDD     #code_8aae_via_D         ;8A9F: CC 8A AE 
+Z8A9F:	LDD     #EG_VCF_decay_phase      ;8A9F: CC 8A AE 
         STD     $1C,X                    ;8AA2: ED 88 1C 
         LDA     $20,X                    ;8AA5: A6 88 20 
         CLRB                             ;8AA8: 5F 
 Z8AA9:	STD     $1A,X                    ;8AA9: ED 88 1A 
-        BRA     code_8ad7_via_D          ;8AAC: 20 29 
+        BRA     VCF_update               ;8AAC: 20 29 
 ;------------------------------------------------------------------------
 
-code_8aae_via_D:
+EG_VCF_decay_phase:
         SUBD    $21,X                    ;8AAE: A3 88 21 
         BCS     Z8AB8                    ;8AB1: 25 05 
         CMPA    $23,X                    ;8AB3: A1 88 23 
         BHI     Z8AC2                    ;8AB6: 22 0A 
-Z8AB8:	LDD     #code_8ad7_via_D         ;8AB8: CC 8A D7 
+Z8AB8:	LDD     #VCF_update              ;8AB8: CC 8A D7 
         STD     $1C,X                    ;8ABB: ED 88 1C 
         LDA     $23,X                    ;8ABE: A6 88 23 
         CLRB                             ;8AC1: 5F 
 Z8AC2:	STD     $1A,X                    ;8AC2: ED 88 1A 
-        BRA     code_8ad7_via_D          ;8AC5: 20 10 
+        BRA     VCF_update               ;8AC5: 20 10 
 ;------------------------------------------------------------------------
 
-code_8ac7_via_D:
+EG_VCF_release_phase:
         SUBD    $24,X                    ;8AC7: A3 88 24 
         BCC     Z8AD4                    ;8ACA: 24 08 
-        LDD     #code_8ad7_via_D         ;8ACC: CC 8A D7 
+        LDD     #VCF_update              ;8ACC: CC 8A D7 
         STD     $1C,X                    ;8ACF: ED 88 1C 
         CLRA                             ;8AD2: 4F 
         CLRB                             ;8AD3: 5F 
 Z8AD4:	STD     $1A,X                    ;8AD4: ED 88 1A 
 
-code_8ad7_via_D:
+VCF_update:
         ANDCC   #$AF                     ;8AD7: 1C AF 
         CMPA    $27,X                    ;8AD9: A1 88 27 
         BLS     Z8AE1                    ;8ADC: 23 03 
@@ -1740,12 +1763,12 @@ Z8AE1:	LDB     $28,X                    ;8AE1: E6 88 28
         JMP     [$2B,X]                  ;8AEC: 6E 98 2B 
 ;------------------------------------------------------------------------
 
-code_8aef_via_D:
+soundengine_8aef:
         ADDD    $2D,X                    ;8AEF: E3 88 2D 
         BCS     Z8AF9                    ;8AF2: 25 05 
         CMPA    $2F,X                    ;8AF4: A1 88 2F 
         BCS     Z8B0A                    ;8AF7: 25 11 
-Z8AF9:	LDD     #code_8b0f_via_D         ;8AF9: CC 8B 0F 
+Z8AF9:	LDD     #soundengine_8b0f        ;8AF9: CC 8B 0F 
         STD     $2B,X                    ;8AFC: ED 88 2B 
         LDA     $2F,X                    ;8AFF: A6 88 2F 
         LSRA                             ;8B02: 44 
@@ -1753,15 +1776,15 @@ Z8AF9:	LDD     #code_8b0f_via_D         ;8AF9: CC 8B 0F
         LDA     $2F,X                    ;8B06: A6 88 2F 
         CLRB                             ;8B09: 5F 
 Z8B0A:	STD     $29,X                    ;8B0A: ED 88 29 
-        BRA     Z8B81                    ;8B0D: 20 72 
+        BRA     soundengine_8b81         ;8B0D: 20 72 
 ;------------------------------------------------------------------------
 
-code_8b0f_via_D:
+soundengine_8b0f:
         SUBD    $30,X                    ;8B0F: A3 88 30 
         BCS     Z8B19                    ;8B12: 25 05 
         CMPA    $32,X                    ;8B14: A1 88 32 
         BHI     Z8B2E                    ;8B17: 22 15 
-Z8B19:	LDD     #Z8B81                   ;8B19: CC 8B 81 
+Z8B19:	LDD     #soundengine_8b81        ;8B19: CC 8B 81 
         STD     $2B,X                    ;8B1C: ED 88 2B 
         CLRB                             ;8B1F: 5F 
         LDA     $32,X                    ;8B20: A6 88 32 
@@ -1781,24 +1804,24 @@ Z8B2E:	CMPA    $2D,X                    ;8B2E: A1 88 2D
         STA     $2D,X                    ;8B3F: A7 88 2D 
         PULS    A                        ;8B42: 35 02 
 Z8B44:	STD     $29,X                    ;8B44: ED 88 29 
-        BRA     Z8B81                    ;8B47: 20 38 
+        BRA     soundengine_8b81         ;8B47: 20 38 
 ;------------------------------------------------------------------------
 
-code_8b49_via_D:
+soundengine_8b49:
         SUBD    $33,X                    ;8B49: A3 88 33 
         BCS     Z8B51                    ;8B4C: 25 03 
         TSTA                             ;8B4E: 4D 
         BNE     Z8B68                    ;8B4F: 26 17 
-Z8B51:	LDD     #code_8bbe_via_DX        ;8B51: CC 8B BE 
+Z8B51:	LDD     #soundengine_8bbe        ;8B51: CC 8B BE 
         STD     $2B,X                    ;8B54: ED 88 2B 
         CLRB                             ;8B57: 5F 
         CLRA                             ;8B58: 4F 
         STD     $29,X                    ;8B59: ED 88 29 
         PSHS    U,Y,X                    ;8B5C: 34 70 
-        JSR     Z87E7                    ;8B5E: BD 87 E7 
+        JSR     hook_task_85c9           ;8B5E: BD 87 E7 
         LDD     $29,X                    ;8B61: EC 88 29 
         PULS    U,Y,X                    ;8B64: 35 70 
-        BRA     Z8B81                    ;8B66: 20 19 
+        BRA     soundengine_8b81         ;8B66: 20 19 
 ;------------------------------------------------------------------------
 Z8B68:	CMPA    $2D,X                    ;8B68: A1 88 2D 
         BHI     Z8B7E                    ;8B6B: 22 11 
@@ -1810,9 +1833,11 @@ Z8B68:	CMPA    $2D,X                    ;8B68: A1 88 2D
         STA     $2D,X                    ;8B79: A7 88 2D 
         PULS    A                        ;8B7C: 35 02 
 Z8B7E:	STD     $29,X                    ;8B7E: ED 88 29 
-Z8B81:	LDB     $36,X                    ;8B81: E6 88 36 
+
+soundengine_8b81:
+        LDB     $36,X                    ;8B81: E6 88 36 
         BNE     Z8B97                    ;8B84: 26 11 
-        LDB     word_801e_X              ;8B86: D6 1E 
+        LDB     osparm_mixmod_src        ;8B86: D6 1E 
         CMPB    #$09                     ;8B88: C1 09 
         BNE     Z8B91                    ;8B8A: 26 05 
         LDB     $18,X                    ;8B8C: E6 88 18 
@@ -1845,17 +1870,19 @@ Z8BAB:	PSHS    U,A                      ;8BAB: 34 42
 Z8BB9:	JSR     ROM_set_DOC_volume_call_hdlrD ;8BB9: BD F6 DD 
         PULS    U                        ;8BBC: 35 40 
 
-code_8bbe_via_DX:
+soundengine_8bbe:
         ANDCC   #$AF                     ;8BBE: 1C AF 
         RTS                              ;8BC0: 39 
 ;------------------------------------------------------------------------
 Z8BC1:	LDA     #$40                     ;8BC1: 86 40 
         STA     $24,X                    ;8BC3: A7 88 24 
-        LDD     #code_8ac7_via_D         ;8BC6: CC 8A C7 
+        LDD     #EG_VCF_release_phase    ;8BC6: CC 8A C7 
         STD     $1C,X                    ;8BC9: ED 88 1C 
         RTS                              ;8BCC: 39 
 ;------------------------------------------------------------------------
-Z8BCD:	LDB     $06,Y                    ;8BCD: E6 26 
+
+soundengine_calc_tuning_from_note:
+        LDB     $06,Y                    ;8BCD: E6 26 
         CMPB    M807D                    ;8BCF: D1 7D 
         BCS     Z8BD5                    ;8BD1: 25 02 
         SUBB    #$18                     ;8BD3: C0 18 
@@ -1888,7 +1915,7 @@ Z8C00:	LDD     word_8011_X              ;8C00: FC 80 11
         BCS     Z8C00                    ;8C0C: 25 F2 
         LDY     #voice1_data             ;8C0E: 10 8E B0 52 
 Z8C12:	INC     flag_804e_0_disables_call_8059_task ;8C12: 0C 4E 
-        JSR     Z8C34                    ;8C14: BD 8C 34 
+        JSR     soundengine_lfo          ;8C14: BD 8C 34 
         LEAY    $4D,Y                    ;8C17: 31 A8 4D 
         PSHS    Y                        ;8C1A: 34 20 
         JSR     Z828C                    ;8C1C: BD 82 8C 
@@ -1901,10 +1928,12 @@ Z8C2B:	PULS    Y                        ;8C2B: 35 20
         BCS     Z8C12                    ;8C31: 25 DF 
         RTS                              ;8C33: 39 
 ;------------------------------------------------------------------------
-Z8C34:	LDU     $04,Y                    ;8C34: EE 24 
+
+soundengine_lfo:
+        LDU     $04,Y                    ;8C34: EE 24 
         LDB     $14,Y                    ;8C36: E6 A8 14 
         BNE     Z8C4F                    ;8C39: 26 14 
-        LDA     word_801d_X              ;8C3B: 96 1D 
+        LDA     osparm_lfomod_src        ;8C3B: 96 1D 
         CMPA    #$09                     ;8C3D: 81 09 
         BNE     Z8C46                    ;8C3F: 26 05 
         LDB     $18,Y                    ;8C41: E6 A8 18 
@@ -1941,11 +1970,13 @@ Z8C66:	TFR     A,B                      ;8C66: 1F 89
         JSR     ROM_set_DOC_freq_call_hdlrU ;8C7C: BD F5 F1 
         RTS                              ;8C7F: 39 
 ;------------------------------------------------------------------------
-Z8C80:	LDY     #voice1_data             ;8C80: 10 8E B0 52 
-Z8C84:	LDD     #code_8ad7_via_D         ;8C84: CC 8A D7 
+
+soundengine_init_voice_params:
+        LDY     #voice1_data             ;8C80: 10 8E B0 52 
+Z8C84:	LDD     #VCF_update              ;8C84: CC 8A D7 
         STD     $1C,Y                    ;8C87: ED A8 1C 
         CLR     $1A,Y                    ;8C8A: 6F A8 1A 
-        LDD     #code_8bbe_via_DX        ;8C8D: CC 8B BE 
+        LDD     #soundengine_8bbe        ;8C8D: CC 8B BE 
         STD     $2B,Y                    ;8C90: ED A8 2B 
         CLR     $29,Y                    ;8C93: 6F A8 29 
         LEAY    $4D,Y                    ;8C96: 31 A8 4D 
@@ -2061,15 +2092,15 @@ Z8D65:	STA     $36,Y                    ;8D65: A7 A8 36
         STD     $29,Y                    ;8D6A: ED A8 29 
         STD     $1A,Y                    ;8D6D: ED A8 1A 
         STA     $26,Y                    ;8D70: A7 A8 26 
-        LDD     #code_8a95_via_D         ;8D73: CC 8A 95 
+        LDD     #EG_VCF_attack_phase     ;8D73: CC 8A 95 
         STD     $1C,Y                    ;8D76: ED A8 1C 
-        LDD     #code_8aef_via_D         ;8D79: CC 8A EF 
+        LDD     #soundengine_8aef        ;8D79: CC 8A EF 
         STD     $2B,Y                    ;8D7C: ED A8 2B 
         LDU     #ROM_16bit_1exp          ;8D7F: CE F7 FD 
-        JSR     Z8DA1                    ;8D82: BD 8D A1 
+        JSR     soundengine_calc_EG      ;8D82: BD 8D A1 
         LEAX    $0A,X                    ;8D85: 30 0A 
         LEAY    $0F,Y                    ;8D87: 31 2F 
-        JSR     Z8DA1                    ;8D89: BD 8D A1 
+        JSR     soundengine_calc_EG      ;8D89: BD 8D A1 
         LEAY    -$0F,Y                   ;8D8C: 31 31 
         LDA     M8067                    ;8D8E: 96 67 
         LDB     $2F,Y                    ;8D90: E6 A8 2F 
@@ -2081,7 +2112,9 @@ Z8D65:	STA     $36,Y                    ;8D65: A7 A8 36
         STA     $32,Y                    ;8D9D: A7 A8 32 
         RTS                              ;8DA0: 39 
 ;------------------------------------------------------------------------
-Z8DA1:	LDA     $11,X                    ;8DA1: A6 88 11 
+
+soundengine_calc_EG:
+        LDA     $11,X                    ;8DA1: A6 88 11 
         LDB     M8065                    ;8DA4: D6 65 
         MUL                              ;8DA6: 3D 
         NEGA                             ;8DA7: 40 
@@ -2139,11 +2172,13 @@ Z8E01:	ASLA                             ;8E01: 48
         LDD     A,U                      ;8E02: EC C6 
         RTS                              ;8E04: 39 
 ;------------------------------------------------------------------------
-Z8E05:	LDX     $0A,Y                    ;8E05: AE 2A 
+
+calc_release_times:
+        LDX     $0A,Y                    ;8E05: AE 2A 
         LDU     #ROM_16bit_1exp          ;8E07: CE F7 FD 
-        LDD     #code_8ac7_via_D         ;8E0A: CC 8A C7 
+        LDD     #EG_VCF_release_phase    ;8E0A: CC 8A C7 
         STD     $1C,Y                    ;8E0D: ED A8 1C 
-        LDD     #code_8b49_via_D         ;8E10: CC 8B 49 
+        LDD     #soundengine_8b49        ;8E10: CC 8B 49 
         STD     $2B,Y                    ;8E13: ED A8 2B 
         LDB     $09,Y                    ;8E16: E6 29 
         LDA     $15,X                    ;8E18: A6 88 15 
@@ -2172,12 +2207,14 @@ Z8E05:	LDX     $0A,Y                    ;8E05: AE 2A
 ;------------------------------------------------------------------------
 Z8E45:	LDB     $06,Y                    ;8E45: E6 26 
         CMPB    #$24                     ;8E47: C1 24 
-        BCC     Z8E4D                    ;8E49: 24 02 
+        BCC     code_8e4d_via_YU         ;8E49: 24 02 
         LDB     #$24                     ;8E4B: C6 24 
-Z8E4D:	CMPB    #$61                     ;8E4D: C1 61 
+
+code_8e4d_via_YU:
+        CMPB    #$61                     ;8E4D: C1 61 
         BLS     Z8E53                    ;8E4F: 23 02 
         LDB     #$61                     ;8E51: C6 61 
-Z8E53:	LDU     #Z8E4D                   ;8E53: CE 8E 4D 
+Z8E53:	LDU     #code_8e4d_via_YU        ;8E53: CE 8E 4D 
         LDA     B,U                      ;8E56: A6 C5 
         ANDA    #$0F                     ;8E58: 84 0F 
         CMPB    M807D                    ;8E5A: D1 7D 
@@ -2231,17 +2268,19 @@ Z8ECF:	LDY     vec_80a7                 ;8ECF: 10 9E A7
         LDX     #vectors_8eaf            ;8ED2: 8E 8E AF 
         LDU     #data_8e71_via_U         ;8ED5: CE 8E 71 
         CLRA                             ;8ED8: 4F 
-        BSR     Z8EEC                    ;8ED9: 8D 11 
+        BSR     soundengine_find_wavesample_for_key ;8ED9: 8D 11 
         PSHS    A                        ;8EDB: 34 02 
         LDY     vec_80a5                 ;8EDD: 10 9E A5 
         LDX     #vectors_8ebf            ;8EE0: 8E 8E BF 
-        BSR     Z8EEC                    ;8EE3: 8D 07 
+        BSR     soundengine_find_wavesample_for_key ;8EE3: 8D 07 
         PULS    A                        ;8EE5: 35 02 
         ADDA    #$24                     ;8EE7: 8B 24 
         STA     M807D                    ;8EE9: 97 7D 
         RTS                              ;8EEB: 39 
 ;------------------------------------------------------------------------
-Z8EEC:	LDB     $0A,Y                    ;8EEC: E6 2A 
+
+soundengine_find_wavesample_for_key:
+        LDB     $0A,Y                    ;8EEC: E6 2A 
         ASLB                             ;8EEE: 58 
         LDX     B,X                      ;8EEF: AE 85 
 Z8EF1:	CMPA    $0E,X                    ;8EF1: A1 0E 
@@ -2262,7 +2301,9 @@ Z8F08:	CMPA    #$3C                     ;8F08: 81 3C
         BLS     Z8EF1                    ;8F0E: 23 E1 
 Z8F10:	RTS                              ;8F10: 39 
 ;------------------------------------------------------------------------
-Z8F11:	PSHS    Y,D                      ;8F11: 34 26 
+
+soundengine_wave_looping_related:
+        PSHS    Y,D                      ;8F11: 34 26 
         CLRA                             ;8F13: 4F 
         CMPY    #vec0_via_8ebf           ;8F14: 10 8C B5 8F 
         BCS     Z8F1C                    ;8F18: 25 02 
@@ -2389,26 +2430,26 @@ data_8ff9:
         FCB     $3F,$7F,$00,$09,$12,$1B  ;8FFF: 3F 7F 00 09 12 1B 
         FCB     $24,$2D,$36,$3F          ;9005: 24 2D 36 3F 
 
-adc_pitchwheel_last:
+ADC_pitchwheel_last:
         FCB     $40                      ;9009: 40 
 
-adc_result:
+ADC_result:
         FCB     $00                      ;900A: 00 
 
-adc_modwheel_last:
+ADC_modwheel_last:
         FCB     $00                      ;900B: 00 
 
-adc_buf1:
+ADC_buf1:
         FCB     $00                      ;900C: 00 
 
-adc_buf2:
+ADC_buf2:
         FCB     $00                      ;900D: 00 
 
-adc_buf3:
+ADC_buf3:
         FCB     $00                      ;900E: 00 
 ;------------------------------------------------------------------------
 
-task0_code_D:
+task0_code:
         LDA     M802F                    ;900F: 96 2F 
         BPL     Z901A                    ;9011: 2A 07 
         INC     M802F                    ;9013: 0C 2F 
@@ -2416,23 +2457,25 @@ task0_code_D:
         BRA     Z901D                    ;9018: 20 03 
 ;------------------------------------------------------------------------
 Z901A:	JSR     context_switch           ;901A: BD 88 5E 
-Z901D:	BRA     task0_code_D             ;901D: 20 F0 
+Z901D:	BRA     task0_code               ;901D: 20 F0 
 ;------------------------------------------------------------------------
 
-task1_code_D:
+task1_code:
         JSR     context_switch           ;901F: BD 88 5E 
         LDA     M8030                    ;9022: 96 30 
-        BPL     task1_code_D             ;9024: 2A F9 
+        BPL     task1_code               ;9024: 2A F9 
         CLR     M8030                    ;9026: 0F 30 
-        JSR     Z9039                    ;9028: BD 90 39 
+        JSR     ADC_sample_wheels        ;9028: BD 90 39 
 Z902B:	JSR     context_switch           ;902B: BD 88 5E 
         LDA     M8030                    ;902E: 96 30 
         BPL     Z902B                    ;9030: 2A F9 
         CLR     M8030                    ;9032: 0F 30 
         JSR     Z8BFD                    ;9034: BD 8B FD 
-        BRA     task1_code_D             ;9037: 20 E6 
+        BRA     task1_code               ;9037: 20 E6 
 ;------------------------------------------------------------------------
-Z9039:	ORCC    #$50                     ;9039: 1A 50 
+
+ADC_sample_wheels:
+        ORCC    #$50                     ;9039: 1A 50 
         LDA     VIA_dr_b                 ;903B: B6 E2 00 
         ANDA    #$FB                     ;903E: 84 FB 
         ORA     #$08                     ;9040: 8A 08 
@@ -2447,11 +2490,11 @@ Z9039:	ORCC    #$50                     ;9039: 1A 50
         ORA     #$0C                     ;9058: 8A 0C 
         STA     VIA_dr_b                 ;905A: B7 E2 00 
         ANDCC   #$AF                     ;905D: 1C AF 
-        STB     adc_buf1                 ;905F: F7 90 0C 
+        STB     ADC_buf1                 ;905F: F7 90 0C 
         CLRA                             ;9062: 4F 
-        ADDB    adc_buf2                 ;9063: FB 90 0D 
+        ADDB    ADC_buf2                 ;9063: FB 90 0D 
         ADCA    #$00                     ;9066: 89 00 
-        ADDB    adc_buf3                 ;9068: FB 90 0E 
+        ADDB    ADC_buf3                 ;9068: FB 90 0E 
         ADCA    #$00                     ;906B: 89 00 
         ASRA                             ;906D: 47 
         RORB                             ;906E: 56 
@@ -2459,42 +2502,58 @@ Z9039:	ORCC    #$50                     ;9039: 1A 50
         RORB                             ;9070: 56 
         LDA     DOC_oer                  ;9071: B6 EC E1 
         LDA     DOC_adc                  ;9074: B6 EC E2 
-        SUBB    adc_result               ;9077: F0 90 0A 
-        BPL     Z9083                    ;907A: 2A 07 
+        SUBB    ADC_result               ;9077: F0 90 0A 
+        BPL     ADC_normalize_pwheel2    ;907A: 2A 07 
         ADDB    #$08                     ;907C: CB 08 
-        BMI     Z9081                    ;907E: 2B 01 
+        BMI     ADC_normalize_pwheel1    ;907E: 2B 01 
         CLRB                             ;9080: 5F 
-Z9081:	BRA     Z9088                    ;9081: 20 05 
+
+ADC_normalize_pwheel1:
+        BRA     ADC_normalize_pwheel3    ;9081: 20 05 
 ;------------------------------------------------------------------------
-Z9083:	SUBB    #$08                     ;9083: C0 08 
-        BPL     Z9088                    ;9085: 2A 01 
+
+ADC_normalize_pwheel2:
+        SUBB    #$08                     ;9083: C0 08 
+        BPL     ADC_normalize_pwheel3    ;9085: 2A 01 
         CLRB                             ;9087: 5F 
-Z9088:	ADDB    #$40                     ;9088: CB 40 
-        BVC     Z908E                    ;908A: 28 02 
+
+ADC_normalize_pwheel3:
+        ADDB    #$40                     ;9088: CB 40 
+        BVC     ADC_normalize_pwheel4    ;908A: 28 02 
         LDB     #$7F                     ;908C: C6 7F 
-Z908E:	BPL     Z9091                    ;908E: 2A 01 
+
+ADC_normalize_pwheel4:
+        BPL     ADC_update_pitchwheel    ;908E: 2A 01 
         CLRB                             ;9090: 5F 
-Z9091:	CMPB    adc_pitchwheel_last      ;9091: F1 90 09 
-        BEQ     Z90A3                    ;9094: 27 0D 
-        STB     adc_pitchwheel_last      ;9096: F7 90 09 
+
+ADC_update_pitchwheel:
+        CMPB    ADC_pitchwheel_last      ;9091: F1 90 09 
+        BEQ     ADC_update_modwheel      ;9094: 27 0D 
+        STB     ADC_pitchwheel_last      ;9096: F7 90 09 
         JSR     MIDI_set_pwheel_to_B     ;9099: BD A0 CF 
         JSR     ZADAF                    ;909C: BD AD AF 
-        BSR     Z90C0                    ;909F: 8D 1F 
+        BSR     apply_bending            ;909F: 8D 1F 
         STD     val_pitchwheel           ;90A1: DD 69 
-Z90A3:	LDD     adc_buf1                 ;90A3: FC 90 0C 
-        STD     adc_buf2                 ;90A6: FD 90 0D 
+
+ADC_update_modwheel:
+        LDD     ADC_buf1                 ;90A3: FC 90 0C 
+        STD     ADC_buf2                 ;90A6: FD 90 0D 
         LDB     DOC_adc                  ;90A9: F6 EC E2 
         LSRB                             ;90AC: 54 
-        CMPB    adc_modwheel_last        ;90AD: F1 90 0B 
-        BEQ     Z90BF                    ;90B0: 27 0D 
-        STB     adc_modwheel_last        ;90B2: F7 90 0B 
+        CMPB    ADC_modwheel_last        ;90AD: F1 90 0B 
+        BEQ     ADC_sample_wheels_exit   ;90B0: 27 0D 
+        STB     ADC_modwheel_last        ;90B2: F7 90 0B 
         STB     val_modwheel             ;90B5: D7 68 
         STB     val_modwheel_related     ;90B7: D7 6C 
         JSR     MIDI_set_mwheel_to_B     ;90B9: BD A0 E2 
         JSR     ZADB2                    ;90BC: BD AD B2 
-Z90BF:	RTS                              ;90BF: 39 
+
+ADC_sample_wheels_exit:
+        RTS                              ;90BF: 39 
 ;------------------------------------------------------------------------
-Z90C0:	LDA     #$AB                     ;90C0: 86 AB 
+
+apply_bending:
+        LDA     #$AB                     ;90C0: 86 AB 
         SUBB    #$40                     ;90C2: C0 40 
         BPL     Z90CB                    ;90C4: 2A 05 
         MUL                              ;90C6: 3D 
@@ -2521,18 +2580,18 @@ Z90DD:	ASRA                             ;90DD: 47
         RTS                              ;90E1: 39 
 ;------------------------------------------------------------------------
 
-task2_code_D:
+task2_panel_code:
         JSR     Z9D4B                    ;90E2: BD 9D 4B 
         BSR     Z90E9                    ;90E5: 8D 02 
-        BRA     task2_code_D             ;90E7: 20 F9 
+        BRA     task2_panel_code         ;90E7: 20 F9 
 ;------------------------------------------------------------------------
-Z90E9:	LDA     M80AE                    ;90E9: 96 AE 
+Z90E9:	LDA     panel_button             ;90E9: 96 AE 
         CMPA    #$0A                     ;90EB: 81 0A 
         BCC     Z90F3                    ;90ED: 24 04 
         JSR     Z9258                    ;90EF: BD 92 58 
         RTS                              ;90F2: 39 
 ;------------------------------------------------------------------------
-Z90F3:	LDA     M80AE                    ;90F3: 96 AE 
+Z90F3:	LDA     panel_button             ;90F3: 96 AE 
         CMPA    #$10                     ;90F5: 81 10 
         BCS     Z9101                    ;90F7: 25 08 
         CMPA    #$17                     ;90F9: 81 17 
@@ -2540,7 +2599,7 @@ Z90F3:	LDA     M80AE                    ;90F3: 96 AE
         JSR     Z943B                    ;90FD: BD 94 3B 
         RTS                              ;9100: 39 
 ;------------------------------------------------------------------------
-Z9101:	LDA     M80AE                    ;9101: 96 AE 
+Z9101:	LDA     panel_button             ;9101: 96 AE 
         CMPA    #$18                     ;9103: 81 18 
         BCS     Z910B                    ;9105: 25 04 
         JSR     Z95F0                    ;9107: BD 95 F0 
@@ -2553,7 +2612,7 @@ Z910B:	BSR     Z9116                    ;910B: 8D 09
         BEQ     Z90E9                    ;9113: 27 D4 
         RTS                              ;9115: 39 
 ;------------------------------------------------------------------------
-Z9116:	LDA     M80AE                    ;9116: 96 AE 
+Z9116:	LDA     panel_button             ;9116: 96 AE 
         CMPA    #$0B                     ;9118: 81 0B 
         BNE     Z9124                    ;911A: 26 08 
         JSR     ZAB90                    ;911C: BD AB 90 
@@ -2609,7 +2668,7 @@ Z916E:	LDA     M8087                    ;916E: 96 87
 ;------------------------------------------------------------------------
 Z917C:	JSR     Z9D4B                    ;917C: BD 9D 4B 
         LDA     M8088                    ;917F: 96 88 
-        CMPA    M80AE                    ;9181: 91 AE 
+        CMPA    panel_button             ;9181: 91 AE 
         BNE     Z9197                    ;9183: 26 12 
         TST     M8032                    ;9185: 0D 32 
         BNE     Z917C                    ;9187: 26 F3 
@@ -2724,7 +2783,7 @@ Z9258:	LDY     #ROM_LED_hexnum          ;9258: 10 8E FB 4D
         LDA     M8082                    ;925C: 96 82 
         CMPA    #$00                     ;925E: 81 00 
         LBNE    Z92A8                    ;9260: 10 26 00 44 
-        TST     M80AE                    ;9264: 0D AE 
+        TST     panel_button             ;9264: 0D AE 
         BEQ     Z9284                    ;9266: 27 1C 
         TST     M80A4                    ;9268: 0D A4 
         BNE     Z9270                    ;926A: 26 04 
@@ -2732,7 +2791,7 @@ Z9258:	LDY     #ROM_LED_hexnum          ;9258: 10 8E FB 4D
         BRA     Z9272                    ;926E: 20 02 
 ;------------------------------------------------------------------------
 Z9270:	LDB     #$7C                     ;9270: C6 7C 
-Z9272:	LDA     M80AE                    ;9272: 96 AE 
+Z9272:	LDA     panel_button             ;9272: 96 AE 
         STA     M808D                    ;9274: 97 8D 
         LDA     A,Y                      ;9276: A6 A6 
         STD     M80B3                    ;9278: DD B3 
@@ -2766,13 +2825,13 @@ Z9298:	STD     M80B3                    ;9298: DD B3
 Z92A8:	CMPA    #$01                     ;92A8: 81 01 
         LBNE    Z9336                    ;92AA: 10 26 00 88 
         JSR     Z9249                    ;92AE: BD 92 49 
-        LDB     M80AE                    ;92B1: D6 AE 
+        LDB     panel_button             ;92B1: D6 AE 
         LDB     B,Y                      ;92B3: E6 A5 
         STB     M80B4                    ;92B5: D7 B4 
         LDA     M808D                    ;92B7: 96 8D 
         LDB     #$0A                     ;92B9: C6 0A 
         MUL                              ;92BB: 3D 
-        ADDB    M80AE                    ;92BC: DB AE 
+        ADDB    panel_button             ;92BC: DB AE 
         CMPB    #$0B                     ;92BE: C1 0B 
         BCS     Z92D0                    ;92C0: 25 0E 
         LDU     #data_9ff3_via_U         ;92C2: CE 9F F3 
@@ -2842,7 +2901,7 @@ Z932D:	LDD     #M2A3A                   ;932D: CC 2A 3A
 ;------------------------------------------------------------------------
 Z9336:	CMPA    #$02                     ;9336: 81 02 
         BNE     Z934A                    ;9338: 26 10 
-        LDA     M80AE                    ;933A: 96 AE 
+        LDA     panel_button             ;933A: 96 AE 
         BNE     Z9345                    ;933C: 26 07 
         LDA     M8091                    ;933E: 96 91 
         CMPA    #$02                     ;9340: 81 02 
@@ -2855,7 +2914,7 @@ Z9345:	CMPA    #$03                     ;9345: 81 03
 ;------------------------------------------------------------------------
 Z934A:	CMPA    #$03                     ;934A: 81 03 
         BNE     Z937C                    ;934C: 26 2E 
-        LDA     M80AE                    ;934E: 96 AE 
+        LDA     panel_button             ;934E: 96 AE 
         BEQ     Z9356                    ;9350: 27 04 
         CMPA    #$09                     ;9352: 81 09 
         BCS     Z9357                    ;9354: 25 01 
@@ -2871,7 +2930,7 @@ Z9361:	LDB     #$10                     ;9361: C6 10
 ;------------------------------------------------------------------------
 Z9365:	LDB     #$05                     ;9365: C6 05 
 Z9367:	LDA     B,Y                      ;9367: A6 A5 
-        LDB     M80AE                    ;9369: D6 AE 
+        LDB     panel_button             ;9369: D6 AE 
         STB     M808C                    ;936B: D7 8C 
         LDB     B,Y                      ;936D: E6 A5 
         STD     M80B3                    ;936F: DD B3 
@@ -2884,7 +2943,7 @@ Z9367:	LDA     B,Y                      ;9367: A6 A5
 ;------------------------------------------------------------------------
 Z937C:	CMPA    #$04                     ;937C: 81 04 
         BNE     Z93A0                    ;937E: 26 20 
-        LDA     M80AE                    ;9380: 96 AE 
+        LDA     panel_button             ;9380: 96 AE 
         CMPA    #$01                     ;9382: 81 01 
         BCS     Z939F                    ;9384: 25 19 
         CMPA    #$04                     ;9386: 81 04 
@@ -2904,7 +2963,7 @@ Z939F:	RTS                              ;939F: 39
 ;------------------------------------------------------------------------
 Z93A0:	CMPA    #$05                     ;93A0: 81 05 
         LBNE    Z9412                    ;93A2: 10 26 00 6C 
-        TST     M80AE                    ;93A6: 0D AE 
+        TST     panel_button             ;93A6: 0D AE 
         BNE     Z93B8                    ;93A8: 26 0E 
         TST     M80A4                    ;93AA: 0D A4 
         BEQ     Z93B3                    ;93AC: 27 05 
@@ -2912,7 +2971,7 @@ Z93A0:	CMPA    #$05                     ;93A0: 81 05
         LBRA    Z9284                    ;93B0: 16 FE D1 
 Z93B3:	INC     M80A4                    ;93B3: 0C A4 
         LBRA    Z9284                    ;93B5: 16 FE CC 
-Z93B8:	LDA     M80AE                    ;93B8: 96 AE 
+Z93B8:	LDA     panel_button             ;93B8: 96 AE 
         CMPA    #$01                     ;93BA: 81 01 
         BCS     Z9412                    ;93BC: 25 54 
         CMPA    #$04                     ;93BE: 81 04 
@@ -2944,7 +3003,7 @@ Z93F0:	JSR     Z8ECF                    ;93F0: BD 8E CF
         ORCC    #$50                     ;93F3: 1A 50 
         JSR     task_handler_875e        ;93F5: BD 87 5E 
         ANDCC   #$AF                     ;93F8: 1C AF 
-        LDB     M80AE                    ;93FA: D6 AE 
+        LDB     panel_button             ;93FA: D6 AE 
         DECB                             ;93FC: 5A 
         TST     word_8016_X              ;93FD: 0D 16 
         BEQ     Z9405                    ;93FF: 27 04 
@@ -2960,7 +3019,7 @@ Z940D:	ADDB    #$2C                     ;940D: CB 2C
 Z940F:	JSR     ZA0F2                    ;940F: BD A0 F2 
 Z9412:	CMPA    #$06                     ;9412: 81 06 
         BNE     Z9430                    ;9414: 26 1A 
-        LDA     M80AE                    ;9416: 96 AE 
+        LDA     panel_button             ;9416: 96 AE 
         CMPA    #$01                     ;9418: 81 01 
         BCS     Z9430                    ;941A: 25 14 
         CMPA    #$04                     ;941C: 81 04 
@@ -2982,7 +3041,7 @@ Z9431:	LDD     #M0180                   ;9431: CC 01 80
         RTS                              ;943A: 39 
 ;------------------------------------------------------------------------
 Z943B:	LDU     #ROM_LED_hexnum          ;943B: CE FB 4D 
-        LDA     M80AE                    ;943E: 96 AE 
+        LDA     panel_button             ;943E: 96 AE 
         CMPA    #$10                     ;9440: 81 10 
         BEQ     Z9448                    ;9442: 27 04 
         CMPA    #$11                     ;9444: 81 11 
@@ -2994,7 +3053,7 @@ Z9448:	LDA     #$01                     ;9448: 86 01
         LDA     #$02                     ;9450: 86 02 
         STA     M8082                    ;9452: 97 82 
         LDA     #$1C                     ;9454: 86 1C 
-        LDB     M80AE                    ;9456: D6 AE 
+        LDB     panel_button             ;9456: D6 AE 
         CMPB    #$10                     ;9458: C1 10 
         BEQ     Z9465                    ;945A: 27 09 
         LDB     #$1C                     ;945C: C6 1C 
@@ -3016,7 +3075,7 @@ Z9470:	LDA     M8091                    ;9470: 96 91
 Z9477:	LDA     M8082                    ;9477: 96 82 
         CMPA    #$02                     ;9479: 81 02 
         BNE     Z949B                    ;947B: 26 1E 
-        LDA     M80AE                    ;947D: 96 AE 
+        LDA     panel_button             ;947D: 96 AE 
         CMPA    #$11                     ;947F: 81 11 
         BEQ     Z948A                    ;9481: 27 07 
         LDA     M8091                    ;9483: 96 91 
@@ -3034,12 +3093,12 @@ Z948F:	LDD     #M1CEE                   ;948F: CC 1C EE
         STA     M8091                    ;9496: 97 91 
         JMP     Z95DD                    ;9498: 7E 95 DD 
 ;------------------------------------------------------------------------
-Z949B:	LDA     M80AE                    ;949B: 96 AE 
+Z949B:	LDA     panel_button             ;949B: 96 AE 
         CMPA    #$12                     ;949D: 81 12 
         BEQ     Z94A7                    ;949F: 27 06 
         CMPA    #$13                     ;94A1: 81 13 
         LBNE    Z952D                    ;94A3: 10 26 00 86 
-Z94A7:	LDA     M80AE                    ;94A7: 96 AE 
+Z94A7:	LDA     panel_button             ;94A7: 96 AE 
         CMPA    #$12                     ;94A9: 81 12 
         BNE     Z94B5                    ;94AB: 26 08 
         LDB     #$7C                     ;94AD: C6 7C 
@@ -3102,16 +3161,16 @@ Z951B:	LDD     #b68e_via_D              ;951B: CC B6 8E
         RTS                              ;9524: 39 
 ;------------------------------------------------------------------------
 Z9525:	LDA     #$0B                     ;9525: 86 0B 
-        STA     M80AE                    ;9527: 97 AE 
+        STA     panel_button             ;9527: 97 AE 
         JSR     Z9116                    ;9529: BD 91 16 
         RTS                              ;952C: 39 
 ;------------------------------------------------------------------------
-Z952D:	LDA     M80AE                    ;952D: 96 AE 
+Z952D:	LDA     panel_button             ;952D: 96 AE 
         CMPA    #$14                     ;952F: 81 14 
         LBCS    Z95E0                    ;9531: 10 25 00 AB 
         CMPA    #$17                     ;9535: 81 17 
         LBHI    Z95E0                    ;9537: 10 22 00 A5 
-        LDA     M80AE                    ;953B: 96 AE 
+        LDA     panel_button             ;953B: 96 AE 
         CMPA    #$15                     ;953D: 81 15 
         BNE     Z957C                    ;953F: 26 3B 
         LDA     #$04                     ;9541: 86 04 
@@ -3209,11 +3268,11 @@ Z95E1:	JSR     ZAB43                    ;95E1: BD AB 43
 Z95E4:	LDA     #$57                     ;95E4: 86 57 
         STA     M808B                    ;95E6: 97 8B 
         LDA     #$0D                     ;95E8: 86 0D 
-        STA     M80AE                    ;95EA: 97 AE 
+        STA     panel_button             ;95EA: 97 AE 
         JSR     Z9116                    ;95EC: BD 91 16 
         RTS                              ;95EF: 39 
 ;------------------------------------------------------------------------
-Z95F0:	LDA     M80AE                    ;95F0: 96 AE 
+Z95F0:	LDA     panel_button             ;95F0: 96 AE 
         CMPA    #$19                     ;95F2: 81 19 
         BNE     Z95FF                    ;95F4: 26 09 
         JSR     Z9249                    ;95F6: BD 92 49 
@@ -3222,7 +3281,7 @@ Z95F0:	LDA     M80AE                    ;95F0: 96 AE
 Z95FF:	CMPA    #$1A                     ;95FF: 81 1A 
         LBNE    Z960F                    ;9601: 10 26 00 0A 
         LDA     #$0C                     ;9605: 86 0C 
-        STA     M80AE                    ;9607: 97 AE 
+        STA     panel_button             ;9607: 97 AE 
         JSR     Z9116                    ;9609: BD 91 16 
         LBRA    Z96F3                    ;960C: 16 00 E4 
 Z960F:	CMPA    #$1B                     ;960F: 81 1B 
@@ -3249,7 +3308,7 @@ Z962D:	CMPA    #$08                     ;962D: 81 08
         RTS                              ;963B: 39 
 ;------------------------------------------------------------------------
 Z963C:	LDA     #$0C                     ;963C: 86 0C 
-        STA     M80AE                    ;963E: 97 AE 
+        STA     panel_button             ;963E: 97 AE 
         JSR     Z9116                    ;9640: BD 91 16 
         RTS                              ;9643: 39 
 ;------------------------------------------------------------------------
@@ -3278,7 +3337,7 @@ Z9674:	BRA     Z96F3                    ;9674: 20 7D
 Z9676:	CMPA    #$1E                     ;9676: 81 1E 
         BNE     Z9683                    ;9678: 26 09 
         LDA     #$0B                     ;967A: 86 0B 
-        STA     M80AE                    ;967C: 97 AE 
+        STA     panel_button             ;967C: 97 AE 
         JSR     Z9116                    ;967E: BD 91 16 
         BRA     Z96F3                    ;9681: 20 70 
 ;------------------------------------------------------------------------
@@ -3309,7 +3368,7 @@ Z9687:	ANDA    #$3F                     ;9687: 84 3F
         STA     M8085                    ;96AC: 97 85 
         STB     M8082                    ;96AE: D7 82 
         LDA     #$0A                     ;96B0: 86 0A 
-        STA     M80AE                    ;96B2: 97 AE 
+        STA     panel_button             ;96B2: 97 AE 
 Z96B4:	LDX     #word_8023_X             ;96B4: 8E 80 23 
         LDA     ,X                       ;96B7: A6 84 
         PSHS    X,A                      ;96B9: 34 12 
@@ -3321,7 +3380,7 @@ Z96B4:	LDX     #word_8023_X             ;96B4: 8E 80 23
 ;------------------------------------------------------------------------
 Z96C5:	ANDB    #$03                     ;96C5: C4 03 
         INCB                             ;96C7: 5C 
-        STB     M80AE                    ;96C8: D7 AE 
+        STB     panel_button             ;96C8: D7 AE 
         LDA     word_8016_X              ;96CA: 96 16 
         PSHS    A                        ;96CC: 34 02 
         LDA     M8091                    ;96CE: 96 91 
@@ -3453,7 +3512,7 @@ Z97B9:	PSHS    Y,X,D                    ;97B9: 34 36
         CLR     $0F,Y                    ;97BF: 6F 2F 
         CLR     $08,Y                    ;97C1: 6F 28 
         LDD     #ROM_word_d15            ;97C3: CC FF 10 
-        JSR     Z8F11                    ;97C6: BD 8F 11 
+        JSR     soundengine_wave_looping_related ;97C6: BD 8F 11 
         PULS    Y,X,D                    ;97C9: 35 36 
         LEAY    $18,Y                    ;97CB: 31 A8 18 
         DECB                             ;97CE: 5A 
@@ -3814,7 +3873,7 @@ Z9AA1:	LEAX    B,X                      ;9AA1: 30 85
 ;------------------------------------------------------------------------
 Z9ABA:	LDA     ,X                       ;9ABA: A6 84 
         DECA                             ;9ABC: 4A 
-Z9ABD:	JSR     Z8F11                    ;9ABD: BD 8F 11 
+Z9ABD:	JSR     soundengine_wave_looping_related ;9ABD: BD 8F 11 
 Z9AC0:	LDX     M809D                    ;9AC0: 9E 9D 
         LDB     ,X                       ;9AC2: E6 84 
         JMP     Z9D15                    ;9AC4: 7E 9D 15 
@@ -3830,7 +3889,7 @@ Z9AC7:	LDA     M808B                    ;9AC7: 96 8B
 ;------------------------------------------------------------------------
 Z9AD7:	CLRA                             ;9AD7: 4F 
 Z9AD8:	LDB     #$08                     ;9AD8: C6 08 
-        JSR     Z8F11                    ;9ADA: BD 8F 11 
+        JSR     soundengine_wave_looping_related ;9ADA: BD 8F 11 
 Z9ADD:	LDX     M809D                    ;9ADD: 9E 9D 
         JMP     Z9CD3                    ;9ADF: 7E 9C D3 
 ;------------------------------------------------------------------------
@@ -3879,7 +3938,7 @@ Z9B2F:	LDA     M808B                    ;9B2F: 96 8B
         BHI     Z9B95                    ;9B37: 22 5C 
         CMPA    #$51                     ;9B39: 81 51 
         BNE     Z9B42                    ;9B3B: 26 05 
-        LDX     #word_8020_X             ;9B3D: 8E 80 20 
+        LDX     #MIDI_flag_omni_poly     ;9B3D: 8E 80 20 
         BRA     Z9B92                    ;9B40: 20 50 
 ;------------------------------------------------------------------------
 Z9B42:	CMPA    #$52                     ;9B42: 81 52 
@@ -3892,7 +3951,7 @@ Z9B42:	CMPA    #$52                     ;9B42: 81 52
 ;------------------------------------------------------------------------
 Z9B51:	CMPA    #$53                     ;9B51: 81 53 
         BNE     Z9B5A                    ;9B53: 26 05 
-        LDX     #MIDI_thru_enabled       ;9B55: 8E 80 22 
+        LDX     #MIDI_flag_thru_enabled  ;9B55: 8E 80 22 
         BRA     Z9B92                    ;9B58: 20 38 
 ;------------------------------------------------------------------------
 Z9B5A:	CMPA    #$54                     ;9B5A: 81 54 
@@ -4002,12 +4061,12 @@ Z9C2B:	CMPA    #$4D                     ;9C2B: 81 4D
         LBRA    Z9CC1                    ;9C32: 16 00 8C 
 Z9C35:	CMPA    #$4E                     ;9C35: 81 4E 
         BNE     Z9C3E                    ;9C37: 26 05 
-        LDX     #word_801d_X             ;9C39: 8E 80 1D 
+        LDX     #osparm_lfomod_src       ;9C39: 8E 80 1D 
         BRA     Z9BE8                    ;9C3C: 20 AA 
 ;------------------------------------------------------------------------
 Z9C3E:	CMPA    #$4F                     ;9C3E: 81 4F 
         BNE     Z9C48                    ;9C40: 26 06 
-        LDX     #word_801e_X             ;9C42: 8E 80 1E 
+        LDX     #osparm_mixmod_src       ;9C42: 8E 80 1E 
         LBRA    Z9BE8                    ;9C45: 16 FF A0 
 Z9C48:	CMPA    #$50                     ;9C48: 81 50 
         BNE     Z9C58                    ;9C4A: 26 0C 
@@ -4025,7 +4084,7 @@ Z9C58:	CMPA    #$59                     ;9C58: 81 59
         LDA     #$01                     ;9C62: 86 01 
         STA     word_8028_X              ;9C64: 97 28 
         CLR     kbd_flag_damper_pedal_onoff ;9C66: 0F 6B 
-        JSR     Z87DD                    ;9C68: BD 87 DD 
+        JSR     hook_task_867b           ;9C68: BD 87 DD 
         JMP     Z9C70                    ;9C6B: 7E 9C 70 
 ;------------------------------------------------------------------------
 Z9C6E:	CLR     word_8028_X              ;9C6E: 0F 28 
@@ -4184,7 +4243,7 @@ Z9D68:	LDA     M80AF                    ;9D68: 96 AF
         LDY     #ROM_keycode_xcode       ;9D79: 10 8E FB 68 
         LDB     M80AD                    ;9D7D: D6 AD 
         LDA     B,Y                      ;9D7F: A6 A5 
-        STA     M80AE                    ;9D81: 97 AE 
+        STA     panel_button             ;9D81: 97 AE 
         RTS                              ;9D83: 39 
 ;------------------------------------------------------------------------
 Z9D84:	BRA     Z9D52                    ;9D84: 20 CC 
@@ -4218,13 +4277,13 @@ Z9DB1:	JSR     Z9DD7                    ;9DB1: BD 9D D7
         BNE     Z9DC6                    ;9DB8: 26 0C 
         LDY     #ROM_keycode_xcode       ;9DBA: 10 8E FB 68 
         LDA     A,Y                      ;9DBE: A6 A6 
-        STA     M80AE                    ;9DC0: 97 AE 
+        STA     panel_button             ;9DC0: 97 AE 
         BRA     Z9DD3                    ;9DC2: 20 0F 
 ;------------------------------------------------------------------------
         BRA     Z9DD3                    ;9DC4: 20 0D 
 ;------------------------------------------------------------------------
 Z9DC6:	LDA     #$0D                     ;9DC6: 86 0D 
-        STA     M80AE                    ;9DC8: 97 AE 
+        STA     panel_button             ;9DC8: 97 AE 
         LDA     #$05                     ;9DCA: 86 05 
         STA     M8031                    ;9DCC: 97 31 
         LDA     #$01                     ;9DCE: 86 01 
@@ -4287,7 +4346,7 @@ Z9E30:	STB     M80B1                    ;9E30: D7 B1
         JSR     context_switch           ;9E39: BD 88 5E 
         JSR     ZA41A                    ;9E3C: BD A4 1A 
         BCC     Z9E56                    ;9E3F: 24 15 
-        STA     M80AE                    ;9E41: 97 AE 
+        STA     panel_button             ;9E41: 97 AE 
         LDA     #$01                     ;9E43: 86 01 
         STA     M8208                    ;9E45: B7 82 08 
         JSR     Z90E9                    ;9E48: BD 90 E9 
@@ -4446,7 +4505,7 @@ Z9F5E:	BRA     Z9F5E                    ;9F5E: 20 FE
 Z9F60:	ORCC    #$50                     ;9F60: 1A 50 
         JSR     ZAB90                    ;9F62: BD AB 90 
         JSR     ROM_qchipsetup           ;9F65: BD F1 BB 
-        JSR     Z8C80                    ;9F68: BD 8C 80 
+        JSR     soundengine_init_voice_params ;9F68: BD 8C 80 
         JSR     ROM_unknown3             ;9F6B: BD F5 41 
         RTS                              ;9F6E: 39 
 ;------------------------------------------------------------------------
@@ -4681,7 +4740,7 @@ ZA134:	LDD     MIDI_txcmd_params        ;A134: DC C2
 ;------------------------------------------------------------------------
 
 MIDI_txbyte:
-        LDA     MIDI_thru_enabled        ;A138: 96 22 
+        LDA     MIDI_flag_thru_enabled   ;A138: 96 22 
         BEQ     MIDI_byte_to_txbuf       ;A13A: 27 01 
         RTS                              ;A13C: 39 
 ;------------------------------------------------------------------------
@@ -4703,59 +4762,80 @@ MIDI_txbuf_overflow:
 FIRQ_entry:
         PSHS    U,Y,X,D                  ;A151: 34 76 
         LDA     UART_csr                 ;A153: B6 E1 00 
-        BPL     ZA1A9                    ;A156: 2A 51 
+        BPL     FIRQ_exit                ;A156: 2A 51 
         BITA    #$30                     ;A158: 85 30 
-        BEQ     ZA179                    ;A15A: 27 1D 
+        BEQ     FIRQ_chk_UART_rxirq      ;A15A: 27 1D 
         LDA     MIDI_rx_pending          ;A15C: B6 82 37 
-        BEQ     ZA163                    ;A15F: 27 02 
-        STA     M80CE                    ;A161: 97 CE 
-ZA163:	JSR     MIDI_init_rx             ;A163: BD A0 94 
+        BEQ     FIRQ_UART_error          ;A15F: 27 02 
+        STA     MIDI_bytecount           ;A161: 97 CE 
+
+FIRQ_UART_error:
+        JSR     MIDI_init_rx             ;A163: BD A0 94 
         LDA     UART_data                ;A166: B6 E1 01 
-        LDX     #vector_8076_X           ;A169: 8E 80 76 
+        LDX     #table_8076_X            ;A169: 8E 80 76 
         CLR     $03,X                    ;A16C: 6F 03 
-        JSR     Z87DD                    ;A16E: BD 87 DD 
-        LDX     #vector_8076_X           ;A171: 8E 80 76 
-        JSR     Z87E2                    ;A174: BD 87 E2 
-        BRA     ZA1A9                    ;A177: 20 30 
+        JSR     hook_task_867b           ;A16E: BD 87 DD 
+        LDX     #table_8076_X            ;A171: 8E 80 76 
+        JSR     hook_task_86a0           ;A174: BD 87 E2 
+        BRA     FIRQ_exit                ;A177: 20 30 
 ;------------------------------------------------------------------------
-ZA179:	BITA    #$01                     ;A179: 85 01 
-        BEQ     ZA1A5                    ;A17B: 27 28 
-        BSR     ZA1DB                    ;A17D: 8D 5C 
-ZA17F:	ORCC    #$40                     ;A17F: 1A 40 
+
+FIRQ_chk_UART_rxirq:
+        BITA    #$01                     ;A179: 85 01 
+        BEQ     FIRQ_chk_UART_txirq      ;A17B: 27 28 
+        BSR     UART_rxdata_to_rxbuf     ;A17D: 8D 5C 
+
+FIRQ_UART_rxirq_loop:
+        ORCC    #$40                     ;A17F: 1A 40 
         LDA     MIDI_rxbuf_len           ;A181: B6 82 36 
         CMPA    MIDI_txbuf_len           ;A184: B1 82 35 
-        BEQ     ZA198                    ;A187: 27 0F 
+        BEQ     FIRQ_UART_rx_overrun     ;A187: 27 0F 
         LDX     #MIDI_rxbuf_base         ;A189: 8E 82 38 
         LDB     A,X                      ;A18C: E6 86 
         INCA                             ;A18E: 4C 
         ANDA    #$3F                     ;A18F: 84 3F 
         STA     MIDI_rxbuf_len           ;A191: B7 82 36 
-        BSR     ZA205                    ;A194: 8D 6F 
-        BRA     ZA17F                    ;A196: 20 E7 
+        BSR     UART_MIDI_thru_from_rxirq ;A194: 8D 6F 
+        BRA     FIRQ_UART_rxirq_loop     ;A196: 20 E7 
 ;------------------------------------------------------------------------
-ZA198:	CLR     MIDI_rx_pending          ;A198: 7F 82 37 
-        LDA     M80CE                    ;A19B: 96 CE 
-        BEQ     ZA1A3                    ;A19D: 27 04 
-        CLR     M80CE                    ;A19F: 0F CE 
-        BRA     ZA163                    ;A1A1: 20 C0 
+
+FIRQ_UART_rx_overrun:
+        CLR     MIDI_rx_pending          ;A198: 7F 82 37 
+        LDA     MIDI_bytecount           ;A19B: 96 CE 
+        BEQ     FIRQ_chk_UART_rxirq_exit ;A19D: 27 04 
+        CLR     MIDI_bytecount           ;A19F: 0F CE 
+        BRA     FIRQ_UART_error          ;A1A1: 20 C0 
 ;------------------------------------------------------------------------
-ZA1A3:	BRA     ZA1A9                    ;A1A3: 20 04 
+
+FIRQ_chk_UART_rxirq_exit:
+        BRA     FIRQ_exit                ;A1A3: 20 04 
 ;------------------------------------------------------------------------
-ZA1A5:	BITA    #$02                     ;A1A5: 85 02 
-        BNE     ZA1B6                    ;A1A7: 26 0D 
-ZA1A9:	PULS    U,Y,X,D                  ;A1A9: 35 76 
+
+FIRQ_chk_UART_txirq:
+        BITA    #$02                     ;A1A5: 85 02 
+        BNE     FIRQ_call_txhdlr_and_exit ;A1A7: 26 0D 
+
+FIRQ_exit:
+        PULS    U,Y,X,D                  ;A1A9: 35 76 
         RTI                              ;A1AB: 3B 
 ;------------------------------------------------------------------------
-ZA1AC:	PULS    D                        ;A1AC: 35 06 
+
+UART_restore_rxhdlr:
+        PULS    D                        ;A1AC: 35 06 
         STD     ptr_UART_rxhdlr          ;A1AE: DD C0 
         RTS                              ;A1B0: 39 
 ;------------------------------------------------------------------------
+
+; dead code alert -- restore_txhdlr never called
+UART_restore_txhdlr:
         PULS    D                        ;A1B1: 35 06 
         STD     ptr_UART_txhdlr          ;A1B3: DD C6 
         RTS                              ;A1B5: 39 
 ;------------------------------------------------------------------------
-ZA1B6:	JSR     [ptr_UART_txhdlr]        ;A1B6: AD 9F 80 C6 
-        BRA     ZA1A9                    ;A1BA: 20 ED 
+
+FIRQ_call_txhdlr_and_exit:
+        JSR     [ptr_UART_txhdlr]        ;A1B6: AD 9F 80 C6 
+        BRA     FIRQ_exit                ;A1BA: 20 ED 
 ;------------------------------------------------------------------------
 
 UART_txhdlr:
@@ -4763,20 +4843,28 @@ UART_txhdlr:
         LDA     ,X+                      ;A1BE: A6 80 
         STA     UART_data                ;A1C0: B7 E1 01 
         CMPX    #MIDI_txbuf_len          ;A1C3: 8C 82 35 
-        BCS     ZA1CB                    ;A1C6: 25 03 
+        BCS     UART_chk_tbuf_range      ;A1C6: 25 03 
         LDX     #MIDI_txbuf_base         ;A1C8: 8E 82 25 
-ZA1CB:	CMPX    MIDI_txbuf_msg_start     ;A1CB: 9C BC 
-        BNE     ZA1D8                    ;A1CD: 26 09 
-        LDA     MIDI_thru_enabled        ;A1CF: 96 22 
-        BNE     ZA1D3                    ;A1D1: 26 00 
-ZA1D3:	LDB     #$95                     ;A1D3: C6 95 
+
+UART_chk_tbuf_range:
+        CMPX    MIDI_txbuf_msg_start     ;A1CB: 9C BC 
+        BNE     UART_set_txbuf_ptr       ;A1CD: 26 09 
+        LDA     MIDI_flag_thru_enabled   ;A1CF: 96 22 
+        BNE     UART_set_rxirq_8n1       ;A1D1: 26 00 
+
+UART_set_rxirq_8n1:
+        LDB     #$95                     ;A1D3: C6 95 
         STB     UART_csr                 ;A1D5: F7 E1 00 
-ZA1D8:	STX     MIDI_txbuf_msg_end       ;A1D8: 9F BE 
+
+UART_set_txbuf_ptr:
+        STX     MIDI_txbuf_msg_end       ;A1D8: 9F BE 
         RTS                              ;A1DA: 39 
 ;------------------------------------------------------------------------
-ZA1DB:	LDB     UART_data                ;A1DB: F6 E1 01 
+
+UART_rxdata_to_rxbuf:
+        LDB     UART_data                ;A1DB: F6 E1 01 
         LDA     MIDI_rx_pending          ;A1DE: B6 82 37 
-        BEQ     ZA202                    ;A1E1: 27 1F 
+        BEQ     UART_MIDI_thru_from_txirq ;A1E1: 27 1F 
         LDA     MIDI_txbuf_len           ;A1E3: B6 82 35 
         LDX     #MIDI_rxbuf_base         ;A1E6: 8E 82 38 
         STB     A,X                      ;A1E9: E7 86 
@@ -4784,111 +4872,126 @@ ZA1DB:	LDB     UART_data                ;A1DB: F6 E1 01
         ANDA    #$3F                     ;A1EC: 84 3F 
         STA     MIDI_txbuf_len           ;A1EE: B7 82 35 
         CMPA    MIDI_rxbuf_len           ;A1F1: B1 82 36 
-        BNE     ZA1FB                    ;A1F4: 26 05 
+        BNE     UART_rxdata_to_rxbuf_exit ;A1F4: 26 05 
         LEAS    $02,S                    ;A1F6: 32 62 
-        JMP     ZA163                    ;A1F8: 7E A1 63 
+        JMP     FIRQ_UART_error          ;A1F8: 7E A1 63 
 ;------------------------------------------------------------------------
-ZA1FB:	LEAS    $02,S                    ;A1FB: 32 62 
+
+UART_rxdata_to_rxbuf_exit:
+        LEAS    $02,S                    ;A1FB: 32 62 
         PULS    U,Y,X,D                  ;A1FD: 35 76 
         RTI                              ;A1FF: 3B 
 ;------------------------------------------------------------------------
-        BRA     ZA205                    ;A200: 20 03 
+
+; dead code alert -- BRA never called
+dead_code_a200:
+        BRA     UART_MIDI_thru_from_rxirq ;A200: 20 03 
 ;------------------------------------------------------------------------
-ZA202:	INC     MIDI_rx_pending          ;A202: 7C 82 37 
-ZA205:	LDA     MIDI_thru_enabled        ;A205: 96 22 
+
+UART_MIDI_thru_from_txirq:
+        INC     MIDI_rx_pending          ;A202: 7C 82 37 
+
+UART_MIDI_thru_from_rxirq:
+        LDA     MIDI_flag_thru_enabled   ;A205: 96 22 
         BEQ     ZA20C                    ;A207: 27 03 
         JSR     MIDI_byte_to_txbuf       ;A209: BD A1 3D 
 ZA20C:	ANDCC   #$BF                     ;A20C: 1C BF 
         TSTB                             ;A20E: 5D 
-        BMI     UART_rx_chk_for_cmd      ;A20F: 2B 04 
+        BMI     UART_rx_tst_channel_or_system ;A20F: 2B 04 
         JMP     [ptr_UART_rxhdlr]        ;A211: 6E 9F 80 C0 
 ;------------------------------------------------------------------------
 
-UART_rx_chk_for_cmd:
+UART_rx_tst_channel_or_system:
         STB     MIDI_rxcmd               ;A215: D7 C5 
         ANDB    #$70                     ;A217: C4 70 
         CMPB    #$70                     ;A219: C1 70 
-        BEQ     ZA23D                    ;A21B: 27 20 
+        BEQ     UART_rx_system_msg       ;A21B: 27 20 
         LDB     MIDI_rxcmd               ;A21D: D6 C5 
         ANDB    #$0F                     ;A21F: C4 0F 
-        STB     MIDI_rxcmd_channel       ;A221: D7 C4 
-        LDA     word_8020_X              ;A223: 96 20 
-        BNE     UART_rx_channel_message  ;A225: 26 07 
+        STB     MIDI_rxcmd_param1        ;A221: D7 C4 
+        LDA     MIDI_flag_omni_poly      ;A223: 96 20 
+        BNE     UART_rx_channel_msg      ;A225: 26 07 
         CMPB    MIDI_channel             ;A227: D1 21 
-        BEQ     UART_rx_channel_message  ;A229: 27 03 
-        JMP     UART_rx_skip_message     ;A22B: 7E A2 47 
+        BEQ     UART_rx_channel_msg      ;A229: 27 03 
+        JMP     UART_rx_skip_msg         ;A22B: 7E A2 47 
 ;------------------------------------------------------------------------
 
-UART_rx_channel_message:
+UART_rx_channel_msg:
         LDB     MIDI_rxcmd               ;A22E: D6 C5 
         ANDB    #$70                     ;A230: C4 70 
         ASRB                             ;A232: 57 
         ASRB                             ;A233: 57 
         ASRB                             ;A234: 57 
-        LDX     #MIDI_rx_vec_chnlmsg_parsers ;A235: 8E A3 D4 
+        LDX     #MIDI_rx_chnmsg_parsers  ;A235: 8E A3 D4 
         LDD     B,X                      ;A238: EC 85 
         STD     ptr_UART_rxhdlr          ;A23A: DD C0 
         RTS                              ;A23C: 39 
 ;------------------------------------------------------------------------
-ZA23D:	LDB     MIDI_rxcmd               ;A23D: D6 C5 
+
+UART_rx_system_msg:
+        LDB     MIDI_rxcmd               ;A23D: D6 C5 
         ANDB    #$0F                     ;A23F: C4 0F 
-        LDX     #MIDI_rx_vec_systmsg_parsers ;A241: 8E A3 E4 
+        LDX     #MIDI_rx_sysmsg_parsers  ;A241: 8E A3 E4 
         ASLB                             ;A244: 58 
         JMP     [B,X]                    ;A245: 6E 95 
 ;------------------------------------------------------------------------
 
-UART_rx_skip_message:
-        JSR     ZA1AC                    ;A247: BD A1 AC 
+UART_rx_skip_msg:
+        JSR     UART_restore_rxhdlr      ;A247: BD A1 AC 
 
 UART_rx_parser_exit:
         RTS                              ;A24A: 39 
 ;------------------------------------------------------------------------
 
 UART_rx_parser_note_off:
-        BSR     ZA290                    ;A24B: 8D 43 
-        JSR     ZA1AC                    ;A24D: BD A1 AC 
+        BSR     limit_note_lo_to_36      ;A24B: 8D 43 
+        JSR     UART_restore_rxhdlr      ;A24D: BD A1 AC 
         LDU     #UART_rx_parser_note_off ;A250: CE A2 4B 
         STU     ptr_UART_rxhdlr          ;A253: DF C0 
         CMPB    #$00                     ;A255: C1 00 
         BNE     ZA25B                    ;A257: 26 02 
         LDB     #$40                     ;A259: C6 40 
-ZA25B:	LDA     MIDI_rxcmd_channel       ;A25B: 96 C4 
+ZA25B:	LDA     MIDI_rxcmd_param1        ;A25B: 96 C4 
         JSR     ZADBC                    ;A25D: BD AD BC 
-        LDA     MIDI_rxcmd_channel       ;A260: 96 C4 
-        LDX     #vector_8076_X           ;A262: 8E 80 76 
-        JMP     Z87BF                    ;A265: 7E 87 BF 
+        LDA     MIDI_rxcmd_param1        ;A260: 96 C4 
+        LDX     #table_8076_X            ;A262: 8E 80 76 
+        JMP     hook_task_82ae           ;A265: 7E 87 BF 
 ;------------------------------------------------------------------------
 
 UART_rx_parser_note_on:
-        BSR     ZA290                    ;A268: 8D 26 
-        JSR     ZA1AC                    ;A26A: BD A1 AC 
+        BSR     limit_note_lo_to_36      ;A268: 8D 26 
+        JSR     UART_restore_rxhdlr      ;A26A: BD A1 AC 
         LDU     #UART_rx_parser_note_on  ;A26D: CE A2 68 
         STU     ptr_UART_rxhdlr          ;A270: DF C0 
-        LDA     MIDI_rxcmd_channel       ;A272: 96 C4 
+        LDA     MIDI_rxcmd_param1        ;A272: 96 C4 
         CMPB    #$00                     ;A274: C1 00 
         BNE     ZA285                    ;A276: 26 0D 
         LDB     #$40                     ;A278: C6 40 
         JSR     ZADBC                    ;A27A: BD AD BC 
-        LDA     MIDI_rxcmd_channel       ;A27D: 96 C4 
-        LDX     #vector_8076_X           ;A27F: 8E 80 76 
-        JMP     Z87BF                    ;A282: 7E 87 BF 
+        LDA     MIDI_rxcmd_param1        ;A27D: 96 C4 
+        LDX     #table_8076_X            ;A27F: 8E 80 76 
+        JMP     hook_task_82ae           ;A282: 7E 87 BF 
 ;------------------------------------------------------------------------
 ZA285:	JSR     adba_note_on_jsr         ;A285: BD AD BA 
-        LDA     MIDI_rxcmd_channel       ;A288: 96 C4 
-        LDX     #vector_8076_X           ;A28A: 8E 80 76 
+        LDA     MIDI_rxcmd_param1        ;A288: 96 C4 
+        LDX     #table_8076_X            ;A28A: 8E 80 76 
         JMP     Z87C4                    ;A28D: 7E 87 C4 
 ;------------------------------------------------------------------------
-ZA290:	CMPB    #$24                     ;A290: C1 24 
-        BCC     ZA298                    ;A292: 24 04 
+
+limit_note_lo_to_36:
+        CMPB    #$24                     ;A290: C1 24 
+        BCC     limit_note_hi_to_96      ;A292: 24 04 
         ADDB    #$0C                     ;A294: CB 0C 
-        BRA     ZA290                    ;A296: 20 F8 
+        BRA     limit_note_lo_to_36      ;A296: 20 F8 
 ;------------------------------------------------------------------------
-ZA298:	CMPB    #$60                     ;A298: C1 60 
+
+limit_note_hi_to_96:
+        CMPB    #$60                     ;A298: C1 60 
         BLS     ZA2A0                    ;A29A: 23 04 
         SUBB    #$0C                     ;A29C: C0 0C 
-        BRA     ZA298                    ;A29E: 20 F8 
+        BRA     limit_note_hi_to_96      ;A29E: 20 F8 
 ;------------------------------------------------------------------------
-ZA2A0:	STB     MIDI_rxcmd_channel       ;A2A0: D7 C4 
+ZA2A0:	STB     MIDI_rxcmd_param1        ;A2A0: D7 C4 
         RTS                              ;A2A2: 39 
 ;------------------------------------------------------------------------
 
@@ -4906,67 +5009,65 @@ ZA2AD:	CMPB    #$60                     ;A2AD: C1 60
         BCS     ZA2C2                    ;A2B5: 25 0B 
         JSR     pedal_handler_if_8028_not_zero ;A2B7: BD A4 04 
         CLR     M80CD                    ;A2BA: 0F CD 
-        JSR     ZA1AC                    ;A2BC: BD A1 AC 
-        JMP     ZA341                    ;A2BF: 7E A3 41 
+        JSR     UART_restore_rxhdlr      ;A2BC: BD A1 AC 
+        JMP     code_a341_via_U          ;A2BF: 7E A3 41 
 ;------------------------------------------------------------------------
-ZA2C2:	CMPB    word_801d_X              ;A2C2: D1 1D 
+ZA2C2:	CMPB    osparm_lfomod_src        ;A2C2: D1 1D 
         BEQ     ZA2CA                    ;A2C4: 27 04 
-        CMPB    word_801e_X              ;A2C6: D1 1E 
+        CMPB    osparm_mixmod_src        ;A2C6: D1 1E 
         BNE     ZA2D2                    ;A2C8: 26 08 
-ZA2CA:	STB     MIDI_rxcmd_channel       ;A2CA: D7 C4 
+ZA2CA:	STB     MIDI_rxcmd_param1        ;A2CA: D7 C4 
         LDD     #code_a30d_via_D         ;A2CC: CC A3 0D 
         STD     ptr_UART_rxhdlr          ;A2CF: DD C0 
         RTS                              ;A2D1: 39 
 ;------------------------------------------------------------------------
-ZA2D2:	LDU     #ZA341                   ;A2D2: CE A3 41 
+ZA2D2:	LDU     #code_a341_via_U         ;A2D2: CE A3 41 
         STU     ptr_UART_rxhdlr          ;A2D5: DF C0 
         LDA     MIDI_channel             ;A2D7: 96 21 
-        CMPA    MIDI_rxcmd_channel       ;A2D9: 91 C4 
+        CMPA    MIDI_rxcmd_param1        ;A2D9: 91 C4 
         BNE     ZA2ED                    ;A2DB: 26 10 
         CMPB    #$7C                     ;A2DD: C1 7C 
         BNE     ZA2E5                    ;A2DF: 26 04 
-        CLR     word_8020_X              ;A2E1: 0F 20 
+        CLR     MIDI_flag_omni_poly      ;A2E1: 0F 20 
         BRA     ZA2F1                    ;A2E3: 20 0C 
 ;------------------------------------------------------------------------
 ZA2E5:	CMPB    #$7D                     ;A2E5: C1 7D 
         BNE     ZA2ED                    ;A2E7: 26 04 
-        STB     word_8020_X              ;A2E9: D7 20 
-
-UART_rx_system_message:
+        STB     MIDI_flag_omni_poly      ;A2E9: D7 20 
         BRA     ZA2F1                    ;A2EB: 20 04 
 ;------------------------------------------------------------------------
 ZA2ED:	CMPB    #$7B                     ;A2ED: C1 7B 
         BNE     ZA2F7                    ;A2EF: 26 06 
-ZA2F1:	LDX     #vector_8076_X           ;A2F1: 8E 80 76 
-        JMP     Z87E2                    ;A2F4: 7E 87 E2 
+ZA2F1:	LDX     #table_8076_X            ;A2F1: 8E 80 76 
+        JMP     hook_task_86a0           ;A2F4: 7E 87 E2 
 ;------------------------------------------------------------------------
 ZA2F7:	RTS                              ;A2F7: 39 
 ;------------------------------------------------------------------------
 
 UART_rx_parser_pitbend:
-        JSR     ZA1AC                    ;A2F8: BD A1 AC 
+        JSR     UART_restore_rxhdlr      ;A2F8: BD A1 AC 
         LDU     #UART_rx_parser_pitbend  ;A2FB: CE A2 F8 
         STU     ptr_UART_rxhdlr          ;A2FE: DF C0 
         LDA     word_8023_X              ;A300: 96 23 
         BEQ     ZA30C                    ;A302: 27 08 
         JSR     ZADAF                    ;A304: BD AD AF 
-        JSR     Z90C0                    ;A307: BD 90 C0 
+        JSR     apply_bending            ;A307: BD 90 C0 
         STD     M8077                    ;A30A: DD 77 
 ZA30C:	RTS                              ;A30C: 39 
 ;------------------------------------------------------------------------
 
 code_a30d_via_D:
-        BSR     ZA341                    ;A30D: 8D 32 
+        BSR     code_a341_via_U          ;A30D: 8D 32 
         LDA     word_8023_X              ;A30F: 96 23 
         BEQ     ZA32A                    ;A311: 27 17 
-        LDA     MIDI_rxcmd_channel       ;A313: 96 C4 
+        LDA     MIDI_rxcmd_param1        ;A313: 96 C4 
         BEQ     ZA32A                    ;A315: 27 13 
         CMPA    #$08                     ;A317: 81 08 
         BCC     ZA32A                    ;A319: 24 0F 
-        CMPA    word_801e_X              ;A31B: 91 1E 
+        CMPA    osparm_mixmod_src        ;A31B: 91 1E 
         BNE     ZA321                    ;A31D: 26 02 
-        STB     vector_8076_X            ;A31F: D7 76 
-ZA321:	CMPA    word_801d_X              ;A321: 91 1D 
+        STB     table_8076_X             ;A31F: D7 76 
+ZA321:	CMPA    osparm_lfomod_src        ;A321: 91 1D 
         BNE     ZA32A                    ;A323: 26 05 
         STB     M807A                    ;A325: D7 7A 
         JSR     ZADB2                    ;A327: BD AD B2 
@@ -4974,63 +5075,65 @@ ZA32A:	RTS                              ;A32A: 39
 ;------------------------------------------------------------------------
 
 code_a32b_via_D:
-        BSR     ZA341                    ;A32B: 8D 14 
+        BSR     code_a341_via_U          ;A32B: 8D 14 
         LDA     word_8023_X              ;A32D: 96 23 
         BEQ     ZA340                    ;A32F: 27 0F 
         JSR     pedal_handler_2          ;A331: BD AD B6 
         ANDB    #$40                     ;A334: C4 40 
         STB     kdb_pedal_state_40       ;A336: D7 79 
         BNE     ZA340                    ;A338: 26 06 
-        LDX     #vector_8076_X           ;A33A: 8E 80 76 
-        JSR     Z87DD                    ;A33D: BD 87 DD 
+        LDX     #table_8076_X            ;A33A: 8E 80 76 
+        JSR     hook_task_867b           ;A33D: BD 87 DD 
 ZA340:	RTS                              ;A340: 39 
 ;------------------------------------------------------------------------
-ZA341:	LDU     #UART_rx_parser_ctrlr    ;A341: CE A2 A3 
+
+code_a341_via_U:
+        LDU     #UART_rx_parser_ctrlr    ;A341: CE A2 A3 
         STU     ptr_UART_rxhdlr          ;A344: DF C0 
         RTS                              ;A346: 39 
 ;------------------------------------------------------------------------
-ZA347:	JSR     ZA1AC                    ;A347: BD A1 AC 
+ZA347:	JSR     UART_restore_rxhdlr      ;A347: BD A1 AC 
 
 UART_rx_parser_chnlprs:
         LDA     word_8023_X              ;A34A: 96 23 
-        LBEQ    UART_rx_skip_message     ;A34C: 10 27 FE F7 
+        LBEQ    UART_rx_skip_msg         ;A34C: 10 27 FE F7 
         ASLB                             ;A350: 58 
         LDA     word_801f_X              ;A351: 96 1F 
         MUL                              ;A353: 3D 
         TFR     A,B                      ;A354: 1F 89 
-        LDA     word_801d_X              ;A356: 96 1D 
+        LDA     osparm_lfomod_src        ;A356: 96 1D 
         CMPA    #$08                     ;A358: 81 08 
         BNE     ZA35E                    ;A35A: 26 02 
         STB     M807A                    ;A35C: D7 7A 
-ZA35E:	LDA     word_801e_X              ;A35E: 96 1E 
+ZA35E:	LDA     osparm_mixmod_src        ;A35E: 96 1E 
         CMPA    #$08                     ;A360: 81 08 
         BNE     ZA366                    ;A362: 26 02 
-        STB     vector_8076_X            ;A364: D7 76 
+        STB     table_8076_X             ;A364: D7 76 
 ZA366:	BRA     ZA347                    ;A366: 20 DF 
 ;------------------------------------------------------------------------
-ZA368:	JSR     ZA1AC                    ;A368: BD A1 AC 
+ZA368:	JSR     UART_restore_rxhdlr      ;A368: BD A1 AC 
 
 UART_rx_parser_polyprs:
         LDA     word_8023_X              ;A36B: 96 23 
-        LBEQ    UART_rx_skip_message     ;A36D: 10 27 FE D6 
-        STB     MIDI_rxcmd_channel       ;A371: D7 C4 
-        JSR     ZA1AC                    ;A373: BD A1 AC 
+        LBEQ    UART_rx_skip_msg         ;A36D: 10 27 FE D6 
+        STB     MIDI_rxcmd_param1        ;A371: D7 C4 
+        JSR     UART_restore_rxhdlr      ;A373: BD A1 AC 
         ASLB                             ;A376: 58 
         LDA     word_801f_X              ;A377: 96 1F 
         MUL                              ;A379: 3D 
         TFR     A,B                      ;A37A: 1F 89 
-        LDA     word_801d_X              ;A37C: 96 1D 
+        LDA     osparm_lfomod_src        ;A37C: 96 1D 
         CMPA    #$09                     ;A37E: 81 09 
         BEQ     ZA388                    ;A380: 27 06 
-        LDA     word_801e_X              ;A382: 96 1E 
+        LDA     osparm_mixmod_src        ;A382: 96 1E 
         CMPA    #$09                     ;A384: 81 09 
         BNE     ZA390                    ;A386: 26 08 
-ZA388:	LDA     MIDI_rxcmd_channel       ;A388: 96 C4 
-        LDX     #vector_8076_X           ;A38A: 8E 80 76 
-        JSR     Z87D8                    ;A38D: BD 87 D8 
+ZA388:	LDA     MIDI_rxcmd_param1        ;A388: 96 C4 
+        LDX     #table_8076_X            ;A38A: 8E 80 76 
+        JSR     hook_task_857f           ;A38D: BD 87 D8 
 ZA390:	BRA     ZA368                    ;A390: 20 D6 
 ;------------------------------------------------------------------------
-ZA392:	JSR     ZA1AC                    ;A392: BD A1 AC 
+ZA392:	JSR     UART_restore_rxhdlr      ;A392: BD A1 AC 
 
 UART_rx_parser_progchn:
         CMPB    #$2F                     ;A395: C1 2F 
@@ -5081,7 +5184,7 @@ UART_rx_parser_sense_rst:
         RTS                              ;A3D3: 39 
 ;------------------------------------------------------------------------
 
-MIDI_rx_vec_chnlmsg_parsers:
+MIDI_rx_chnmsg_parsers:
         FDB     UART_rx_parser_note_off  ;A3D4: A2 4B 
         FDB     UART_rx_parser_note_on   ;A3D6: A2 68 
         FDB     UART_rx_parser_polyprs   ;A3D8: A3 6B 
@@ -5091,21 +5194,21 @@ MIDI_rx_vec_chnlmsg_parsers:
         FDB     UART_rx_parser_pitbend   ;A3E0: A2 F8 
         FDB     UART_rx_parser_exit      ;A3E2: A2 4A 
 
-MIDI_rx_vec_systmsg_parsers:
-        FDB     UART_rx_skip_message     ;A3E4: A2 47 
-        FDB     UART_rx_skip_message     ;A3E6: A2 47 
-        FDB     UART_rx_skip_message     ;A3E8: A2 47 
-        FDB     UART_rx_skip_message     ;A3EA: A2 47 
-        FDB     UART_rx_skip_message     ;A3EC: A2 47 
-        FDB     UART_rx_skip_message     ;A3EE: A2 47 
-        FDB     UART_rx_skip_message     ;A3F0: A2 47 
-        FDB     UART_rx_skip_message     ;A3F2: A2 47 
+MIDI_rx_sysmsg_parsers:
+        FDB     UART_rx_skip_msg         ;A3E4: A2 47 
+        FDB     UART_rx_skip_msg         ;A3E6: A2 47 
+        FDB     UART_rx_skip_msg         ;A3E8: A2 47 
+        FDB     UART_rx_skip_msg         ;A3EA: A2 47 
+        FDB     UART_rx_skip_msg         ;A3EC: A2 47 
+        FDB     UART_rx_skip_msg         ;A3EE: A2 47 
+        FDB     UART_rx_skip_msg         ;A3F0: A2 47 
+        FDB     UART_rx_skip_msg         ;A3F2: A2 47 
         FDB     UART_rx_parser_timing_clk ;A3F4: A3 B0 
-        FDB     UART_rx_skip_message     ;A3F6: A2 47 
+        FDB     UART_rx_skip_msg         ;A3F6: A2 47 
         FDB     UART_rx_parser_seq_start ;A3F8: A3 BE 
         FDB     UART_rx_parser_seq_cont  ;A3FA: A3 C6 
         FDB     UART_rx_parser_seq_stop  ;A3FC: A3 C2 
-        FDB     UART_rx_skip_message     ;A3FE: A2 47 
+        FDB     UART_rx_skip_msg         ;A3FE: A2 47 
         FDB     UART_rx_parser_sense_rst ;A400: A3 D3 
         FDB     UART_rx_parser_sense_rst ;A402: A3 D3 
 ;------------------------------------------------------------------------
@@ -5603,13 +5706,13 @@ ZA847:	LDA     disk_first_sec           ;A847: B6 80 D6
         CMPA    #$08                     ;A85D: 81 08 
         BNE     ZA869                    ;A85F: 26 08 
 ZA861:	LDD     #M0800                   ;A861: CC 08 00 
-        ADDD    #MB800                   ;A864: C3 B8 00 
+        ADDD    #seqdata_base            ;A864: C3 B8 00 
         BRA     ZA86F                    ;A867: 20 06 
 ;------------------------------------------------------------------------
 ZA869:	LDD     #M2000                   ;A869: CC 20 00 
-        ADDD    #MB800                   ;A86C: C3 B8 00 
+        ADDD    #seqdata_base            ;A86C: C3 B8 00 
 ZA86F:	STD     M80DB                    ;A86F: FD 80 DB 
-        LDX     #MB800                   ;A872: 8E B8 00 
+        LDX     #seqdata_base            ;A872: 8E B8 00 
 ZA875:	STX     M8004                    ;A875: BF 80 04 
         LDA     M80E1                    ;A878: B6 80 E1 
         CMPA    #$00                     ;A87B: 81 00 
@@ -5961,7 +6064,7 @@ ZAB60:	CLR     M8036                    ;AB60: 0F 36
         STA     word_8026_X              ;AB6A: 97 26 
         LDA     #$08                     ;AB6C: 86 08 
         STA     M80E7                    ;AB6E: 97 E7 
-        LDB     adc_pitchwheel_last      ;AB70: F6 90 09 
+        LDB     ADC_pitchwheel_last      ;AB70: F6 90 09 
         JSR     ZADAF                    ;AB73: BD AD AF 
         LDB     val_modwheel_related     ;AB76: D6 6C 
         JSR     ZADB2                    ;AB78: BD AD B2 
@@ -6030,8 +6133,8 @@ ZABEB:	LDU     #word_via_80ee           ;ABEB: CE AB 2A
         STU     M80EE                    ;ABEE: DF EE 
         BSR     ZAC3F                    ;ABF0: 8D 4D 
 ZABF2:	LDX     #vector_806f_X           ;ABF2: 8E 80 6F 
-        JSR     Z87E2                    ;ABF5: BD 87 E2 
-        LDU     #Z8E4D                   ;ABF8: CE 8E 4D 
+        JSR     hook_task_86a0           ;ABF5: BD 87 E2 
+        LDU     #code_8e4d_via_YU        ;ABF8: CE 8E 4D 
         LDA     #$24                     ;ABFB: 86 24 
 ZABFD:	LDB     A,U                      ;ABFD: E6 C6 
         BPL     ZAC0A                    ;ABFF: 2A 09 
@@ -6075,7 +6178,7 @@ ZAC40:	STB     M8072                    ;AC40: D7 72
         TSTB                             ;AC45: 5D 
         BNE     ZAC4E                    ;AC46: 26 06 
         LDX     #vector_806f_X           ;AC48: 8E 80 6F 
-        JSR     Z87DD                    ;AC4B: BD 87 DD 
+        JSR     hook_task_867b           ;AC4B: BD 87 DD 
 ZAC4E:	RTS                              ;AC4E: 39 
 ;------------------------------------------------------------------------
 
@@ -6177,7 +6280,7 @@ ZACEB:	LDU     M80EC                    ;ACEB: DE EC
         CMPA    #$02                     ;ACFD: 81 02 
         BLE     ZAD18                    ;ACFF: 2F 17 
         JSR     ZA0B7                    ;AD01: BD A0 B7 
-        LDY     #Z8E4D                   ;AD04: 10 8E 8E 4D 
+        LDY     #code_8e4d_via_YU        ;AD04: 10 8E 8E 4D 
         LDB     A,Y                      ;AD08: E6 A6 
         ORB     #$80                     ;AD0A: CA 80 
         STB     A,Y                      ;AD0C: E7 A6 
@@ -6219,19 +6322,19 @@ ZAD4F:	BRA     ZAD8E                    ;AD4F: 20 3D
 ZAD51:	CMPA    #$03                     ;AD51: 81 03 
         BLS     ZAD6C                    ;AD53: 23 17 
         JSR     MIDI_do_note_off         ;AD55: BD A0 C5 
-        LDY     #Z8E4D                   ;AD58: 10 8E 8E 4D 
+        LDY     #code_8e4d_via_YU        ;AD58: 10 8E 8E 4D 
         LDB     A,Y                      ;AD5C: E6 A6 
         ANDB    #$7F                     ;AD5E: C4 7F 
         STB     A,Y                      ;AD60: E7 A6 
         LDB     M80F3                    ;AD62: D6 F3 
         LDX     #vector_806f_X           ;AD64: 8E 80 6F 
-        JSR     Z87BF                    ;AD67: BD 87 BF 
+        JSR     hook_task_82ae           ;AD67: BD 87 BF 
         BRA     ZAD8E                    ;AD6A: 20 22 
 ;------------------------------------------------------------------------
 ZAD6C:	CMPA    #$00                     ;AD6C: 81 00 
         BNE     ZAD7A                    ;AD6E: 26 0A 
         JSR     MIDI_set_pwheel_to_B     ;AD70: BD A0 CF 
-        JSR     Z90C0                    ;AD73: BD 90 C0 
+        JSR     apply_bending            ;AD73: BD 90 C0 
         STD     M8070                    ;AD76: DD 70 
         BRA     ZAD8E                    ;AD78: 20 14 
 ;------------------------------------------------------------------------
@@ -6335,8 +6438,8 @@ ZAE1D:	JSR     ROM_set_VCF_A_B          ;AE1D: BD F5 E7
         CMPU    #ME420                   ;AE20: 11 83 E4 20 
         BNE     ZAE1D                    ;AE24: 26 F7 
         LDU     #voice1_data             ;AE26: CE B0 52 
-        LDD     #code_8ad7_via_D         ;AE29: CC 8A D7 
-        LDX     #code_8bbe_via_DX        ;AE2C: 8E 8B BE 
+        LDD     #VCF_update              ;AE29: CC 8A D7 
+        LDX     #soundengine_8bbe        ;AE2C: 8E 8B BE 
 ZAE2F:	STD     $1C,U                    ;AE2F: ED C8 1C 
         STX     $2B,U                    ;AE32: AF C8 2B 
         CLR     $1A,U                    ;AE35: 6F C8 1A 
@@ -6356,7 +6459,7 @@ task0_TOS:
 task1_TOS:
         RMB     %0000000010100000        ;AF31: 
 
-task2_TOS:
+task2_panel_TOS:
         RMB     %0000000001111111        ;AFD1: 
 
 voice1_data_offs2:
@@ -6861,7 +6964,9 @@ data_via_ab2a:
         FCB     $00,$02,$1E,$14,$18,$19  ;B7F0: 00 02 1E 14 18 19 
         FCB     $00,$00,$00,$00,$00,$00  ;B7F6: 00 00 00 00 00 00 
         FCB     $00,$00,$00,$00          ;B7FC: 00 00 00 00 
-MB800:	FCB     $01,$39,$39,$39          ;B800: 01 39 39 39 
+
+seqdata_base:
+        FCB     $01,$39,$39,$39          ;B800: 01 39 39 39 
 
 vec_b804:
         FDB     ptr_b80a                 ;B804: B8 0A 
@@ -6936,7 +7041,7 @@ init_task_table_loop:
         JMP     context_switch_init_ptr  ;B91D: 7E 88 68 
 ;------------------------------------------------------------------------
 
-osentry:
+OS_entry:
         LDS     #voice1_data             ;B920: 10 CE B0 52 
         LDD     #flag_8038_0_marks_empty_8059_task ;B924: CC 80 38 
         TFR     A,DP                     ;B927: 1F 8B 
@@ -6955,27 +7060,27 @@ tune_pitchbend:
         MUL                              ;B941: 3D 
         MUL                              ;B942: 3D 
         LDB     DOC_adc                  ;B943: F6 EC E2 
-        STB     adc_buf3                 ;B946: F7 90 0E 
+        STB     ADC_buf3                 ;B946: F7 90 0E 
         MUL                              ;B949: 3D 
         MUL                              ;B94A: 3D 
         MUL                              ;B94B: 3D 
         LDB     DOC_adc                  ;B94C: F6 EC E2 
-        STB     adc_buf2                 ;B94F: F7 90 0D 
+        STB     ADC_buf2                 ;B94F: F7 90 0D 
         MUL                              ;B952: 3D 
         MUL                              ;B953: 3D 
         MUL                              ;B954: 3D 
         LDB     DOC_adc                  ;B955: F6 EC E2 
-        STB     adc_buf1                 ;B958: F7 90 0C 
+        STB     ADC_buf1                 ;B958: F7 90 0C 
         CLRA                             ;B95B: 4F 
-        ADDB    adc_buf2                 ;B95C: FB 90 0D 
+        ADDB    ADC_buf2                 ;B95C: FB 90 0D 
         ADCA    #$00                     ;B95F: 89 00 
-        ADDB    adc_buf3                 ;B961: FB 90 0E 
+        ADDB    ADC_buf3                 ;B961: FB 90 0E 
         ADCA    #$00                     ;B964: 89 00 
         ASRA                             ;B966: 47 
         RORB                             ;B967: 56 
         ASRA                             ;B968: 47 
         RORB                             ;B969: 56 
-        STB     adc_result               ;B96A: F7 90 0A 
+        STB     ADC_result               ;B96A: F7 90 0A 
         RTS                              ;B96D: 39 
 ;------------------------------------------------------------------------
 
@@ -6996,9 +7101,10 @@ tune_filters_loop:
 
 ; 4 sets of S/D vectors, D get pushed to stack, S gets stored to b2be/c0/c2/c4
 vectors_b987:
-        FDB     task0_TOS,task0_code_D   ;B987: AE B9 90 0F 
-        FDB     task1_TOS,task1_code_D   ;B98B: AF 31 90 1F 
-        FDB     task2_TOS,task2_code_D   ;B98F: AF D1 90 E2 
+        FDB     task0_TOS,task0_code     ;B987: AE B9 90 0F 
+        FDB     task1_TOS,task1_code     ;B98B: AF 31 90 1F 
+        FDB     task2_panel_TOS          ;B98F: AF D1 
+        FDB     task2_panel_code         ;B991: 90 E2 
         FDB     task3_TOS,task3_code_D   ;B993: B0 51 AC 4F 
 
         END

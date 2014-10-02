@@ -14,6 +14,17 @@ label 867b	code_867b_via_U
 label 86a0	code_86a0_via_U
 
 label 875e	task_handler_875e
+
+label 87bf	hook_task_82ae
+label 87ce	hook_task_8380
+label 87d8	hook_task_857f
+label 87dd	hook_task_867b
+label 87e2	hook_task_86a0
+label 87e7	hook_task_85c9
+label 87ec	hook_task_85b9
+label 87f4	hook_task_in_U_with_A_from_$19,X
+label 87f7	hook_task_in_U
+
 label 885e context_switch
 label 8868 context_switch_init_ptr
 label 886b context_switch_set_ptr
@@ -58,18 +69,31 @@ label 8a5d kbd_exit_scale_on_vel
 
 label 8a8d 	invoke_hdlr_[1C,X]_data_1A,X
 
-label 8a95	code_8a95_via_D
-label 8ac7	code_8ac7_via_D
-label 8aae	code_8aae_via_D
-label 8ad7	code_8ad7_via_D
-label 8aef	code_8aef_via_D
-label 8b0f	code_8b0f_via_D
-label 8b49	code_8b49_via_D
-label 8bbe	code_8bbe_via_DX
+label 8a95	EG_VCF_attack_phase
+label 8aae	EG_VCF_decay_phase
+label 8ac7	EG_VCF_release_phase
 
+label 8ad7	VCF_update
+
+label 8aef	soundengine_8aef
+label 8b0f	soundengine_8b0f
+label 8b49	soundengine_8b49
+label 8b81	soundengine_8b81
+label 8bbe	soundengine_8bbe
+
+label 8bcd	soundengine_calc_tuning_from_note
+
+label 8c34	soundengine_lfo
+label 8c80	soundengine_init_voice_params
+
+label 8da1	soundengine_calc_EG
 
 data 8bf1-8bfc
 label 8bf1	data_8bf1_via_X
+
+label 8e05	calc_release_times
+
+label 8e4d	code_8e4d_via_YU
 
 data 8e71-8e7f
 label 8e71	data_8e71_via_U
@@ -80,6 +104,10 @@ word 8eaf-8ece
 label 8eaf 	vectors_8eaf
 label 8ebf 	vectors_8ebf
 
+label 8eec	soundengine_find_wavesample_for_key
+
+label 8f11	soundengine_wave_looping_related
+
 label 8ff1	code_8ff1_via_X
 
 data 8ff9-8fff
@@ -87,16 +115,27 @@ label 8ff9	data_8ff9 via_X
 
 
 data 9000-900e
-label 9009 adc_pitchwheel_last
-label 900a adc_result
-label 900b adc_modwheel_last
-label 900c adc_buf1
-label 900d adc_buf2
-label 900e adc_buf3
+label 9009 ADC_pitchwheel_last
+label 900a ADC_result
+label 900b ADC_modwheel_last
+label 900c ADC_buf1
+label 900d ADC_buf2
+label 900e ADC_buf3
 
-label 900f 	task0_code_D
-label 901f 	task1_code_D
-label 90e2 	task2_code_D
+label 900f 	task0_code
+label 901f 	task1_code
+label 90e2 	task2_panel_code
+
+label 9039 ADC_sample_wheels
+label 9081 ADC_normalize_pwheel1
+label 9083 ADC_normalize_pwheel2
+label 9088 ADC_normalize_pwheel3
+label 908e ADC_normalize_pwheel4
+label 9091 ADC_update_pitchwheel
+label 90a3 ADC_update_modwheel
+label 90bf ADC_sample_wheels_exit
+
+label 90c0 	apply_bending
 
 data 9d4a
 
@@ -127,17 +166,43 @@ label a13d MIDI_byte_to_txbuf
 label a149 MIDI_txbuf_overflow
 
 label a151 FIRQ_entry
+label a163 FIRQ_UART_error
+label a179 FIRQ_chk_UART_rxirq
+label a17f FIRQ_UART_rxirq_loop
+label a198 FIRQ_UART_rx_overrun
+label a1a3 FIRQ_chk_UART_rxirq_exit
+label a1a5 FIRQ_chk_UART_txirq
+
+label a1a9 FIRQ_exit
+label a1ac UART_restore_rxhdlr
+label a1b1 UART_restore_txhdlr
+comm a1b1 dead code alert -- restore_txhdlr never called
+
+label a1b6 FIRQ_call_txhdlr_and_exit
 
 label a1bc UART_txhdlr
+label a1cb UART_chk_tbuf_range
+label a1d3 UART_set_rxirq_8n1
+label a1d8 UART_set_txbuf_ptr
+label a1db UART_rxdata_to_rxbuf
+label a1fb UART_rxdata_to_rxbuf_exit
 
-label a215 UART_rx_chk_for_cmd
-label a22e UART_rx_channel_message
-label a2eb UART_rx_system_message
-label a247 UART_rx_skip_message
+label a200 dead_code_a200
+comm a200 dead code alert -- BRA never called
+
+label a202 UART_MIDI_thru_from_txirq
+label a205 UART_MIDI_thru_from_rxirq
+
+label a215 UART_rx_tst_channel_or_system
+label a22e UART_rx_channel_msg
+label a23d UART_rx_system_msg
+label a247 UART_rx_skip_msg
 
 label a24A UART_rx_parser_exit
 label a24B UART_rx_parser_note_off
 label a268 UART_rx_parser_note_on
+label a290 limit_note_lo_to_36
+label a298 limit_note_hi_to_96
 label a2A3 UART_rx_parser_ctrlr
 label a2F8 UART_rx_parser_pitbend
 
@@ -146,6 +211,7 @@ label a32b	code_a32b_via_D
 
 label a36B UART_rx_parser_polyprs
 label a395 UART_rx_parser_progchn
+label a341 code_a341_via_U
 label a34A UART_rx_parser_chnlprs
 
 label a3b0 UART_rx_parser_timing_clk
@@ -155,8 +221,8 @@ label a3c2 UART_rx_parser_seq_stop
 label a3d3 UART_rx_parser_sense_rst
 
 word a3d4-a403
-label a3d4 MIDI_rx_vec_chnlmsg_parsers
-label a3e4 MIDI_rx_vec_systmsg_parsers
+label a3d4 MIDI_rx_chnmsg_parsers
+label a3e4 MIDI_rx_sysmsg_parsers
 
 label a404 pedal_handler_if_8028_not_zero
 
@@ -178,7 +244,7 @@ label aeb9 task0_TOS
 
 label af31 task1_TOS
 #label af63 task2_BOS
-label afd1 task2_TOS
+label afd1 task2_panel_TOS
 label b051 task3_TOS
 
 data b051-b835
@@ -284,11 +350,18 @@ char b836-b86c
 char b86d-b8b3
 data b8b4-b8ff
 
+; ----------------------------------------------------------------------
+; --- area below gets overwritten by sequencer data
+; --- only valid immediately after start-up
+; ----------------------------------------------------------------------
+
+label b800 seqdata_base
+
 code b900-b986
 label b900 init_task_table
 label b90c init_task_table_loop
 
-label b920 osentry
+label b920 OS_entry
 label b935 tune_pitchbend
 label b96e tune_filters
 label b974 tune_filters_loop
