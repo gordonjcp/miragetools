@@ -45,6 +45,8 @@ label 8029 	word_8029_X
 label 802a 	word_802a_X
 label 802b 	word_802b_X
 
+label 8032	copy_of_8087
+
 label 8038 	flag_8038_0_marks_empty_8059_task
 
 word 8039-8044
@@ -86,10 +88,25 @@ label 806c	val_modwheel_related
 
 label 806f 	vector_806f_X
 
+label 8072	kbd_io_related
+
 label 8076 	table_8076_X
 comm 8076 entry 3: MIDI rx related
 
 label 8079 kdb_pedal_state_40
+
+label 8082	tested_for_enter_8082
+label 8083 flag_panel_in_value_mode
+label 8084	up_is_01_down_is_80
+label 8085	tested_for_enter_8085
+label 8087	some_jobcode_c8_for_updown
+label 8088	copy_of_button_for_updown
+label 808b parameter_number
+label 808c	enter_related_808c
+label 808e	enter_related_808e
+label 808f	enter_related_808f
+label 8090	enter_related_8090
+label 8091	enter_related_8091
 
 label 809f	809f_via_X
 
@@ -98,7 +115,11 @@ label 80a5 	vec_80a5
 label 80a7 	vec_80a7
 label 80a9 	vector_80a9_X
 label 80aa 	vector_80aa_X
-label 80ae panel_button
+label 80ad panel_button_raw
+label 80ae panel_button_cooked
+label 80af	raw_button_code_80af
+label 80b3 panel_display_AB_cooked
+
 label 80bb MIDI_cmd
 
 word 80bc-80bf
@@ -124,6 +145,8 @@ label 80d5 disk_first_trk
 label 80d6 disk_first_sec
 label 80d7 disk_last_trk
 label 80d8 disk_last_sec
+
+label 80e7	tested_for_enter_depending_on_8082
 
 word 80ec-80ef
 

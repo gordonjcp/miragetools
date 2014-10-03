@@ -124,7 +124,7 @@ label 900e ADC_buf3
 
 label 900f 	task0_code
 label 901f 	task1_code
-label 90e2 	task2_panel_code
+label 90e2 	task2_panel_handler
 
 label 9039 ADC_sample_wheels
 label 9081 ADC_normalize_pwheel1
@@ -137,7 +137,92 @@ label 90bf ADC_sample_wheels_exit
 
 label 90c0 	apply_bending
 
+label 90e9 chk_button_0to9
+label 90f3 chk_button_system
+label 9101 chk_button_virtual
+label 910b chk_button_updown
+label 9116 chk_button_cancel
+label 9124 chk_button_param
+label 913b chk_button_value
+label 9142 switch_to_value_mode
+label 9148 chk_button_up
+label 9158 chk_button_down
+label 9198 chk_button_enter
+label 9247 chk_button_leave
+
+label 9249 	related_to_cancel_param_value
+
+label 9258 hdlr_button_0to9
+
+label 932d msg_output_NO
+
+label 9431	set_8089_808a_to_01_panelmodeflag_to_80
+
+label 943b hdlr_button_system
+label 95f0 hdlr_button_virtual
+label 998b hdlr_button_value
+
+label 99b0 chk_param_synthesis
+label 99ce chk_param_init_wavesample
+label 99ee chk_param_1c
+label 9a06 chk_param_1d
+label 9a20 chk_param_22
+label 9a2c chk_param_23
+label 9a38 chk_param_VCF_f
+label 9a44 chk_param_VCF_q
+label 9a4d chk_param_VCF_EG_sens
+label 9a5a chk_param_VCA_EG_sens
+label 9a67 	chk_param_unknown_9a67
+label 9a73 chk_param_wavesample_block
+label 9aa1 chk_param_wsample_loop_start_end
+label 9ac7 chk_param_loop_switch
+label 9ae2 chk_param_wsample_rotate
+label 9b02 chk_param_rel_max_ffreq
+label 9b0f chk_param_top_key
+label 9b23 	chk_param_unknown_9b23
+label 9b2f chk_param_MIDI
+label 9b42 chk_param_MIDI_chnl
+label 9b51 chk_param_MIDI_thru
+label 9b5a chk_param_MIDI_ctrl_enable
+label 9b65 chk_param_ext_seq_clk
+label 9b6e chk_param_ext_clk_jack
+label 9b77 chk_param_int_clk_rate
+label 9b8b chk_param_seq_loop_sw
+label 9b92	call_9cc1
+label 9b95 chk_param_kbd_balance
+label 9ba8 chk_param_ul_prog_link
+label 9bb2 chk_param_wavesample_select
+label 9bca chk_param_master_tune
+label 9bd8 chk_param_pbend_range
+label 9be1 chk_param_kbd_vel_sens
+label 9bed chk_param_sampletime_adj
+label 9bff chk_param_input_filter
+label 9c10 chk_param_linemic_level
+label 9c1a chk_param_sample_thresh
+label 9c2b chk_param_user_msampling
+label 9c35 chk_param_src_lfomod
+label 9c3e chk_param_src_mixmod
+label 9c48 chk_param_50
+label 9c58 chk_param_foot_switch
+label 9c76 chk_param_5b
+label 9c7f chk_param_5c
+label 9c98 chk_param_61
+label 9ca3 chk_param_62
+label 9cae chk_param_63
+label 9cb9 chk_param_bad_code
+
+label 9d2d hdlr_button_param
+
+label 9d23 msg_output_number_in_AB
+
 data 9d4a
+
+label 9d4b	button_code_deriving
+
+label 9f60 reset_synthesis
+label 9f6f reset_timer_and_IO
+
+label 9fe6 	msg_output_NO_with_80_to_80ba
 
 data 9ff3-a07d
 label 9ff3	data_9ff3_via_U
@@ -231,6 +316,8 @@ label a4d4 load_samples
 word ab2a-ab2b
 label ab2a 	word_via_80ee
 
+label ab90	related_to_cancel
+
 label ac4f 	task3_code_D
 
 label adb6 	pedal_handler_2
@@ -318,16 +405,12 @@ label b47e 	data5_via_b396
 label b49e 	data6_via_b3ae
 label b4be 	data7_via_b3c6
 label b4fe 	tab_b4fe_step36
-
-label b60a	data_b60a_via_D
-	  
+  
 label b64f	data0_via_b85f
 label b651	data0_next_init
 label b66f	data1_via_b5a7
-label b68e	b68e_via_D
 label b68f	data2_via_b5bf
 label b6af	data3_via_b5d7
-label b6ce	b6ce_via_D
 label b6cf	data4_via_b5ef
 label b6ef	data5_via_b607
 label b70f	data6_via_b61f
@@ -373,4 +456,5 @@ comm b987 4 sets of S/D vectors, D get pushed to stack, S gets stored to b2be/c0
 label b997 OSRAM_unused
 unused b997-bfff
 
+code b800-b803
 
