@@ -1,0 +1,15 @@
+; ----------------------------------------------------------------------
+; --- Ensoniq Mirage MASOS3.2 definitions ------------------------------
+; ----------------------------------------------------------------------
+
+org 8000
+setdp 80
+
+# pretty much static
+include "./mirage-rom.lbl"
+include "./mirage-peripherals.lbl"
+
+# keep variables and code separate for easier editing
+include "./mos32-var8k.lbl"
+include "./mos32-code.lbl"
+

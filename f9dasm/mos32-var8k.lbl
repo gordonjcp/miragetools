@@ -1,0 +1,153 @@
+; ----------------------------------------------------------------------
+; --- Ensoniq Mirage MASOS3.2 variable/data structures definitions -----
+; ----------------------------------------------------------------------
+;
+; stuff that resides before the main program code
+; does not necessarily include "in-place" variables of code section
+;
+; tabbed labels are still unclear / presumed
+
+
+hex 8000-8007
+comm 8000 Ensoniq Mirage OS 3.2
+
+data 8011-828b
+label 8005 	word_8006_D
+label 8006 	word_8006_X
+label 8007 	word_8007_X
+label 8011 	word_8011_X
+label 8012 osparm_tuning
+label 8013 osparm_bendrange
+label 8014 osparm_velosens
+label 8015 osparm_upperlower
+label 8016 	word_8016_X
+label 8017 	word_8017_X
+label 8018 	word_8018_X
+label 8019 	word_8019_X
+label 801a 	word_801a_X
+label 801b 	word_801b_X
+label 801c	word_801c_X
+label 801d osparm_lfomod_src
+label 801e osparm_mixmod_src
+label 801f	word_801f_X
+
+label 8020 MIDI_flag_omni_poly
+label 8021 MIDI_channel
+label 8022 MIDI_flag_thru_enabled
+
+label 8023 	word_8023_X
+label 8024 	word_8024_X
+label 8025 	word_8025_X
+label 8026 	word_8026_X
+label 8027 	word_8027_X
+label 8028 	word_8028_X
+label 8029 	word_8029_X
+label 802a 	word_802a_X
+label 802b 	word_802b_X
+
+label 8038 	flag_8038_0_marks_empty_8059_task
+
+word 8039-8044
+label 8039	vector_8039_U
+label 803b	vector_803b_U
+label 803d	vector_803d_U
+label 803f	vector_803f_U
+label 8041 	vector_8041_U
+label 8043 	vector_8043_U
+
+label 804e 	flag_804e_0_disables_call_8059_task
+label 804d 	flag_804e_copy_of_+05,Y
+
+word 804f-8050
+label 804f 	table_base_804f
+
+word 8056-8057
+label 8056 	vector_8056_U
+
+word 8059-805c
+label 8059 	task_vector_8059
+label 805b 	task_vector_805b
+
+label 805d	kbd_msg_byte_count
+
+word 805e-805f
+label 805e context_ptr
+label 8060 DOC_irq_cnt
+
+word 8061-8062
+label 8061 kbd_parser_ptr
+label 8063 kbd_normalized_note
+
+label 8068 val_modwheel
+label 8069 val_pitchwheel
+label 806a	val_pitchwheel_related
+label 806b kbd_flag_damper_pedal_onoff
+label 806c	val_modwheel_related
+
+label 806f 	vector_806f_X
+
+label 8076 	table_8076_X
+comm 8076 entry 3: MIDI rx related
+
+label 8079 kdb_pedal_state_40
+
+label 809f	809f_via_X
+
+word 80a5-80ab
+label 80a5 	vec_80a5
+label 80a7 	vec_80a7
+label 80a9 	vector_80a9_X
+label 80aa 	vector_80aa_X
+label 80ae panel_button
+label 80bb MIDI_cmd
+
+word 80bc-80bf
+label 80bc MIDI_txbuf_msg_start
+label 80be MIDI_txbuf_msg_end
+
+word 80c0-80c1
+label 80c0 ptr_UART_rxhdlr
+label 80c2 MIDI_txcmd_params
+label 80c3 MIDI_txcmd_param2
+label 80c4 MIDI_rxcmd_param1
+label 80c5 MIDI_rxcmd
+
+word 80c6-80c7
+label 80c6 ptr_UART_txhdlr
+
+label 80ce MIDI_bytecount
+label 80cf MIDI_program_number
+
+label 80d2 	vector_80d2_X
+
+label 80d5 disk_first_trk
+label 80d6 disk_first_sec
+label 80d7 disk_last_trk
+label 80d8 disk_last_sec
+
+word 80ec-80ef
+
+label 80f4 tab_setbit_0to7
+label 80fc tab_clrbit_0to7
+
+label 8107	field_248_bytes_8107_via_D
+
+label 8209	table_10_20_00
+label 820c	table_02_00_01
+label 820f	table_04_08_0c|05_09_0d|06_0a_0e|07_0b_0f|80_81_82_83
+
+label 8225 MIDI_txbuf_base
+label 8235 MIDI_txbuf_len
+label 8236 MIDI_rxbuf_len
+label 8237 MIDI_rx_pending
+label 8238 MIDI_rxbuf_base
+word 8278-827b
+label 8278 	vec_to_8280_seemingly_static
+label 827a 	vec_to_827c_seemingly_static
+label 8280 	data_via_8278_static_zero_changed_relative?
+label 827c 	table_10_11_01_0a
+
+word 88fc-893b
+label 88fc oscirq_vectors
+comm 32 oscillator IRQ vectors as 16 pairs
+
