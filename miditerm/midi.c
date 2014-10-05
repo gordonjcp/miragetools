@@ -33,21 +33,34 @@ void term_in(VteTerminal *terminal, gchar *text, guint length, gpointer ptr) {
 	int i;
 	snd_seq_event_t ev;
 
-        snd_seq_ev_clear(&ev);
-        snd_seq_ev_set_subs(&ev);
-        snd_seq_ev_set_direct(&ev);
-        snd_seq_ev_set_source(&ev, (int)midi_out);
-		snd_seq_ev_set_fixed(&ev);
-		
-		
-		//ev.data.control.channel=1;
-		ev.type = SND_SEQ_EVENT_QFRAME;
-		for (i=0; i<length; i++) {
-			ev.data.control.value = text[i];
-            snd_seq_event_output(g_seq_ptr, &ev);
-		}
-        snd_seq_drain_output(g_seq_ptr);	
+    snd_seq_ev_clear(&ev);
+    snd_seq_ev_set_subs(&ev);
+    snd_seq_ev_set_direct(&ev);
+    snd_seq_ev_set_source(&ev, (int)midi_out);
+	snd_seq_ev_set_fixed(&ev);
 
+	//ev.data.control.channel=1;
+	ev.type = SND_SEQ_EVENT_QFRAME;
+	for (i=0; i<length; i++) {
+		ev.data.control.value = text[i];
+		snd_seq_event_output(g_seq_ptr, &ev);
+	}
+	snd_seq_drain_output(g_seq_ptr);	
+
+}
+
+void send_reset() {
+	// send a MIDI Reset message (0xff)
+	snd_seq_event_t ev;
+
+    snd_seq_ev_clear(&ev);
+    snd_seq_ev_set_subs(&ev);
+    snd_seq_ev_set_direct(&ev);
+    snd_seq_ev_set_source(&ev, (int)midi_out);
+	snd_seq_ev_set_fixed(&ev);
+	ev.type = SND_SEQ_EVENT_RESET;
+	snd_seq_event_output(g_seq_ptr, &ev);
+	snd_seq_drain_output(g_seq_ptr);
 }
 
 
