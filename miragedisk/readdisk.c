@@ -1,22 +1,21 @@
 /* vim: set noexpandtab ai ts=4 sw=4 tw=4: */
-/*  writedisk, part of a set of disk tools for the Ensoniq Mirage
+/*  readdisk, part of a set of disk tools for the Ensoniq Mirage
 	(C) 2010-2011 Gordon JC Pearce MM0YEQ
 	
-	writedisk.c
-	Write a Mirage disk image to a formatted floppy
+	readdisk.c
+	Read a Mirage disk image from a floppy
 	
-	Put a formatted disk in /dev/fd0 and write an image to it with
+	Put a formatted Mirage disk in /dev/fd0 and read it with:
 
-	$ writedisk <image file>
+	$ readdisk <name of image file>
 
-	You can format a suitable floppy with "superformat /dev/fd0 tracksize=11b mss ssize=1024 dd --zero-based"
 	
-	writedisk is free software: you can redistribute it and/or modify
+	readdisk is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
 	the Free Software Foundation, either version 2 of the License, or
 	any later version.
 
-	writedisk is distributed in the hope that it will be useful, but
+	readdisk is distributed in the hope that it will be useful, but
 	WITHOUT ANY WARRANTY; without even the implied warranty of
 	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 	GNU General Public License for more details.
@@ -65,13 +64,13 @@ void seekin(int fd) {
 	if(tmp) printf("seekin nonzero, error = \"%s\"\n", strerror(errno));
 }
 
-void writetrack(int fd, int trk, char *buffer) {
+void readtrack(int fd, int trk, char *buffer) {
 
 	struct floppy_raw_cmd raw_cmd;
 	int tmp, i, j;
 	raw_cmd.rate = 2;
 	raw_cmd.track = trk;
-	raw_cmd.flags = FD_RAW_WRITE | FD_RAW_INTR | FD_RAW_NEED_SEEK;
+	raw_cmd.flags = FD_RAW_READ | FD_RAW_INTR | FD_RAW_NEED_SEEK;
 
 	// write first part
 	raw_cmd.cmd_count = 0;
@@ -79,7 +78,7 @@ void writetrack(int fd, int trk, char *buffer) {
 	raw_cmd.length = 5120;
 	
 	// set up the command
-	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_WRITE;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_READ;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = trk;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
@@ -89,17 +88,17 @@ void writetrack(int fd, int trk, char *buffer) {
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0x1b;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0xff;
 	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
-	if(tmp) printf("write nonzero, error = \"%s\"\n", strerror(errno));
+	if(tmp) printf("read nonzero, error = \"%s\"\n", strerror(errno));
 		
 	raw_cmd.rate = 2;
 	raw_cmd.track = trk;
-	raw_cmd.flags = FD_RAW_WRITE | FD_RAW_INTR | FD_RAW_NEED_SEEK;
+	raw_cmd.flags = FD_RAW_READ | FD_RAW_INTR | FD_RAW_NEED_SEEK;
 	raw_cmd.cmd_count = 0;
 	raw_cmd.data = buffer+5120;
 	raw_cmd.length = 512;
 	
 	// set up the command
-	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_WRITE;
+	raw_cmd.cmd[raw_cmd.cmd_count++] = FD_READ;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = trk;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0;
@@ -109,7 +108,7 @@ void writetrack(int fd, int trk, char *buffer) {
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0x1b;
 	raw_cmd.cmd[raw_cmd.cmd_count++] = 0xff;
 	tmp = ioctl( fd, FDRAWCMD, &raw_cmd );
-	if (tmp) printf("write2 nonzero, error = \"%s\"\n", strerror(errno));
+	if (tmp) printf("read2 nonzero, error = \"%s\"\n", strerror(errno));
 }
 
 void main(int argc, char **argv) {
@@ -120,11 +119,11 @@ void main(int argc, char **argv) {
 	FILE *in;
 
 	if (argc != 2) {
-		printf("usage: writedisk <image to write>\n");
+		printf("usage: readdisk <file to save image to>\n");
 		exit(1);
 	}
 
-	in = fopen(argv[1], "rb");
+	in = fopen(argv[1], "wb");
 	if (!in) {
 		printf("could not open %s\n",argv[1]);
 		exit(1);
@@ -132,7 +131,7 @@ void main(int argc, char **argv) {
 
 	fd = open("/dev/fd0", O_ACCMODE | O_NDELAY);
 	if (!fd) {
-		printf("could not open /dev/fd0 for writing\n");
+		printf("could not open /dev/fd0 for reading\n");
 		exit(1);
 	}
 
@@ -140,8 +139,8 @@ void main(int argc, char **argv) {
 	
 	for(i = 0; i< 80; i++) {
 		printf("track %d\n", i);
-		fread(buffer, sizeof(char), 5632, in);
-		writetrack(fd, i, buffer);
+		readtrack(fd, i, buffer);
+		fwrite(buffer, sizeof(char), 5632, in);
 		seekin(fd);
 	}
 	printf("done        \n");
