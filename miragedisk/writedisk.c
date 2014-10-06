@@ -28,6 +28,7 @@
 #include <linux/fd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <linux/fdreg.h>
 #include <string.h>
