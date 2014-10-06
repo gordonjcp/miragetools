@@ -18,7 +18,7 @@ aciad   equ $e101
 
 	org $ba00
 * start by saving stack pointer then stacking all registers
-entry	sta sstack
+entry	sts sstack
 	lds #sregs
 	pshs a,b,x,y,cc,u
 	orcc #$50

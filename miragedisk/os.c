@@ -59,6 +59,7 @@ int load_srec(FILE *in, char *buffer) {
 		start_addr=0;
 		for(p=4,i=0;i<4;i++)
 			start_addr = (start_addr<<4) + hex_to_int(buf[p++]);
+			printf("%04x\n",start_addr);
 
 			/* read data */
 			for(i=0;i<num_bytes;i++) {
@@ -90,7 +91,7 @@ void get_os_sectors(int fd, char *buffer) {
 	fd_readwrite(fd, MFD_READ, track, 5, 512, buffer + 10752);
 	track++;
 	// loop through the remaining tracks
-	for(; track<=10; track++) {
+	for(; track<=11; track++) {
 
 		fd_readwrite(fd, MFD_READ, track, 5, 512, buffer + 10240+(512*track));
 	}
@@ -170,10 +171,12 @@ dumpfile_readfail:
 }
 
 void put_os(int fd, char *filename) {
-	// get the OS from disk, and save as a binary image
+	// write an OS out to the disk
 	
 	char buffer[16384];
 	FILE *in;
+
+	get_os_sectors(fd,buffer);
 
 	in=fopen(filename,"r");
 	if(!in) {
@@ -181,10 +184,12 @@ void put_os(int fd, char *filename) {
 		exit(1);
 	}
 
-	if (strncmp(strrchr(filename, '.'), ".s19", 4) == -1) {
+	//printf("filename=%s\n",filename);
+	//printf("%d\n",strncmp(strrchr(filename, '.'), ".s19", 4));
+	if (strncmp(strrchr(filename, '.'), ".s19", 4) != 0) {
 		// doesn't end with .s19, so we'll assume (possibly wrongly)
 		// that it isn't a Motorola S-REC file	
-
+		printf("writing binary\n");
 		if (fread(buffer, 1, 16384, in) != 16384) {
 			fprintf(stderr,"error reading %s\n", filename);
 			fclose(in);
