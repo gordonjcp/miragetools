@@ -1,29 +1,37 @@
 *       title minibug.asm
 *       (C) 2014 Gordon JC Pearce
 *       Based fairly loosely on the old Motorola 6800 Minibug
+* 	loads into sequencer RAM at ba00
 
-ram     equ $8000
-cksum   equ ram-1
-xlo     equ cksum-1
-xhi     equ xlo-1
-bytect  equ xhi-1
+ramtop  equ $bfff	* last byte of sequencer RAM
+cksum   equ ramtop	* checksum for S-record
+xlo     equ cksum-1	* used for two-byte hex entry
+xhi     equ xlo-1	* used for two-byte hex entry
+bytect  equ xhi-1	* byte count for S-record
+sstack	equ bytect-2	* holds stack pointer on entry
+sregs	equ $bfc0	* stack registers on entry
 
-stack   equ bytect
-
+stack   equ $bf80	* ROM uses this address anyway
 
 aciac   equ $e100
 aciad   equ $e101
 
-	org $8008
-irqvec	jmp irqhandler	VIA and DOC
-firqvec	jmp firqhandler	ACIA
-osvec	jmp start
+	org $ba00
+* start by saving stack pointer then stacking all registers
+entry	sta sstack
+	lds #sregs
+	pshs a,b,x,y,cc,u
+	orcc #$50
+	jmp start
 
-irqhandler
-firqhandler
-        rti
+* restore old stack and return
+return	lds #sregs
+	puls a,b,x,y,cc,u
+	lds sstack
+	rts
 
 * inch - fetch a single character, with MIDIterm framing
+
 inch    pshs b          * save B
         ldb #$01        * receive data register flag
 inch1   bitb aciac      * check acia
@@ -85,14 +93,14 @@ outhexs bsr outhex
 * inhex - read a hex character
 inhex   bsr inch
         cmpa #'0'
-        lbmi contrl      * below 0
+        lbmi ctrl      * below 0
         cmpa #'9'
         ble inhex1      * between 0 and 9
         ora #$20        * smash case
         cmpa #'a'       * 10-16?
-        bmi contrl      * fixme, needs case insensitive
+        bmi ctrl      * fixme, needs case insensitive
         cmpa #'f'
-        bgt contrl
+        bgt ctrl
         suba #$07       * remove offset
 inhex1  rts        
 
@@ -127,7 +135,7 @@ change  bsr baddr
         bsr outhexs
         bsr byte
         sta ,x
-        bra contrl
+        bra ctrl
 
 load    jsr inch
         cmpa #'S'
@@ -150,22 +158,17 @@ load1   bsr byte
 load2   inc cksum
         beq load
         jmp ctrlerr
-load3   jmp contrl
+load3   jmp ctrl
   
-start   orcc #$55       * disable interrupts
-        lda #$03        * ACIA master reset
-        sta aciac
-        lda #$95        * /16, 8N1, RX Interrupt On
-        sta aciac
-        
-* if the VIA isn't set up, we're in a spot of trouble
-* fortunately hwsetup is called before we even try the disk
-        
-contrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
+start        
+ctrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
         lda #$0d        * carriage return
         jsr outch
         lda #$0a        * linefeed
         jsr outch
+	lda #'>'
+	jsr outch
+	jsr outs
         
         jsr inch
         tfr a,b
@@ -176,9 +179,12 @@ contrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
         beq change
         cmpb #'g'
         beq ctrlgo
+	cmpb #'r'	* return
+	lbeq return 
 ctrlerr lda #'?'
         jsr outch
-        bra contrl
+        bra ctrl
 ctrlgo  jsr baddr
-        jmp ,x
+        jsr ,x
+	jmp ctrl
 
