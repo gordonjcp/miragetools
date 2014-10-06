@@ -13,7 +13,7 @@ label 85c9	code_85c9_via_U
 label 867b	code_867b_via_U
 label 86a0	code_86a0_via_U
 
-label 875e	task_handler_875e
+label 875e	called_by_mono_mode
 
 label 87bf	hook_task_82ae
 label 87ce	hook_task_8380
@@ -60,6 +60,7 @@ label 89ec kbd_note_off
 label 89f6 kbd_scale_off_velocity
 label 8a07 kbd_minmax_off_vel
 label 8a0b kbd_set_off_vel
+
 label 8a24 kbd_exit_scale_off_vel
 
 label 8a2f kbd_scale_on_velocity
@@ -101,12 +102,14 @@ label 8e71	data_8e71_via_U
 data 8e80-8eae
 
 word 8eaf-8ece
-label 8eaf 	vectors_8eaf
-label 8ebf 	vectors_8ebf
+label 8eaf	ptr_ws_parms_L
+label 8ebf	ptr_ws_parms_U
+
+label 8ecf	probably_handler_wavesample_param
 
 label 8eec	soundengine_find_wavesample_for_key
 
-label 8f11	soundengine_wave_looping_related
+label 8f11	update_param_ws_lse
 
 label 8ff1	code_8ff1_via_X
 
@@ -154,32 +157,92 @@ label 9249 	related_to_cancel_param_value
 
 label 9258 hdlr_button_0to9
 
+lcomm 926c show -L
+lcomm 9270 show -U
+
+lcomm 928d show -L
+lcomm 9296 show -U
+
+label 92d4 chk_command_codes
+label 92d8 chk_cmd_save_lower
+lcomm 92df show -L
+label 92e4 chk_cmd_save_upper
+lcomm 92ec show -U
+label 92f1 chk_cmd_save_both
+lcomm 92f9 show -A
+lcomm 92fb show S-
+label 9309 chk_cmd_save_config
+lcomm 930d show SP
+label 931d chk_cmd_copy_to_lower
+lcomm 932d show nO
+label 9325 chk_cmd_copy_to_upper
+
 label 932d msg_output_NO
 
 label 9431	set_8089_808a_to_01_panelmodeflag_to_80
 
 label 943b hdlr_button_system
-label 95f0 hdlr_button_virtual
-label 998b hdlr_button_value
 
+lcomm 9454 show L-
+lcomm 945c show -L
+lcomm 9465 show -L
+lcomm 948f show LA
+label 949b chk_btn_sample_UL
+lcomm 94ad show -U
+lcomm 94b5 show -L
+lcomm 94b9 show S-
+lcomm 9512 show nS
+lcomm 951b show SF
+label 9525 press_cancel
+lcomm 9565 show oU
+
+lcomm 95ab show r-
+lcomm 95bb show L-
+lcomm 95d7 show S-
+lcomm 95d9 show -S
+
+label 95f0 hdlr_button_virtual
+
+lcomm 96ea show <space>-
+
+lcomm 96f4 show Sr
+label 98ab	inc_wsample_rotate
+label 98ce	dec_wsample_rotate
+
+label 998b hdlr_button_value
+label 99a4 chk_param_local_on
 label 99b0 chk_param_synthesis
-label 99ce chk_param_init_wavesample
-label 99ee chk_param_1c
-label 9a06 chk_param_1d
-label 9a20 chk_param_22
-label 9a2c chk_param_23
+label 99c2 sel_synth_param_UL
+label 99ca sel_synth_param_U
+label 99ce chk_param_init_wsample
+label 99ee chk_param_mix_mode
+label 9a06 chk_param_mono_mode
+label 9a20 chk_param_osc_mix
+label 9a2c chk_param_osx_mix_vsense
 label 9a38 chk_param_VCF_f
 label 9a44 chk_param_VCF_q
 label 9a4d chk_param_VCF_EG_sens
 label 9a5a chk_param_VCA_EG_sens
-label 9a67 	chk_param_unknown_9a67
-label 9a73 chk_param_wavesample_block
+label 9a67 set_param_max_value
+label 9a73 chk_param_wsample_block
+label 9a85 sel_ws_param_block_UL
+label 9a93 sel_ws_param_block_L
+label 9a9b sel_ws_param_block
 label 9aa1 chk_param_wsample_loop_start_end
+label 9aba dec_ws_lse
+label 9abd inc_ws_lse
+label 9ac0 show_ws_lse
 label 9ac7 chk_param_loop_switch
+label 9ad7 clr_loop_switch
+label 9ad8 set_loop_switch
+label 9add show_loop_switch
 label 9ae2 chk_param_wsample_rotate
+label 9af8 dec_param_wsample_rotate
+label 9afd show_wsample_rotate
+
 label 9b02 chk_param_rel_max_ffreq
 label 9b0f chk_param_top_key
-label 9b23 	chk_param_unknown_9b23
+label 9b23 update_synth_parameter
 label 9b2f chk_param_MIDI
 label 9b42 chk_param_MIDI_chnl
 label 9b51 chk_param_MIDI_thru
@@ -188,13 +251,15 @@ label 9b65 chk_param_ext_seq_clk
 label 9b6e chk_param_ext_clk_jack
 label 9b77 chk_param_int_clk_rate
 label 9b8b chk_param_seq_loop_sw
-label 9b92	call_9cc1
+label 9b92 call_update_parameter
 label 9b95 chk_param_kbd_balance
 label 9ba8 chk_param_ul_prog_link
 label 9bb2 chk_param_wavesample_select
 label 9bca chk_param_master_tune
 label 9bd8 chk_param_pbend_range
 label 9be1 chk_param_kbd_vel_sens
+label 9be8 param_set_limit_and_update
+
 label 9bed chk_param_sampletime_adj
 label 9bff chk_param_input_filter
 label 9c10 chk_param_linemic_level
@@ -202,32 +267,77 @@ label 9c1a chk_param_sample_thresh
 label 9c2b chk_param_user_msampling
 label 9c35 chk_param_src_lfomod
 label 9c3e chk_param_src_mixmod
-label 9c48 chk_param_50
+label 9c48 chk_param_AT_depth
 label 9c58 chk_param_foot_switch
+label 9c6e clr_param_foot_switch
+label 9c70 set_param_foot_switch
 label 9c76 chk_param_5b
-label 9c7f chk_param_5c
+label 9c7f chk_param_5c_via_t1_lsb
 label 9c98 chk_param_61
-label 9ca3 chk_param_62
-label 9cae chk_param_63
+label 9ca3 chk_param_FDC_statcooked
+label 9cae chk_param_FDC_statraw
 label 9cb9 chk_param_bad_code
+lcomm 9cbc show nO
+label 9cd1 output_param_OFF
+label 9cd3 output_param_ONOF
+lcomm 9cd3 show On
+label 9cdc param_output
+label 9cdf param_incdec
+label 9cc1 update_parameter
+label 9cc5 update_flag
+lcomm 9ce1 =0 -> no change
+lcomm 9ce3 <0 -> dec
+lcomm 9ce5 >0 -> inc
+label 9cf1 param_dec
+label 9cfb param_scale_offs
+lcomm 9cff =0 -> no adjust
+lcomm 9cf1 <0 -> scale
+lcomm 9d03 >0 -> offs +1
+label 9d06 param_scale
+lcomm 9d06 =0x81 -> >>1
+lcomm 9d08 =0x80 -> >>2
+label 9d0d param_scale_2
+label 9d0f B_to_screen
+label 9d15 B_to_screen_hex
+label 9d21 hex_B_to_dec_AB_jumpoff
+label 9d2d hex_B_to_dec_AB
+label 9d23 AB_to_screen
 
-label 9d2d hdlr_button_param
-
-label 9d23 msg_output_number_in_AB
+label 9d38	set_param_scale_step_2
+label 9d41	set_param_scale_step_4
 
 data 9d4a
 
 label 9d4b	button_code_deriving
 
+label 9f1b FDC_error_01
+lcomm 9f27 show dE
+label 9f2c FDC_error_02_05
+lcomm 9f34 show nF
+label 9f39 FDC_error_06
+lcomm 9f3d show Ud
+label 9f42 FDC_error_07
+lcomm 9f46 show nd
+label 9f4b FDC_error_08
+lcomm 9f4f show Pd
+label 9f54 FDC_error_09
+lcomm 9f58 show nc
+label 9f5b FDC_show_error
+
 label 9f60 reset_synthesis
 label 9f6f reset_timer_and_IO
 
+label 9f9a	set_copy_params
+lcomm 9fa0	show L-
+lcomm 9fa4	show U-
+lcomm 9fa6	show -C
 label 9fe6 	msg_output_NO_with_80_to_80ba
+lcomm 9fe6	show no
 
 data 9ff3-a07d
-label 9ff3	data_9ff3_via_U
-label a057	data_a057_via_X
-label a077	data_a077_via_U
+label 9ff3 tab_param_to_offset
+label a057 tab_param_synth_max_val
+label a077 tab_param_wsmp2_max_val
 
 label a07e MIDI_init_rxtx
 label a094 MIDI_init_rx
