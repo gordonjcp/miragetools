@@ -1,7 +1,9 @@
 *.o
 sim6809
-*.s19
 *.img
 *.lst
 as9
 *~
+*.bin
+*.hex
+*.s19
