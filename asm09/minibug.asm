@@ -16,6 +16,8 @@ stack   equ $bf80	* ROM uses this address anyway
 aciac   equ $e100
 aciad   equ $e101
 
+	org $a402
+	fdb $ba00
 	org $ba00
 * start by saving stack pointer then stacking all registers
 entry	sts sstack
