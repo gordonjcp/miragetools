@@ -1,3 +1,4 @@
+* vim: syn=asm6809 noexpandtab ts=8
 *	title	micro forth 1.0
 *
 * micro forth 1.0

@@ -1,3 +1,4 @@
+* vim: syn=asm6809 noexpandtab ts=8
 *       title minibug.asm
 *       (C) 2014 Gordon JC Pearce
 *       Based fairly loosely on the old Motorola 6800 Minibug

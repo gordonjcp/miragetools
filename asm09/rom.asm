@@ -1,3 +1,4 @@
+* vim: syn=asm6809 noexpandtab ts=8
 *** Ensoniq Mirage DSK ROM
 *** listing by Tim Victor, Jul 4-6 1999
 *** mailto:TimVictor@aol.com
