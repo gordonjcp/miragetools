@@ -5,6 +5,11 @@ This is an assembler based on Motorola's freeware 6809 assembler from their dial
 
 The original file is available [from that page](http://koti.mbnet.fi/~atjs/mc6809/Assembler/asm09.tgz) but requires one or two fixes to work in "modern" gcc.
 
+You can copy the file asm6809.vim to your vim syntax highlighting directory (on Ubuntu 14.04 and no doubt others, this is /usr/share/vim/vim74/syntax) to get correct syntax highlighting.  Thanks to David Roper for the file, found on github:
+
+https://gist.github.com/ebonhand09/1190963
+
+
 Requirements
 -----------
 
