@@ -12,38 +12,39 @@ hex 8000-8007
 comm 8000 Ensoniq Mirage OS 3.2
 
 data 8011-828b
-label 8005 	word_8006_D
-label 8006 	word_8006_X
-label 8007 	word_8007_X
-label 8011 	word_8011_X
+label 8006 FDC_status_raw
+label 8007 FDC_status_cooked
+label 8011 ptr_diskbuf_or_base_wheel
 label 8012 osparm_tuning
 label 8013 osparm_bendrange
 label 8014 osparm_velosens
 label 8015 osparm_upperlower
-label 8016 	word_8016_X
-label 8017 	word_8017_X
-label 8018 	word_8018_X
-label 8019 	word_8019_X
-label 801a 	word_801a_X
-label 801b 	word_801b_X
-label 801c	word_801c_X
+label 8016 osparm_ul_prog_link
+label 8017 osparm_sample_time_adj
+label 8018 osparm_inp_filter_freq
+label 8019 osparm_inp_linemic_lvl
+label 801a osparm_sample_thresh
+label 801b osparm_user_msampling
+label 801c osparm_local_on
 label 801d osparm_lfomod_src
 label 801e osparm_mixmod_src
-label 801f	word_801f_X
+label 801f osparm_AT_depth
 
 label 8020 MIDI_flag_omni_poly
 label 8021 MIDI_channel
 label 8022 MIDI_flag_thru_enabled
 
-label 8023 	word_8023_X
-label 8024 	word_8024_X
-label 8025 	word_8025_X
-label 8026 	word_8026_X
-label 8027 	word_8027_X
-label 8028 	word_8028_X
-label 8029 	word_8029_X
-label 802a 	word_802a_X
-label 802b 	word_802b_X
+label 8023 MIDI_ctrlr_enable
+label 8024 SEQU_ext_clock
+label 8025 SEQU_ext_clk_jack
+label 8026 SEQU_int_clk_rate
+label 8027 SEQU_loop_switch
+label 8028 foot_sw_or_sus_pedl
+label 8029 	osparm_91
+label 802a 	osparm_92
+label 802b 	osparm_97
+
+label 8032	copy_of_8087
 
 label 8038 	flag_8038_0_marks_empty_8059_task
 
@@ -86,19 +87,55 @@ label 806c	val_modwheel_related
 
 label 806f 	vector_806f_X
 
+label 8072	kbd_io_related
+
 label 8076 	table_8076_X
 comm 8076 entry 3: MIDI rx related
 
 label 8079 kdb_pedal_state_40
 
-label 809f	809f_via_X
+label 8082	tested_for_enter_8082
+label 8083 flag_panel_in_value_mode
+label 8084 param_inc_nop_dec
+label 8085	tested_for_enter_8085
+label 8087	some_jobcode_c8_for_updown
+label 8088	copy_of_button_for_updown
+label 808b parameter_number
+label 808c	enter_related_808c
+label 808d	copy_of_button_for_0to9
+label 808e	enter_related_808e
+label 808f	enter_related_808f
+label 8090	enter_related_8090
+label 8091	enter_related_8091
+
+label 8092 cmd_save
+lcomm 0=lower, 1=upper, 2=both
+	
+label 809d	vector_to_selected_ws_block
+
+label 809f	param_wsample_rotate
+
+label 80a0	param_B_max_val
+label 80a2	param_B_delta
+label 80a1	param_B_min_val
+label 80a3	param_B_scale_offs
+
+label 80a4	ws_parms_block_UL
 
 word 80a5-80ab
-label 80a5 	vec_80a5
-label 80a7 	vec_80a7
-label 80a9 	vector_80a9_X
-label 80aa 	vector_80aa_X
-label 80ae panel_button
+label 80a5 	ws_parms_base_osc_L
+label 80a7 	ws_parms_base_osc_U
+label 80a9 	ws_parms_offs_osc_L
+label 80aa 	ws_parms_offs_osc_U
+label 80ab	flag_param_onoff_or_numeric
+label 80ac	param_attribute
+lcomm 80ac xDxx.xxxx D=0: decimal, D=1: hex
+label 80ad panel_button_raw
+label 80ae panel_button_cooked
+label 80af	raw_button_code_80af
+label 80b3 panel_display_AB_cooked
+
+label 80ba panel_command
 label 80bb MIDI_cmd
 
 word 80bc-80bf
@@ -124,6 +161,8 @@ label 80d5 disk_first_trk
 label 80d6 disk_first_sec
 label 80d7 disk_last_trk
 label 80d8 disk_last_sec
+
+label 80e7	tested_for_enter_depending_on_8082
 
 word 80ec-80ef
 
