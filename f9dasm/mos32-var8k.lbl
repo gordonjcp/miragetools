@@ -7,9 +7,16 @@
 ;
 ; tabbed labels are still unclear / presumed
 
+data 8000-8007
 
-hex 8000-8007
-comm 8000 Ensoniq Mirage OS 3.2
+label 8000 fdccmd
+label 8001 fdcrtry
+label 8002 fdctrk
+label 8003 fdcsect
+label 8004 fdcbuff
+label 8006 fdcstat
+label 8007 fdcerr
+
 
 data 8011-828b
 label 8006 FDC_status_raw

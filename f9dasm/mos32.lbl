@@ -6,7 +6,7 @@ org 8000
 setdp 80
 
 # pretty much static
-include "./mirage-rom.lbl"
+#include "./mirage-rom.lbl"
 include "./mirage-peripherals.lbl"
 
 # keep variables and code separate for easier editing

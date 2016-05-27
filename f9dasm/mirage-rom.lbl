@@ -1,96 +1,237 @@
-; ----------------------------------------------------------------------
-; --- Ensoniq Mirage ROM definitions -----------------------------------
-; ----------------------------------------------------------------------
-;
-; todo / open issues
-; ----------------------------------------------------------------------
-;	- certain calls to unknown routines
-;	- meaning of certain data structures
+-- Ensoniq Mirage ROM disassembly
+-- Main f9dasm file
+-- disassemble with "./f9dasm mirage-rom.lbl"
 
-; ----------------------------------------------------------------------
-; defined by ROM vectors
-; ----------------------------------------------------------------------
+file "./miragerom.bin" f000
+#option nohex
+#option noaddr
 
-code 8008-8010
-label 8008 SYS_irqvec
-label 800b SYS_firqvec
-label 800e SYS_osvec
+setdp e8
 
-; ----------------------------------------------------------------------
-; ROM routines
-; ----------------------------------------------------------------------
- 
-label f000 ROM_fdcreadsector
-label f013 ROM_fdcskipsector
-label f024 ROM_fdcwritesector
-label f037 ROM_fdcfillsector
-label f04a ROM_fdcreadtrack
-label f058 ROM_fdcwritetrack
-label f066 ROM_fdcrestore
-label f06f ROM_fdcseektrack
-label f07d ROM_fdcseekin
-label f086 ROM_fdcseekout
-label f08f ROM_fdcforceinterrupt
-label f0a7 ROM_countdown
-label f0b0 ROM_nmivec
-label f0f0 ROM_coldstart
-label f146 ROM_runopsys
-label f15d ROM_hwsetup
-label f1bb ROM_qchipsetup
-label f1e5 ROM_clearram
-label f20d ROM_loadopsys
-label f2af ROM_readsysparams
-label f306 ROM_checkos
-label f33c ROM_showerrcode
-label f38c ROM_preparefd
-label f3ac ROM_loadossector
-label f3f1 ROM_gototrack
-label f413 ROM_seterrcode
-label f425 ROM_saveparams
-label f437 ROM_restoreparams
-label f448 ROM_readsector
-label f476 ROM_writesector
-label f4a4 ROM_gototrack2
-label f4c6 ROM_enablefd
-label f4d6 ROM_disablefd
-label f4df ROM_timer2int
-label f514	ROM_unknown1
-label f52d	ROM_unknown2
-label f541	ROM_unknown3
-label f55b ROM_copybytes
-label f564 ROM_swapbytes
-label f571 ROM_tune_filters
-label f5be ROM_get_filter_response
-label f5dc ROM_set_VCF_ff_B
-label f5e7 ROM_set_VCF_A_B
-label f5f1 ROM_set_DOC_freq_call_hdlrU
-label f6dd ROM_set_DOC_volume_call_hdlrD
-label f77d ROM_8bit_exp
-label f7fd ROM_16bit_1exp
-label f84d ROM_8bit_log
-label f8cd	ROM_8bit_sinpos_XX
-label f8ce	ROM_8bit_sin_XX
-label fb4d ROM_LED_hexnum
-label fb5d ROM_LED_symbols
-label fb68 ROM_keycode_xcode
-label fb88 ROM_ts_sysparam
-label fb8c ROM_ts_osflags
-label fb90 ROM_ts_lower
-label fb9c ROM_ts_upper
-label fba8 ROM_ts_shortseq
-label fbc8 ROM_ts_longseq
-label fbd4	ROM_unknown_fbd4
-label fbdf	ROM_unknown_fbdf
-label fbe2 ROM_bitmask_0to7
-label fbea ROM_bitmask_0to2
-label fbed	ROM_unknown_fbed
-label fbf0	ROM_unknown_fbf0
-label fbf4	ROM_unknwon_fbf4
-label fbf8 ROM_8bit_atanh
-label fbfe ROM_8bit_atanh_offs
+include "./mirage-peripherals.lbl"
+include "./mos32-var8k.lbl"
 
-label fc7f ROM_resetvec
-label fc91 ROM_ospanic
+label 8008 irq_handler
+label 800b firq_handler
+label 800e osentry
 
-label ff10	ROM_word_d15
+-- unused blocks
+unused f615-f6dc
+unused f6f4-f77c
+unused fcb7-ffef
+
+-- data blocks
+data f77d-fb4c
+
+label fb4d ledpatterns
+comm fb4d led display patterns for hexadecimal 0-f
+comm fb5d more led display patterns: l n o p r u _ - [top bar] c u
+data fb4d-fb67
+
+label fb68 permutations
+comm fb68 "fascinating permutation of values from 0 to 23, no idea why"
+data fb68-fb7f
+
+comm Track/sector for OS load
+label trksec_os
+data fb80-fb87
+
+comm Track/sector for System Params
+label trksec_sysprm
+data fb88-fb8b
+
+comm Track/sector for OS flags
+data fb8c-fb8f
+
+comm Track/sector for lower sounds
+data fb90-fb9b
+
+comm Track/sector for upper sounds
+data fb9c-fba7
+
+comm Track/sector for short sequences
+data fba8-fbc7
+
+comm Track/sector for long sequences
+data fbc8-fbd3
+
+comm Something to do with directory bytes, apparently
+comm a bunch of stuff in here looks like a curve table
+data fbd4-fc7e
+
+
+-- vectors
+word fff0-ffff
+label fff0 reserved_vector
+label fff2 SWI3_vector
+label fff4 SWI2_vector
+label fff6 firq_vector
+label fff8 irq_vector
+label fffa swi_vector
+label fffc nmi_vector
+label fffe reset_vector
+
+-- labels for subroutines
+label f000 fdcreadsector
+label f00c fdcrdsec1
+comm f000 Read sector from current track
+comm f000 sector in fdcsect, buffer address in X register
+comm f000 terminates on NMI
+
+label f013 fdcskipsector
+label f01f fdcskpsec1
+comm f013 Read just one byte from the sector on the current track
+comm f013 sector in fdcsect, buffer address in X register
+comm f013 possibly used for directory byte CHECKME
+
+label f024 fdcwritesector
+label f030 fcdwrsec1
+comm f024 Write sector to disk
+comm f024 Sector in fdcsect, buffer address in X register
+
+label f037 fdcfillsector
+label f043 fdcflsec1
+comm f037 Fill sector with single byte (directory byte? CHECKME)
+comm f037 Sector in fdcsect, buffer address in X register
+
+label f04a fdcreadtrack
+label f051 fdcrdtrk1
+comm f04a Read entire track from disk
+comm f04a Buffer address in X register
+
+label f058 fdcwritetrack
+label f05f fdcwrtrk1
+comm f058 Write entire track to disk
+comm f058 Buffer address in X register
+
+label f066 fdcrestore
+label f06d fdcrestore1
+comm f066 Return drive head to track 0
+
+label f06f fdcseektrack
+label f07b fdcseektrk1
+comm f06f Step drive head to track
+comm f06f Track number in fdctrk
+
+label f07d fdcseekin
+label f082 fdcseekin1
+comm f07d Step head in one track
+
+label f086 fdcseekout
+label f08d fdcseekout1
+comm f087 Step head out one track
+
+label f08f fdcforceint
+label f096 fdcforce1
+comm f08f Force FDC interrupt
+comm f08f Reset the FDC and cancel any pending commands
+
+label f0a7 countdown
+comm f0a7 Delay loop, count in Y register
+comm f0a7 15 clocks per loop
+
+label f0b0 nmivec
+label f0c5 nmivec1
+label f0cf nmivec2
+label f0dd nmivec3
+label f0e7 nmivec4
+label f0ef nmiend
+comm f0b0 NMI vector handler
+comm f0b0 When a disk command is finished, the FDC asserts NMI
+comm f0b0 and breaks the infinite loop in the command routine
+lcomm f0b0 Reset stack, discarding saved registers
+lcomm f0b2 read FDC status register
+lcomm f0b4 ... and save it in fdcstat system variable
+lcomm f0ba If we were doing a Read Sector command...
+lcomm f0c1 ... or a Write Sector command...
+lcomm f0c3 (we weren't, skip ahead)
+lcomm f0c5 ... then get the FDC status
+lcomm f0c8 Mask off all except WP, RNF, CRC and LD
+lcomm f0ca Save status in fdcstat system variable
+lcomm f0d2 If we were doing a Read Track command...
+lcomm f0d9 ... or a Write Track command...
+lcomm f0db (we weren't, skip ahead)
+lcomm f0dd ... then get the FDC status
+lcomm f0e0 Mask off all except WP, RNF, CRC and LD
+lcomm f0e2 Save status in fdcstat system variable
+lcomm f0ea All that's left are seek commands, save SE and CRC
+lcomm f0ec Save status in fdcstat system variable
+
+comm f0f0 *** end of disk routines
+
+label f0f0 coldstart
+label f0ff cold1
+label f110 cold2
+label f12f cold3
+label f131 cold4
+label f13f cold5
+lcomm f0f0 disable interrupts
+lcomm f0f4 Set VIA ddrb pin mode
+lcomm f0f9 FD motor off, RAM bank 0
+comm f0fc Zero out VCF chip sample-and-holds
+lcomm f109 System stack pointer
+lcomm f11b Disk in drive?
+lcomm f139 error code = "nd"
+lcomm f142 check for FDC errors
+lcomm f144 if fdcstat is non-zero try again to boot
+comm f146 otherwise fall through and run OS in RAM
+label f146 runopsys
+lcomm f14b SET, T2, CB2, SR interrupts
+bin f14c
+lcomm f150 Enable RX interrupt, 8n1, x16 prescaler
+bin f151
+lcomm f155 Floppy off
+lcomm f15a RAM OS entry point
+
+comm f15d Initialise VIA, DOC and ACIA
+label f15d hwsetup
+lcomm f15d DP register points to FDC
+lcomm f166 disable all VIA interrupts
+lcomm f169 T1 generates pulse on PB7, shift in on ext clock
+bin f16a
+lcomm f169 PB7 drives the UART clock
+lcomm f169 Shift register is used for the keyboard interface
+lcomm f16f CB2 in/fall, CA1 fall, CA2 high
+bin f170
+lcomm f178 FD motor off
+bin f179
+lcomm f189 preset VIA T2, 2MHz/5000
+lcomm f194 reset DOC by writing $ff to the enable reg
+lcomm f197 zero out DOC registers
+label f19a hwsetup1
+lcomm f1a4 ACIA master reset
+lcomm f1b7 "set flag for os load" CHECKME
+
+comm Initialise DOC chip
+comm (referred to as Q Chip in some documents)
+
+label f1bb qchipsetup
+label f1be qchip1
+label f1ca qchip2
+label f1d5 qchip3
+
+comm f1e5 Clear sample RAM with $7f
+label f1e5 clearram
+label f1e8 clearram1
+label f1f6 clearram2
+lcomm f1e5 bank counter
+lcomm f1e8 get the bank counter
+lcomm f1eb or with contents of VIA port B
+lcomm f1ee select appropriate bank
+lcomm is there a bug here?  Looks like it would never clear bank 2
+lcomm f207 all banks done, reset to bank 0
+
+comm f20d Load OS into $8000
+label f20d loadopsys
+
+comm fc7f Reset Handler
+comm fc7f checks for cartridge, jumps to coldstart if not present
+label fc7f reset_handler
+label fc8e reset1
+
+comm fc91 OS Panic handler
+comm fc91 Flashes ".O.S" on the display then reboots
+label fc91 ospanic
+lcomm fc9b erroneous label, here - that's a constant
+
 

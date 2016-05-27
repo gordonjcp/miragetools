@@ -22,6 +22,8 @@ label 0xe20d VIA_isr
 label 0xe20e VIA_ier
 label 0xe20f VIA_data
 
+label 0xe400 MUX_reg
+label 0xe408 MUX_preselect
 label 0xe418 MUX_base
 label 0xe41F VCF_base
 
