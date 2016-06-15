@@ -1,18 +1,18 @@
-* vim: syn=asm6809 noexpandtab ts=8
-*       title minibug.asm
-*       (C) 2014 Gordon JC Pearce
-*       Based fairly loosely on the old Motorola 6800 Minibug
-* 	loads into sequencer RAM at ba00
+; vim: syn=asm6809 noexpandtab ts=8
+;       title minibug.asm
+;       (C) 2014 Gordon JC Pearce
+;       Based fairly loosely on the old Motorola 6800 Minibug
+; 	loads into sequencer RAM at ba00
 
-ramtop  equ $bfff	* last byte of sequencer RAM
-cksum   equ ramtop	* checksum for S-record
-xlo     equ cksum-1	* used for two-byte hex entry
-xhi     equ xlo-1	* used for two-byte hex entry
-bytect  equ xhi-1	* byte count for S-record
-sstack	equ bytect-2	* holds stack pointer on entry
-sregs	equ $bfc0	* stack registers on entry
+ramtop  equ $bfff	; last byte of sequencer RAM
+cksum   equ ramtop	; checksum for S-record
+xlo     equ cksum-1	; used for two-byte hex entry
+xhi     equ xlo-1	; used for two-byte hex entry
+bytect  equ xhi-1	; byte count for S-record
+sstack	equ bytect-2	; holds stack pointer on entry
+sregs	equ $bfc0	; stack registers on entry
 
-stack   equ $bf80	* ROM uses this address anyway
+stack   equ $bf80	; ROM uses this address anyway
 
 aciac   equ $e100
 aciad   equ $e101
@@ -35,32 +35,32 @@ return	lds #sregs
 
 * inch - fetch a single character, with MIDIterm framing
 
-inch    pshs b          * save B
-        ldb #$01        * receive data register flag
-inch1   bitb aciac      * check acia
-        beq inch1       * wait
-        lda aciad       * get the byte
-        cmpa #$f1       * MIDI Quarter Frame message?
-        bne inch1       * no, wait until it is
-inch2   bitb aciac      * wait again
+inch    pshs b          ; save B
+        ldb #$01        ; receive data register flag
+inch1   bitb aciac      ; check acia
+        beq inch1       ; wait
+        lda aciad       ; get the byte
+        cmpa #$f1       ; MIDI Quarter Frame message?
+        bne inch1       ; no, wait until it is
+inch2   bitb aciac      ; wait again
         beq inch2
-        lda aciad       * fetch the byte
-        cmpa #$7f       * RUBOUT?
-        beq inch        * ignore, go back for another
-        puls b          * restore B and fall through to...
+        lda aciad       ; fetch the byte
+        cmpa #$7f       ; RUBOUT?
+        beq inch        ; ignore, go back for another
+        puls b          ; restore B and fall through to...
                 
 * outch - output a single character, with MIDIterm framing
-outch   pshs b,a        * save B, byte to send in A
-        ldb #$02        * transmit data register flag
-outch1  bitb aciac      * check acia
-        beq outch1      * wait
-        lda #$f1        * MIDI Quarter Frame message
-        sta aciad       * transmit
-        puls a          * get wanted byte
-outch2  bitb aciac      * wait again
+outch   pshs b,a        ; save B, byte to send in A
+        ldb #$02        ; transmit data register flag
+outch1  bitb aciac      ; check acia
+        beq outch1      ; wait
+        lda #$f1        ; MIDI Quarter Frame message
+        sta aciad       ; transmit
+        puls a          ; get wanted byte
+outch2  bitb aciac      ; wait again
         beq outch2
-        sta aciad       * transmit
-        puls b          * restore B
+        sta aciad       ; transmit
+        puls b          ; restore B
         rts
         
 * outs - output a space
@@ -74,7 +74,7 @@ outhl   lsra
         lsra
         lsra
 * outhr - hex right digit
-outhr   anda #$0f       * mask
+outhr   anda #$0f       ; mask
         adda #'0'
         cmpa #'9'
         bls outch
@@ -96,15 +96,15 @@ outhexs bsr outhex
 * inhex - read a hex character
 inhex   bsr inch
         cmpa #'0'
-        lbmi ctrl      * below 0
+        lbmi ctrl      ; below 0
         cmpa #'9'
-        ble inhex1      * between 0 and 9
-        ora #$20        * smash case
-        cmpa #'a'       * 10-16?
-        bmi ctrl      * fixme, needs case insensitive
+        ble inhex1     ; between 0 and 9
+        ora #$20       ; smash case
+        cmpa #'a'      ; 10-16?
+        bmi ctrl	; fixme, needs case insensitive
         cmpa #'f'
         bgt ctrl
-        suba #$07       * remove offset
+        suba #$07       ; remove offset
 inhex1  rts        
 
 * byte - get a hex byte
@@ -115,7 +115,7 @@ byte    bsr inhex
         asla
         tfr a,b
         bsr inhex
-        anda #$0f       * ensure it's four bits
+        anda #$0f       ; ensure it's four bits
         pshs b
         adda ,s+
         tfr a,b
@@ -142,20 +142,20 @@ change  bsr baddr
 
 load    jsr inch
         cmpa #'S'
-        bne load        * wait until we get an S
-        jsr inch        * get type
+        bne load        ; wait until we get an S
+        jsr inch        ; get type
         cmpa #'9'
-        beq load3       * start address
+        beq load3       ; start address
         cmpa #'1'
-        bne load        * not a data record
+        bne load        ; not a data record
         clr cksum
-        bsr byte        * fetch length
-        suba #$02       * correct it
+        bsr byte        ; fetch length
+        suba #$02       ; correct it
         sta bytect
-        bsr baddr       * get address
+        bsr baddr       ; get address
 load1   bsr byte
         dec bytect
-        beq load2       * zero bytes
+        beq load2       ; zero bytes
         sta ,x+
         bra load1
 load2   inc cksum
@@ -164,10 +164,10 @@ load2   inc cksum
 load3   jmp ctrl
   
 start        
-ctrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
-        lda #$0d        * carriage return
+ctrl  lds #stack      ; stack pointer, will ultimately be top of upper bank 1
+        lda #$0d        ; carriage return
         jsr outch
-        lda #$0a        * linefeed
+        lda #$0a        ; linefeed
         jsr outch
 	lda #'>'
 	jsr outch
@@ -182,7 +182,7 @@ ctrl  lds #stack      * stack pointer, will ultimately be top of upper bank 1
         beq change
         cmpb #'g'
         beq ctrlgo
-	cmpb #'r'	* return
+	cmpb #'r'	; return
 	lbeq return 
 ctrlerr lda #'?'
         jsr outch
