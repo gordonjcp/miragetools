@@ -31,13 +31,13 @@ void abx()
 
 #define adc8(reg) \
 { \
-  tt_u16 v = (tt_u16)FETCHB; \
-  tt_u16 r; \
+  uint16_t v = (uint16_t)FETCHB; \
+  uint16_t r; \
  \
-  r = (tt_u16)reg + v + ccc; \
+  r = (uint16_t)reg + v + ccc; \
   SET_NZVC8(reg,v,r); \
   SET_H(reg,v,r); \
-  reg = (tt_u8)r; \
+  reg = (uint8_t)r; \
 }              
 
 void adca()
@@ -52,13 +52,13 @@ void adcb()
 
 #define add8(reg) \
 { \
-  tt_u16 v = (tt_u16)FETCHB; \
-  tt_u16 r; \
+  uint16_t v = (uint16_t)FETCHB; \
+  uint16_t r; \
  \
-  r = (tt_u16)reg + v; \
+  r = (uint16_t)reg + v; \
   SET_NZVC8(reg,v,r); \
   SET_H(reg,v,r); \
-  reg = (tt_u8)r; \
+  reg = (uint8_t)r; \
 }
 
 void adda()
@@ -73,8 +73,8 @@ void addb()
 
 void addd()
 {
-  tt_u32 v = (tt_u32)FETCHW;
-  tt_u32 r, d = GETRD;
+  uint32_t v = (uint32_t)FETCHW;
+  uint32_t r, d = GETRD;
 
   r = d + v;
   SET_NZVC16(d,v,r);
@@ -125,8 +125,8 @@ void aslb()
 
 void asl()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   asl8(t);
   set_memb(a, t);
@@ -151,8 +151,8 @@ void asrb()
 
 void asr()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   asr8(t);
   set_memb(a, t);
@@ -160,7 +160,7 @@ void asr()
 
 #define bit8(reg) \
 { \
-  tt_u8 r; \
+  uint8_t r; \
  \
   r = reg & FETCHB; \
   SET_NZ8(r); \
@@ -206,8 +206,8 @@ void clr()
 
 #define cmp8(reg) \
 { \
-  tt_u16 v = (tt_u16)FETCHB; \
-  tt_u16 r; \
+  uint16_t v = (uint16_t)FETCHB; \
+  uint16_t r; \
  \
   r = reg - v; \
   SET_NZVC8(reg,v,r); \
@@ -225,8 +225,8 @@ void cmpb()
 
 #define cmp16(reg) \
 { \
-  tt_u32 v = (tt_u32)FETCHW; \
-  tt_u32 r, d = (tt_u32)reg; \
+  uint32_t v = (uint32_t)FETCHW; \
+  uint32_t r, d = (uint32_t)reg; \
  \
   r = d - v; \
   SET_NZVC16(d,v,r); \
@@ -279,8 +279,8 @@ void comb()
 
 void com()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   com8(t);
   set_memb(a, t);
@@ -293,8 +293,8 @@ void cwai()
 
 void daa()
 {
-  tt_u8 m, l;
-  tt_u16 t, cf = 0;
+  uint8_t m, l;
+  uint16_t t, cf = 0;
 
   m = ra & 0xf0;
   l = ra & 0x0f;
@@ -305,11 +305,11 @@ void daa()
   if (m > 0x90 || ccc )
     cf |= 0x60;
   t = cf + ra;
-  SET_NZ8((tt_u8)t);
+  SET_NZ8((uint8_t)t);
   SET_C8(t);
   PUT_V;
   ccv = 0;
-  ra = (tt_u8)t;
+  ra = (uint8_t)t;
 }
 
 #define dec8(reg) \
@@ -332,8 +332,8 @@ void decb()
 
 void dec()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   dec8(t);
   set_memb(a, t);
@@ -359,8 +359,8 @@ void eorb()
 
 void exg()
 {
-  tt_u8 c = get_i8();
-  tt_u16 i;
+  uint8_t c = get_i8();
+  uint16_t i;
   int c1, c2;
 
   c1 = c & 0x0f;
@@ -391,8 +391,8 @@ void incb()
 
 void inc()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   inc8(t);
   set_memb(a, t);
@@ -405,7 +405,7 @@ void jmp()
 
 void jsr()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   rs -= 2;
   set_memw(rs, rpc);
@@ -440,7 +440,7 @@ void ldb()
 
 void ldd()
 {
-  tt_u16 d;
+  uint16_t d;
 
   ld16(d);
   SETRD(d);
@@ -508,8 +508,8 @@ void lsrb()
 
 void lsr()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 v = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t v = get_memb(a);
 
   lsr8(v);
   set_memb(a, v);
@@ -517,7 +517,7 @@ void lsr()
 
 void mul()
 {
-  tt_u16 r = (tt_u16)ra * (tt_u16)rb;
+  uint16_t r = (uint16_t)ra * (uint16_t)rb;
 
   SET_Z16(r);
   ccc = btst(rb, 0x80);
@@ -526,11 +526,11 @@ void mul()
 
 #define neg8(reg) \
 { \
-  tt_u16 r; \
+  uint16_t r; \
  \
   r = -reg; \
   SET_NZVC8(0,reg,r); \
-  reg = (tt_u8)r; \
+  reg = (uint8_t)r; \
 }
 
 void nega()
@@ -545,8 +545,8 @@ void negb()
 
 void neg()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   neg8(t);
   set_memb(a, t);
@@ -601,7 +601,7 @@ void pulu()
 
 #define rol8(reg) \
 { \
-  tt_u8 r = reg << 1 | ccc; \
+  uint8_t r = reg << 1 | ccc; \
  \
   ccc = btst(reg, 0x80); \
   reg = r; \
@@ -622,8 +622,8 @@ void rolb()
 
 void rol()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   rol8(t);
   set_memb(a, t);
@@ -631,7 +631,7 @@ void rol()
 
 #define ror8(reg) \
 { \
-  tt_u8 r = reg >> 1 | ccc << 7; \
+  uint8_t r = reg >> 1 | ccc << 7; \
  \
   ccn = ccc; \
   ccc = reg & 0x01; \
@@ -651,8 +651,8 @@ void rorb()
 
 void ror()
 {
-  tt_u16 a = GET_EAB;
-  tt_u8 t = get_memb(a);
+  uint16_t a = GET_EAB;
+  uint8_t t = get_memb(a);
 
   ror8(t);
   set_memb(a, t);
@@ -678,13 +678,13 @@ void rts()
 
 #define sbc8(reg) \
 { \
-  tt_u16 v = (tt_u16)FETCHB; \
-  tt_u16 r; \
+  uint16_t v = (uint16_t)FETCHB; \
+  uint16_t r; \
  \
-  r = (tt_u16)reg - v - ccc; \
+  r = (uint16_t)reg - v - ccc; \
   SET_NZVC8(reg,v,r); \
   SET_H(reg,v,r); \
-  reg = (tt_u8)r; \
+  reg = (uint8_t)r; \
 }              
 
 void sbca()
@@ -731,7 +731,7 @@ void stb()
 
 void std()
 {
-  tt_u16 d = GETRD;
+  uint16_t d = GETRD;
 
   st16(d);
 }
@@ -758,13 +758,13 @@ void sty()
 
 #define sub8(reg) \
 { \
-  tt_u16 v = (tt_u16)FETCHB; \
-  tt_u16 r; \
+  uint16_t v = (uint16_t)FETCHB; \
+  uint16_t r; \
  \
-  r = (tt_u16)reg - v; \
+  r = (uint16_t)reg - v; \
   SET_NZVC8(reg,v,r); \
   SET_H(reg,v,r); \
-  reg = (tt_u8)r; \
+  reg = (uint8_t)r; \
 }
 
 void suba()
@@ -779,8 +779,8 @@ void subb()
 
 void subd()
 {
-  tt_u32 v = (tt_u32)FETCHW;
-  tt_u32 r, d = GETRD;
+  uint32_t v = (uint32_t)FETCHW;
+  uint32_t r, d = GETRD;
 
   r = d - v;
   SET_NZVC16(d,v,r);
@@ -819,7 +819,7 @@ void syn() {
 
 void tfr()
 {
-  tt_u8 c = get_i8();
+  uint8_t c = get_i8();
 
   setexr(c & 0x0f, getexr(c >> 4));
 }
@@ -843,14 +843,14 @@ void tstb()
 
 void tst()
 {
-  tt_u8 t = FETCHB;
+  uint8_t t = FETCHB;
 
   tst8(t);
 }
 
 void bcc()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (!ccc)
     rpc = nrpc;
@@ -858,7 +858,7 @@ void bcc()
 
 void lbcc()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (!ccc) {
     rpc = nrpc;
@@ -868,7 +868,7 @@ void lbcc()
 
 void bcs()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (ccc)
     rpc = nrpc;
@@ -876,7 +876,7 @@ void bcs()
 
 void lbcs()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (ccc) {
     rpc = nrpc;
@@ -886,7 +886,7 @@ void lbcs()
 
 void beq()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (ccz)
     rpc = nrpc;
@@ -894,7 +894,7 @@ void beq()
 
 void lbeq()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (ccz) {
     rpc = nrpc;
@@ -904,7 +904,7 @@ void lbeq()
 
 void bge()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   GET_V;
   if (!(ccn ^ ccv))
@@ -913,7 +913,7 @@ void bge()
 
 void lbge()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   GET_V;
   if (!(ccn ^ ccv)) {
@@ -924,7 +924,7 @@ void lbge()
 
 void bgt()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   GET_V;
   if (!(ccz | (ccn ^ ccv)))
@@ -933,7 +933,7 @@ void bgt()
 
 void lbgt()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   GET_V;
   if (!(ccz | (ccn ^ ccv))) {
@@ -944,7 +944,7 @@ void lbgt()
 
 void bhi()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (!(ccz | ccc))
     rpc = nrpc;
@@ -952,7 +952,7 @@ void bhi()
 
 void lbhi()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (!(ccz | ccc)) {
     rpc = nrpc;
@@ -962,7 +962,7 @@ void lbhi()
 
 void ble()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   GET_V;
   if (ccz | (ccn ^ ccv))
@@ -971,7 +971,7 @@ void ble()
 
 void lble()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   GET_V;
   if (ccz | (ccn ^ ccv)) {
@@ -982,7 +982,7 @@ void lble()
 
 void bls()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (ccc | ccz)
     rpc = nrpc;
@@ -990,7 +990,7 @@ void bls()
 
 void lbls()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (ccc | ccz) {
     rpc = nrpc;
@@ -1000,7 +1000,7 @@ void lbls()
 
 void blt()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   GET_V;
   if (ccn ^ ccv)
@@ -1009,7 +1009,7 @@ void blt()
 
 void lblt()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   GET_V;
   if (ccn ^ ccv) {
@@ -1020,7 +1020,7 @@ void lblt()
 
 void bmi()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (ccn)
     rpc = nrpc;
@@ -1028,7 +1028,7 @@ void bmi()
 
 void lbmi()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (ccn) {
     rpc = nrpc;
@@ -1038,7 +1038,7 @@ void lbmi()
 
 void bne()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (!ccz)
     rpc = nrpc;
@@ -1046,7 +1046,7 @@ void bne()
 
 void lbne()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (!ccz) {
     rpc = nrpc;
@@ -1056,7 +1056,7 @@ void lbne()
 
 void bpl()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   if (!ccn)
     rpc = nrpc;
@@ -1064,7 +1064,7 @@ void bpl()
 
 void lbpl()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   if (!ccn) {
     rpc = nrpc;
@@ -1108,7 +1108,7 @@ void lbsr()
 
 void bvc()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   GET_V;
   if (!ccv)
@@ -1117,7 +1117,7 @@ void bvc()
 
 void lbvc()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   GET_V;
   if (!ccv) {
@@ -1128,7 +1128,7 @@ void lbvc()
 
 void bvs()
 {
-  tt_u16 nrpc = GET_EAB;
+  uint16_t nrpc = GET_EAB;
 
   GET_V;
   if (ccv)
@@ -1137,7 +1137,7 @@ void bvs()
 
 void lbvs()
 {
-  tt_u16 nrpc = GET_EAW;
+  uint16_t nrpc = GET_EAW;
 
   GET_V;
   if (ccv) {

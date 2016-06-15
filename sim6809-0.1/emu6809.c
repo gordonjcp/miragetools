@@ -23,20 +23,20 @@
 #include "emu6809.h"
 #include "calc6809.h"
 
-tt_u16 rpc, last_rpc, rx, ry, ru, rs;
+uint16_t rpc, last_rpc, rx, ry, ru, rs;
 
-tt_u8 ra, rb, rdp;
+uint8_t ra, rb, rdp;
 
 int ccc, ccv, ccz, ccn, cci, cch, ccf, cce;
 
-tt_u16 *regp[] = { &rx, &ry, &ru, &rs };
+uint16_t *regp[] = { &rx, &ry, &ru, &rs };
 
 int addrmode;
 int nbcycle;
 int err6809;
 
 #ifdef PC_HISTORY
-tt_u16 pchist[PC_HISTORY_SIZE];
+uint16_t pchist[PC_HISTORY_SIZE];
 int pchistidx = 0;
 int pchistnbr = 0;
 #endif
@@ -207,18 +207,18 @@ null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
 null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,
 null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null };
 
-tt_u16 (*eaddrmodb[7])() = {
+uint16_t (*eaddrmodb[7])() = {
   nula, immb, dir, idx, ext, nula, relb };
 
-tt_u16 (*eaddrmodw[7])() = {
+uint16_t (*eaddrmodw[7])() = {
   nula, immw, dir, idx, ext, nula, relw };
 
-tt_u8 getcc()
+uint8_t getcc()
 {
   return(ccc | ccv << 1 | ccz << 2 | ccn << 3 | cci << 4 | cch << 5 | ccf << 6 | cce << 7);
 }
 
-void setcc(tt_u8 i)
+void setcc(uint8_t i)
 {
   ccc = btst(i, 0x01);
   ccv = btst(i, 0x02);
@@ -230,11 +230,11 @@ void setcc(tt_u8 i)
   cce = btst(i, 0x80);
 }
 
-tt_u16 getexr(int c)
+uint16_t getexr(int c)
 {
   switch(c) {
   case 0:
-    return((tt_u16)ra << 8 | (tt_u16)rb);
+    return((uint16_t)ra << 8 | (uint16_t)rb);
   case 1:
     return(rx);
   case 2:
@@ -246,25 +246,25 @@ tt_u16 getexr(int c)
   case 5:
     return(rpc);
   case 8:
-    return((tt_u16)ra);
+    return((uint16_t)ra);
   case 9:
-    return((tt_u16)rb);
+    return((uint16_t)rb);
   case 10:
-    return((tt_u16)getcc());
+    return((uint16_t)getcc());
   case 11:
-    return((tt_u16)rdp);
+    return((uint16_t)rdp);
   default :
     err6809 = ERR_INVALID_EXGR;
     return 0;
   }
 }
 
-void setexr(int c, tt_u16 r)
+void setexr(int c, uint16_t r)
 {
   switch(c) {
   case 0:
-    ra = (tt_u8)(r >> 8);
-    rb = (tt_u8)r;
+    ra = (uint8_t)(r >> 8);
+    rb = (uint8_t)r;
     break;
   case 1:
     rx = r;
@@ -282,23 +282,23 @@ void setexr(int c, tt_u16 r)
     rpc = r;
     break;
   case 8:
-    ra = (tt_u8)r;
+    ra = (uint8_t)r;
     break;
   case 9:
-    rb = (tt_u8)r;
+    rb = (uint8_t)r;
     break;
   case 10:
-    setcc((tt_u8)r);
+    setcc((uint8_t)r);
     break;
   case 11:
-    rdp = (tt_u8)r;
+    rdp = (uint8_t)r;
     break;
   default :
     err6809 = ERR_INVALID_EXGR;
   }
 }
 
-void do_psh(tt_u16 *rp, tt_u16 *rnp, tt_u8 c)
+void do_psh(uint16_t *rp, uint16_t *rnp, uint8_t c)
 {
   if (c & 0x80) {
     *rp -= 2;
@@ -342,7 +342,7 @@ void do_psh(tt_u16 *rp, tt_u16 *rnp, tt_u8 c)
   }
 }
 
-void do_pul(tt_u16 *rp, tt_u16 *rnp, tt_u8 c)
+void do_pul(uint16_t *rp, uint16_t *rnp, uint8_t c)
 {
   if (c & 0x01) {
     setcc(get_memb(*rp));
@@ -386,14 +386,14 @@ void do_pul(tt_u16 *rp, tt_u16 *rnp, tt_u8 c)
   }
 }
 
-tt_u8 get_i8()
+uint8_t get_i8()
 {
   return(get_memb(rpc++));
 }
 
-tt_u16 get_i16()
+uint16_t get_i16()
 {
-  tt_u16 w = get_memw(rpc);
+  uint16_t w = get_memw(rpc);
 
   rpc += 2;
   return(w);
@@ -404,37 +404,37 @@ void null()
   err6809 = ERR_INVALID_OPCODE;
 }
 
-tt_u16 nula()
+uint16_t nula()
 {
   err6809 = ERR_INVALID_ADDRMODE;
   return 0;
 }
 
-tt_u16 immb()
+uint16_t immb()
 {
-  tt_u16 v = rpc;
+  uint16_t v = rpc;
 
   rpc++;
   return(v);
 }
 
-tt_u16 immw()
+uint16_t immw()
 {
-  tt_u16 v = rpc;
+  uint16_t v = rpc;
 
   rpc += 2;
   return(v);
 }
 
-tt_u16 dir()
+uint16_t dir()
 {
-  return(((tt_u16)rdp) << 8 | (tt_u16)get_i8());
+  return(((uint16_t)rdp) << 8 | (uint16_t)get_i8());
 }
 
-tt_u16 idx()
+uint16_t idx()
 {
-  tt_u8 v = get_i8();
-  tt_u16 r, *pr;
+  uint8_t v = get_i8();
+  uint16_t r, *pr;
 
   pr = regp[(v >> 5) & 0x3];
 
@@ -479,11 +479,11 @@ tt_u16 idx()
       nbcycle += 1;
       break;
     case 0x09: case 0x19:    /* n15,R */
-      r = *pr + (tt_s16)get_i16();
+      r = *pr + (int16_t)get_i16();
       nbcycle += 4;
       break;
     case 0x0b: case 0x1b:    /* D,R */
-      r = *pr + (tt_s16)rd();
+      r = *pr + (int16_t)rd();
       nbcycle += 4;
       break;
     case 0x0c: case 0x1c:    /* n7,PCR */
@@ -491,7 +491,7 @@ tt_u16 idx()
       nbcycle += 1;
       break;
     case 0x0d: case 0x1d:    /* n15,PCR */
-      r = rpc + (tt_s16)get_i16();
+      r = rpc + (int16_t)get_i16();
       nbcycle += 5;
       break;
     case 0x1f:               /* [n] */
@@ -511,17 +511,17 @@ tt_u16 idx()
   return r;
 }
 
-tt_u16 ext()
+uint16_t ext()
 {
   return(get_i16());
 }
 
-tt_u16 relb()
+uint16_t relb()
 {
-  return(rpc + (tt_s16)(tt_s8)get_i8());
+  return(rpc + (int16_t)(int8_t)get_i8());
 }
 
-tt_u16 relw()
+uint16_t relw()
 {
   return(rpc + get_i16());
 }
@@ -544,17 +544,17 @@ void pag3()
   (*(fonc[r]))();
 }
  
-tt_u16 rd()
+uint16_t rd()
 {
-  return((tt_u16)ra << 8 | (tt_u16)rb);
+  return((uint16_t)ra << 8 | (uint16_t)rb);
 }
 
-tt_u16 get_eab()
+uint16_t get_eab()
 {
   return((*eaddrmodb[addrmode])());
 }
 
-tt_u16 get_eaw()
+uint16_t get_eaw()
 {
   return((*eaddrmodw[addrmode])());
 }

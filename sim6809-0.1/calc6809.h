@@ -21,7 +21,7 @@ int ccc, ccv, ccz, ccn, cci, cch, ccf, cce;
 /* help to compute V bit */
 
 #ifdef BIT_V_DELAYED
-tt_u32 ccvx, ccvy, ccvz;
+uint32_t ccvx, ccvy, ccvz;
 int ccvr, ccv8;
 
 #define GET_V if (!ccvr) {ccvr=1; if (ccv8) { GET_V8;} else { GET_V16;}}
@@ -33,8 +33,8 @@ int ccvr, ccv8;
 #define PUT_V ;
 #endif
 
-#define SET_Z8(a)     {ccz = !(tt_u8)(a);}
-#define SET_Z16(a)    {ccz = !(tt_u16)(a);}
+#define SET_Z8(a)     {ccz = !(uint8_t)(a);}
+#define SET_Z16(a)    {ccz = !(uint16_t)(a);}
 #define SET_N8(a)     {ccn = ((a)&0x80)>>7;}
 #define SET_N16(a)    {ccn = ((a)&0x8000)>>15;}
 #define SET_H(a,b,r)  {cch = (((a)^(b)^(r))&0x10)>>3;}
@@ -56,8 +56,8 @@ int ccvr, ccv8;
 
 int addrmode;
 
-tt_u16 (*eaddrmodb[7])();
-tt_u16 (*eaddrmodw[7])();
+uint16_t (*eaddrmodb[7])();
+uint16_t (*eaddrmodw[7])();
 
 #define GET_EAB (*eaddrmodb[addrmode])()
 #define GET_EAW (*eaddrmodw[addrmode])()
@@ -65,12 +65,12 @@ tt_u16 (*eaddrmodw[7])();
 #define FETCHB get_memb(GET_EAB)
 #define FETCHW get_memw(GET_EAW)
 
-#define GETRD    ((tt_u16)ra << 8 | (tt_u16)rb)
-#define SETRD(d) {ra = (tt_u8)(d >> 8);rb = (tt_u8)d;}
+#define GETRD    ((uint16_t)ra << 8 | (uint16_t)rb)
+#define SETRD(d) {ra = (uint8_t)(d >> 8);rb = (uint8_t)d;}
 
-#define ext5(v) (tt_s16)((v) & 0x10 ? (tt_u16)(v) | 0xffe0 : (tt_u16)(v) & 0x000f)
+#define ext5(v) (int16_t)((v) & 0x10 ? (uint16_t)(v) | 0xffe0 : (uint16_t)(v) & 0x000f)
 
-#define ext8(v) (tt_s16)(tt_s8)(v)
+#define ext8(v) (int16_t)(int8_t)(v)
 
 
 

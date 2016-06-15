@@ -59,7 +59,7 @@ int m6809_system(void)
 {
   static char input[256];
   char *p = input;
-  tt_u8 c;
+  uint8_t c;
 
 	rti();
 	return 1;
@@ -125,7 +125,7 @@ int execute()
   return r;
 }
 
-void execute_addr(tt_u16 addr)
+void execute_addr(uint16_t addr)
 {
   int n;
 
@@ -152,9 +152,9 @@ void ignore_ws(char **c)
     (*c)++;
 }
 
-tt_u16 readhex(char **c)
+uint16_t readhex(char **c)
 {
-  tt_u16 val = 0;
+  uint16_t val = 0;
   char nc;
 
   ignore_ws(c);
@@ -220,7 +220,7 @@ void console_command()
 {
   static char input[80], copy[80];
   char *strptr;
-  tt_u16 memadr, start, end;
+  uint16_t memadr, start, end;
   long n;
   int i, r;
   int regon = 0;
@@ -246,7 +246,7 @@ void console_command()
     switch (next_char(&strptr)) {
     case 'c' :
       for (n = 0; n < 0x10000; n++)
-	set_memb((tt_u16)n, 0);
+	set_memb((uint16_t)n, 0);
       printf("Memory cleared\n");
       break;
     case 'd' :
@@ -259,9 +259,9 @@ void console_command()
       } else 
 	start = end = memadr;
       
-      for(n = start; n <= end && n < 0x10000; n += dis6809((tt_u16)n, stdout));
+      for(n = start; n <= end && n < 0x10000; n += dis6809((uint16_t)n, stdout));
 
-      memadr = (tt_u16)n;
+      memadr = (uint16_t)n;
       break;
     case 'f' :
       if (more_params(&strptr)) {
@@ -359,7 +359,7 @@ void console_command()
 	  printf("%02X ", get_memb(n++));
 	n -= 8;
 	for (i = 1; i <= 8; i++) {
-	  tt_u8 v;
+	  uint8_t v;
 
 	  v = get_memb(n++);
 	  if (v >= 0x20 && v <= 0x7e)

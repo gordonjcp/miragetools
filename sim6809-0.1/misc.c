@@ -22,7 +22,7 @@
 
 static const char ccbits[] = "EFHINZVC";
 
-char hexdigit(tt_u16 v)
+char hexdigit(uint16_t v)
 {
   v &= 0xf;
   if (v <= 9)
@@ -31,7 +31,7 @@ char hexdigit(tt_u16 v)
     return 'A' - 10 + v;
 }
 
-char *hex8str(tt_u8 v)
+char *hex8str(uint8_t v)
 {
   static char tmpbuf[3] = "  ";
 
@@ -41,7 +41,7 @@ char *hex8str(tt_u8 v)
   return tmpbuf;
 }
 
-char *hex16str(tt_u16 v)
+char *hex16str(uint16_t v)
 {
   static char tmpbuf[5] = "    ";
 
@@ -56,7 +56,7 @@ char *hex16str(tt_u16 v)
   return tmpbuf;
 }
 
-char *bin8str(tt_u8 val)
+char *bin8str(uint8_t val)
 {
   static char tmpbuf[9] = "        ";
   int i;
@@ -72,7 +72,7 @@ char *bin8str(tt_u8 val)
   return tmpbuf;
 }
 
-char *ccstr(tt_u8 val)
+char *ccstr(uint8_t val)
 {
   static char tempbuf[9] = "        ";
   int i;

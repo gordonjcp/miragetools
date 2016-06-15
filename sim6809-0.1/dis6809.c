@@ -195,11 +195,11 @@ static const char *pshuregi[] = { "PC", "S", "Y", "X", "DP", "B", "A", "CC" };
 
 /* disassemble one instruction at adress adr and return its size */
 
-int dis6809(tt_u16 adr, FILE *stream)
+int dis6809(uint16_t adr, FILE *stream)
 {
   int d = get_memb(adr);
   int s, i;
-  tt_u8 pb;
+  uint8_t pb;
   char reg;
 
   fprintf(stream, "%04hX:  %04hX %04hX    ", adr, get_memw(adr), get_memw(adr + 2));
@@ -370,13 +370,13 @@ int dis6809(tt_u16 adr, FILE *stream)
     break; 
   case 6:             /* relative */
     {
-      tt_s16 v;
+      int16_t v;
 
       if (s == 2)
-	v = (tt_s16)(tt_s8)get_memb(adr + 1);
+	v = (int16_t)(int8_t)get_memb(adr + 1);
       else
-	v = (tt_s16)get_memw(adr + s - 2);
-      fprintf(stream, ">$%s", hex16str(adr + (tt_u16)s + v));
+	v = (int16_t)get_memw(adr + s - 2);
+      fprintf(stream, ">$%s", hex16str(adr + (uint16_t)s + v));
       break;
     }
   }

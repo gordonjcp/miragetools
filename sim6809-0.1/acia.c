@@ -192,7 +192,7 @@ static void acia_run_midi() {
 }
 
 
-tt_u8 acia_rreg(int reg) {
+uint8_t acia_rreg(int reg) {
 	// handle reads from ACIA registers
 	switch (reg & 0x01) {   // not fully mapped
 		case ACIA_SR:
@@ -203,7 +203,7 @@ tt_u8 acia_rreg(int reg) {
 	}
 	return 0xff;	// maybe the bus floats
 }
-void acia_wreg(int reg, tt_u8 val) {
+void acia_wreg(int reg, uint8_t val) {
 	// handle writes to ACIA registers
 	switch (reg & 0x01) {   // not fully mapped
 		case ACIA_CR:

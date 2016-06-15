@@ -29,7 +29,7 @@
 
 //#define DEBUGDEV
 
-tt_u8 *ramdata;    /* 64 kb of ram */
+uint8_t *ramdata;    /* 64 kb of ram */
 
 static int protect_rom = 0;
 
@@ -37,7 +37,7 @@ int memory_init(void) {
 	// allocate RAM and fetch ROM from disk
 	FILE *in;
 	
-	ramdata = (tt_u8 *)malloc(65536); // FIXME is this ever actually free()ed?
+	ramdata = (uint8_t *)malloc(65536); // FIXME is this ever actually free()ed?
 	if (!ramdata) {
 		fprintf(stderr, "Failed to allocate RAM area\n");
 		abort();
@@ -64,7 +64,7 @@ int memory_init(void) {
 	return 1;
 }
 
-tt_u8 get_memb(tt_u16 adr) {
+uint8_t get_memb(uint16_t adr) {
 	// fetch bytes from memory, or dispatch a call to the device handler
 	
 	//if (last_rpc <0x8000 && activate_console==0) activate_console=1;
@@ -95,12 +95,12 @@ tt_u8 get_memb(tt_u16 adr) {
 	 return ramdata[adr];
 }
 
-tt_u16 get_memw(tt_u16 adr)
+uint16_t get_memw(uint16_t adr)
 {
-  return (tt_u16)get_memb(adr) << 8 | (tt_u16)get_memb(adr + 1);
+  return (uint16_t)get_memb(adr) << 8 | (uint16_t)get_memb(adr + 1);
 }
 
-void set_memb(tt_u16 adr, tt_u8 val) {
+void set_memb(uint16_t adr, uint8_t val) {
 	// write byte to memory, or dispatch a call to the device handler
 
 	if (last_rpc<0x8000 && activate_console==0) activate_console=1;
@@ -143,10 +143,10 @@ void set_memb(tt_u16 adr, tt_u8 val) {
 
 }
 
-void set_memw(tt_u16 adr, tt_u16 val)
+void set_memw(uint16_t adr, uint16_t val)
 {
-  set_memb(adr, (tt_u8)(val >> 8));
-  set_memb(adr + 1, (tt_u8)val);
+  set_memb(adr, (uint8_t)(val >> 8));
+  set_memb(adr + 1, (uint8_t)val);
 }
 
 

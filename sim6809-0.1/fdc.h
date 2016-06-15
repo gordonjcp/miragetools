@@ -26,18 +26,20 @@
 #define FDC_SECTOR 2
 #define FDC_DATA 3
 
+#include <stdint.h>
+
 int fdc_init();
 void fdc_destroy();
 void fdc_run();
-tt_u8 fdc_rreg(int reg);
-void fdc_wreg(int reg, tt_u8 val);
+uint8_t fdc_rreg(int reg);
+void fdc_wreg(int reg, uint8_t val);
 
 struct {
-	tt_u8 sr;
-	tt_u8 cr;
-	tt_u8 trk_r;
-	tt_u8 sec_r;
-	tt_u8 data_r;
+	uint8_t sr;
+	uint8_t cr;
+	uint8_t trk_r;
+	uint8_t sec_r;
+	uint8_t data_r;
 } fdc;
 
 #endif

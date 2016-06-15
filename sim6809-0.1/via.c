@@ -60,9 +60,9 @@ void via_run() {
 	via_cycles = cycles + (via_t2>>2);  // half, because the clock frequency is 2MHz
 }
 
-tt_u8 via_rreg(int reg) {
+uint8_t via_rreg(int reg) {
 
-	tt_u8 val=0;
+	uint8_t val=0;
 
 	switch(reg) {
 		case 0:
@@ -92,7 +92,7 @@ tt_u8 via_rreg(int reg) {
 	return val;
 }
 
-void via_wreg(int reg, tt_u8 val) {
+void via_wreg(int reg, uint8_t val) {
 	int bc;
 
 	switch(reg) {

@@ -19,17 +19,19 @@
 #ifndef __VIA_H
 #define __VIA_H
 
-tt_u8 via_rreg(int reg);
-void via_wreg(int reg, tt_u8 val);
+#include <stdint.h>
+uint8_t via_rreg(int reg);
+void via_wreg(int reg, uint8_t val);
 void via_run();
 
+
 struct {
-	tt_u8 orb, irb;
-	tt_u8 ora, ira;
-	tt_u8 ddrb, ddra;
-	tt_u8 t2l, t2h;
-	tt_u8 ier, ifr;
-	tt_u8 pcr;
+	uint8_t orb, irb;
+	uint8_t ora, ira;
+	uint8_t ddrb, ddra;
+	uint8_t t2l, t2h;
+	uint8_t ier, ifr;
+	uint8_t pcr;
 
 } via;
 #endif

@@ -33,7 +33,7 @@
 */
 
 static FILE *disk;
-static tt_u8 *diskdata;
+static uint8_t *diskdata;
 static long fdc_cycles;
 static int s_byte;  // byte within sector
 
@@ -104,9 +104,9 @@ void fdc_run() {
 	fdc.sr &= 0xfe;	// stop
 }
 
-tt_u8 fdc_rreg(int reg) {
+uint8_t fdc_rreg(int reg) {
 	// handle reads from FDC registers
-	tt_u8 val;
+	uint8_t val;
 
 	switch (reg & 0x03) {   // not fully mapped
 		case FDC_SR:
@@ -126,7 +126,7 @@ tt_u8 fdc_rreg(int reg) {
 	return val;
 }
 
-void fdc_wreg(int reg, tt_u8 val) {
+void fdc_wreg(int reg, uint8_t val) {
 	// handle writes to FDC registers
 	int cmd = (val & 0xf0)>>4;
 

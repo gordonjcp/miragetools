@@ -17,16 +17,17 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+#include <stdint.h>
 #include <stdio.h>
 
-tt_u16 rpc, rx, ry, ru, rs;
-tt_u8 ra, rb, rdp;
+uint16_t rpc, rx, ry, ru, rs;
+uint8_t ra, rb, rdp;
 int nbcycle;
 int err6809; 
-tt_u16 last_rpc;
+uint16_t last_rpc;
  
 #ifdef PC_HISTORY
-tt_u16 pchist[PC_HISTORY_SIZE];
+uint16_t pchist[PC_HISTORY_SIZE];
 int pchistidx;
 int pchistnbr;
 #endif
@@ -50,9 +51,9 @@ int pchistnbr;
 void console_init(void);
 int m6809_system(void);
 int execute(void);
-void execute_addr(tt_u16 addr);
+void execute_addr(uint16_t addr);
 void ignore_ws(char **c);
-tt_u16 readhex(char **c);
+uint16_t readhex(char **c);
 int readint(char **c);
 int more_params(char **c);
 char next_char(char **c);
@@ -62,31 +63,31 @@ int main(int argc, char **argv);
 long cycles;
 
 /* dis6809.c */
-int dis6809(tt_u16 adr, FILE *stream);
+int dis6809(uint16_t adr, FILE *stream);
 
 /* emu6809.c */
-tt_u8 getcc(void);
-void setcc(tt_u8 i);
-tt_u16 getexr(int c);
-void setexr(int c, tt_u16 r);
-void do_psh(tt_u16 *rp, tt_u16 *rnp, tt_u8 c);
-void do_pul(tt_u16 *rp, tt_u16 *rnp, tt_u8 c);
-tt_u8 get_i8(void);
-tt_u16 get_i16(void);
+uint8_t getcc(void);
+void setcc(uint8_t i);
+uint16_t getexr(int c);
+void setexr(int c, uint16_t r);
+void do_psh(uint16_t *rp, uint16_t *rnp, uint8_t c);
+void do_pul(uint16_t *rp, uint16_t *rnp, uint8_t c);
+uint8_t get_i8(void);
+uint16_t get_i16(void);
 void null(void);
-tt_u16 nula(void);
-tt_u16 immb(void);
-tt_u16 immw(void);
-tt_u16 dir(void);
-tt_u16 idx(void);
-tt_u16 ext(void);
-tt_u16 relb(void);
-tt_u16 relw(void);
+uint16_t nula(void);
+uint16_t immb(void);
+uint16_t immw(void);
+uint16_t dir(void);
+uint16_t idx(void);
+uint16_t ext(void);
+uint16_t relb(void);
+uint16_t relw(void);
 void pag2(void);
 void pag3(void);
-tt_u16 rd(void);
-tt_u16 get_eab(void);
-tt_u16 get_eaw(void);
+uint16_t rd(void);
+uint16_t get_eab(void);
+uint16_t get_eaw(void);
 void m6809_init(void);
 int m6809_execute(void);
 void m6809_dumpregs(void);
@@ -233,15 +234,15 @@ void nmi();
 
 /* memory.c */
 int memory_init(void);
-tt_u8 get_memb(tt_u16 adr);
-tt_u16 get_memw(tt_u16 adr);
-void set_memb(tt_u16 adr, tt_u8 val);
-void set_memw(tt_u16 adr, tt_u16 val);
+uint8_t get_memb(uint16_t adr);
+uint16_t get_memw(uint16_t adr);
+void set_memb(uint16_t adr, uint8_t val);
+void set_memw(uint16_t adr, uint16_t val);
 
 /* misc.c */
-char hexdigit(tt_u16 v);
-char *hex8str(tt_u8 v);
-char *hex16str(tt_u16 v);
-char *bin8str(tt_u8 val);
-char *ccstr(tt_u8 val);
+char hexdigit(uint16_t v);
+char *hex8str(uint8_t v);
+char *hex16str(uint16_t v);
+char *bin8str(uint8_t val);
+char *ccstr(uint8_t val);
 

@@ -32,14 +32,14 @@
 int acia_init(int device);
 void acia_destroy();
 void (*acia_run)();
-tt_u8 acia_rreg(int reg);
-void acia_wreg(int reg, tt_u8 val);
+uint8_t acia_rreg(int reg);
+void acia_wreg(int reg, uint8_t val);
 
 struct {
-	tt_u8 cr;
-	tt_u8 sr;
-	tt_u8 tdr;
-	tt_u8 rdr;
+	uint8_t cr;
+	uint8_t sr;
+	uint8_t tdr;
+	uint8_t rdr;
 } acia;
 
 #endif
