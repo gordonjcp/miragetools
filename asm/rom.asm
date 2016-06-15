@@ -94,11 +94,11 @@ fdcwritetrack:
 	lda   #$f8	;write track command
 	sta   fdccmd
 	sta   $00	; FDC command register
-fdcwrite1:
+fdcwritetrk1:
 	sync  
 	lda   ,x+
 	sta   $03	; FDC data register
-	bra   fdcwrite1
+	bra   fdcwritetrk1
 
 
 *** step drive head to track 0
@@ -162,7 +162,7 @@ countdown:
 	nop   
 	nop   
 	nop   
-	leay  $-1,y        ;dec y
+	leay  -1,y        ;dec y
 	bne   countdown
 	rts   
 
@@ -306,25 +306,25 @@ hwsetup1:
 qchipsetup:
 	ldx   #$ec80	; wavetable pointer registers
 qchip1
-	lda   #$10	*
-	sta   ,x+	* write $10 to all of them, why?
+	lda   #$10	
+	sta   ,x+	; write $10 to all of them, why?
 	cmpx  #$eca0
-	bne   qchip1	* loop over all registers
+	bne   qchip1	; loop over all registers
 	ldx   #$eca0	; oscillator control registers
 qchip2:
 	lda   #$63	; channel 6, oneshot, stopped?
 	sta   ,x+
 	cmpx  #$ecc0
-	bne   qchip2	* loop over all registers
+	bne   qchip2	; loop over all registers
 	ldb   #$20
 * wait for all voices to stop?
 qchip3:
-	lda   $ece0	* read interrupt register
+	lda   $ece0	; read interrupt register
 	ldy   #$000c
-	jsr   countdown	* wait
+	jsr   countdown	; wait
 	decb
-	cmpb  #$00	* done it 32 times?
-	bne   qchip3	* loop
+	cmpb  #$00	; done it 32 times?
+	bne   qchip3	; loop
 	rts   
 
 
@@ -534,7 +534,7 @@ showerrcode4:
 	sta   $e201          ;multiplexed, two segs at a time
 	ldy   #$0100
 showerrcode5:
-	leay  $-1,y
+	leay  -1,y
 	bne   showerrcode5          ;pause
 	inc   $bf86
 	ldb   $bf87
@@ -757,12 +757,12 @@ timer2int:
 	ldd   #$1388	; 5000
 	sta   $e209	; VIA t2 high
 	andcc #$bf           ;clear firq mask bit
-	com   $2e	* internal to ROM
+	com   $2e	; internal to ROM
 	beq   timer2int1
-	dec   $2f	* counted down every second interrupt?
+	dec   $2f	; counted down every second interrupt?
 	bra   timer2int2
 timer2int1:
-	dec   $30	* called every second interrupt?
+	dec   $30	; called every second interrupt?
 	inc   $36
 timer2int2:
 	dec   $33
@@ -816,11 +816,11 @@ unknown12:
 
 *** initialise timer 2
 unknown2:
-	ldd   #$1388		// 5000
-	stb   $e208          ;restart via timer 2
+	ldd   #$1388	; 5000
+	stb   $e208     ;restart via timer 2
 	sta   $e209
 	lda   #$a6
-	sta   $e20e          ;via int enab reg
+	sta   $e20e     ;via int enab reg
 	ldd   #$8038
 	tfr   a,dp
 	rts   
@@ -846,7 +846,7 @@ unknown3:
 copybytes:
 	lda   ,x+
 	sta   ,u+
-	leay  $-1,y
+	leay  -1,y
 	bne   copybytes
 	rts   
 
@@ -857,7 +857,7 @@ swapbytes:
 	ldb   ,u
 	sta   ,u+
 	stb   ,x+
-	leay  $-1,y
+	leay  -1,y
 	bne   swapbytes
 	rts   
 
@@ -866,40 +866,40 @@ swapbytes:
 *** X contains filter address
 *** B is set to $10
 swponefilt:
-	cmpb  #$10	* B is preloaded with $10 by the filter tuning routine
+	cmpb  #$10	; B is preloaded with $10 by the filter tuning routine
 	beq   swponefilt1 
-	jmp   ospanic	* Panic if B doesn't contain the right value to set up the VIA port? why?
+	jmp   ospanic	; Panic if B doesn't contain the right value to set up the VIA port? why?
 			
 swponefilt1:
-	stb   $e200     * via data reg 2, motor off, muted, compressor input
-	ldb   #$b0	* initial filter cutoff
+	stb   $e200     ; via data reg 2, motor off, muted, compressor input
+	ldb   #$b0	; initial filter cutoff
 swponefilt2:
 	jsr   setmaxres
-	bsr   unknown5	* measure filter
+	bsr   unknown5	; measure filter
 	ldy   #$0000
-	bsr   unknown5	* measure filter four times
+	bsr   unknown5	; measure filter four times
 	bsr   unknown5
 	bsr   unknown5
 	bsr   unknown5
-	cmpy  #$0000	* didn't hear the tone at all
+	cmpy  #$0000	; didn't hear the tone at all
 	beq   swponefilt4 
 	cmpy  #$0fa0		; 4000 decimal
-	bcc   swponefilt4	* higher or same as some large number, end
+	bcc   swponefilt4	; higher or same as some large number, end
 	cmpy  #$0085
-	bcs   swponefilt3 * lower than some smallish number, proceed
-	incb  		* raise the cutoff
-	bra   swponefilt2	* try again
+	bcs   swponefilt3 ; lower than some smallish number, proceed
+	incb  		; raise the cutoff
+	bra   swponefilt2	; try again
 swponefilt3:
-	cmpy  #$0080	* higher?
-	bhi   swponefilt4 * more than $80, less than $85, end
-	decb  		* sweep down
-	bra   swponefilt2 * try again
+	cmpy  #$0080	; higher?
+	bhi   swponefilt4 ; more than $80, less than $85, end
+	decb  		; sweep down
+	bra   swponefilt2 ; try again
 swponefilt4:
-	subb  #$7a	* subtract some offset
-	stb   $18,u	* store in the voice parameter table
-	clrb  		* zero B
-	jsr   setmaxres	* close filter
-	stb   -16,x	* stop resonance
+	subb  #$7a	; subtract some offset
+	stb   $18,u	; store in the voice parameter table
+	clrb  		; zero B
+	jsr   setmaxres	; close filter
+	stb   -16,x	; stop resonance
 	rts   		* return
 
 	nop   
@@ -923,10 +923,10 @@ unknown51:
 unknown52:
 	bsr   setmaxres
 	leay  $0001,y		; inc y
-	beq   unknown5end	// end, if zero
-	lda   $ece2		// get doc adc
-	cmpa  #$70		// 112 decimal
-	bhi   unknown52	// loop if higher?
+	beq   unknown5end	; end, if zero
+	lda   $ece2		; get doc adc
+	cmpa  #$70		; 112 decimal
+	bhi   unknown52		; loop if higher?
 unknown5end
 	rts   
 
@@ -981,16 +981,16 @@ unknown8:
 *** another qchip dealie
 * probably not DOC, probably something to do with voice management
 unknown9:
-	orcc  #$50		// mask firq/irq
-	ldd   $0002,s		// stack+2, return address?
+	orcc  #$50		; mask firq/irq
+	ldd   $0002,s		; stack+2, return address?
 	sta   -$3e,y		
 	sta   -$3f,y
 	stb   -$3d,y
 	stb   -$3c,y
-	andcc #$af		// unmask firq/irq
-	puls  a,b		// top value off stack
-	std   ,s		// put return address back
-	rts   		// return
+	andcc #$af		; unmask firq/irq
+	puls  a,b		; top value off stack
+	std   ,s		; put return address back
+	rts   			; return
 
 	fill $ff, 12
 	fill $ff, 112
@@ -1123,7 +1123,7 @@ resetvec:
 	ldx   #$c000
 resetvec1:
 	cmpa  ,x+
-	lbne  coldstart	// not zero?
+	lbne  coldstart	; not zero?
 	inca  
 	cmpa  #$10
 	bne   resetvec1
