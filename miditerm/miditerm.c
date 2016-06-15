@@ -31,12 +31,12 @@ int main (int argc, char *argv[]) {
     gtk_window_set_title(GTK_WINDOW(window), "MIDIterm");
     terminal = vte_terminal_new();
     //scrollbar = gtk_vscrollbar_new(VTE_TERMINAL (terminal)->adjustment);
-    hbox = gtk_hbox_new(FALSE, 0);
+    hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
     gtk_box_pack_start(GTK_BOX (hbox), terminal, TRUE, TRUE, 0);
-    gtk_box_pack_start(GTK_BOX (hbox), scrollbar, FALSE, FALSE, 0);
+    //gtk_box_pack_start(GTK_BOX (hbox), scrollbar, FALSE, FALSE, 0);
 
 	// menu bar
-	vbox = gtk_vbox_new(FALSE, 0);
+	vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 	gtk_container_add(GTK_CONTAINER(window), vbox);
 
 	menubar = gtk_menu_bar_new();

@@ -24,4 +24,7 @@
 GtkWidget *terminal;
 void term_in(VteTerminal *terminal, gchar *text, guint length, gpointer ptr);
 void send_reset();
+gboolean alsa_init();
+void alsa_destroy();
+
 #endif
