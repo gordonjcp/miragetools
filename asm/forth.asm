@@ -13,6 +13,14 @@
 * system equates
 *
 
+
+; macro for A09
+
+fccz	macro
+	fcc &1
+	fcb 0
+	endm
+
 osram	equ	$8000
 sysram	equ	$8030
 width	equ	65		terminal screen width margin
@@ -144,10 +152,13 @@ variab	ldx	,s++		get following address
 	rts			return to caller
 * messages
 prompt	fcb	$0a,$0d		new line
-	fccz	'ok>'		prompt
-ermsg1	fccz	/error: '/	error prefix
-ermsg2	fccz	/' /		error suffix
-redmsg	fccz	'redef: '	re-definition indicator
+	fccz	'ok>'		; prompt
+ermsg1	
+	fccz	/error: '/	;error prefix
+ermsg2	
+	fccz	/' /		;error suffix
+redmsg	
+	fccz	'redef: '	;re-definition indicator
 
 delmsg	fcb	8,32,8,0	bug when using strings?
 
@@ -887,11 +898,11 @@ qui2	jsr	number		try for number
 	bra	qui1		keep interpreting
 * subroutine to generate error message, first displays 'error:' message,
 * then name of last word processed, then error message text
-error	ldx	#ermsg1		get pointer to error message prefix
+error	ldx	#ermsg1		; get pointer to error message prefix
 	bsr	pmsg1		display prefix
 	ldx	lstlok		get address of last word from input buffer
 	bsr	pwrd1		display word
-	ldx	#ermsg2		point to error message suffix
+	ldx	#ermsg2		; point to error message suffix
 	bsr	pmsg1		display suffix
 	ldx	,s++		get address of error message
 	bsr	pmsg1		display message
@@ -1235,7 +1246,7 @@ loop	pulu	a		get structure type
 	std	,x++		place in dictionary
 	ldd	#$01ed		'std 2,s'
 	std	,x++		place in dictionary
-loop1	ldd	#$6210		< catchup > (postbyte for std, prefix for cmpd)
+loop1	ldd	#$6210		; < catchup > (postbyte for std, prefix for cmpd)
 	std	,x++		save in dictionary
 	ldd	#$a3e4		'cmpd ,s'
 	std	,x++		compile
@@ -1487,10 +1498,10 @@ setfilter
 	fcb $80
 	fcc 'rotom'
 	fdb setfilter
-motor	ldd ,u++	* on, off
+motor	ldd ,u++	; on, off
 	bitb #$01
 	beq motor1
-	jmp $f4c6	* rom motor on
+	jmp $f4c6	; rom motor on
 	
 motor1	jmp $f4d6
 	rts
@@ -1499,7 +1510,7 @@ motor1	jmp $f4d6
 	fcc 'krtkees'
 	fdb motor
 seektrk
-	ldd ,u++	unstack track
+	ldd ,u++	; unstack track
 	stb $8002
 	jsr $f06f
 	andcc #$bf
