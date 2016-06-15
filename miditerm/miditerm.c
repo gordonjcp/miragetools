@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "MIDIterm");
     terminal = vte_terminal_new();
-    scrollbar = gtk_vscrollbar_new(VTE_TERMINAL (terminal)->adjustment);
+    //scrollbar = gtk_vscrollbar_new(VTE_TERMINAL (terminal)->adjustment);
     hbox = gtk_hbox_new(FALSE, 0);
     gtk_box_pack_start(GTK_BOX (hbox), terminal, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX (hbox), scrollbar, FALSE, FALSE, 0);
@@ -56,7 +56,7 @@ int main (int argc, char *argv[]) {
 
     g_signal_connect(window, "delete-event", gtk_main_quit, NULL);
     g_signal_connect(terminal, "child-exited", gtk_main_quit, NULL);
-    g_signal_connect_after(GTK_OBJECT(terminal), "commit", G_CALLBACK(term_in), NULL);
+    g_signal_connect_after(G_OBJECT(terminal), "commit", G_CALLBACK(term_in), NULL);
 	g_signal_connect_swapped(quit, "activate", gtk_main_quit, NULL);
 	g_signal_connect_swapped(reset, "activate", send_reset, NULL);
     

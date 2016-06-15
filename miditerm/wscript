@@ -20,9 +20,9 @@ def configure(conf):
     conf.env.CCFLAGS = ['-O0', '-g3']
 
 
-    conf.check_cfg(package='gtk+-2.0', uselib_store='GTK', atleast_version='2.6.0', mandatory=True, args='--cflags --libs')
+    conf.check_cfg(package='gtk+-3.0', uselib_store='GTK', atleast_version='3.18', mandatory=True, args='--cflags --libs')
     conf.check_cfg(package = 'alsa', uselib_store='ALSA', atleast_version = '1.0.25', mandatory=True, args = '--cflags --libs')
-    conf.check_cfg(package = 'vte', uselib_store='VTE', atleast_version = '0.28.0', mandatory=True, args = '--cflags --libs')
+    conf.check_cfg(package = 'vte-2.91', uselib_store='VTE', atleast_version = '0.42', mandatory=True, args = '--cflags --libs')
     
 def build(bld):
     # the main program
