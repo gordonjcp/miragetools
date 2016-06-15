@@ -3,8 +3,9 @@
 -- disassemble with "./f9dasm mirage-rom.lbl"
 
 file "./miragerom.bin" f000
-#option nohex
-#option noaddr
+option nohex
+option noaddr
+option noasc
 
 setdp e8
 
@@ -32,31 +33,31 @@ label fb68 permutations
 comm fb68 "fascinating permutation of values from 0 to 23, no idea why"
 data fb68-fb7f
 
-comm Track/sector for OS load
+comm fb80 Track/sector for OS load
 label trksec_os
 data fb80-fb87
 
-comm Track/sector for System Params
+comm fb88 Track/sector for System Params
 label trksec_sysprm
 data fb88-fb8b
 
-comm Track/sector for OS flags
+comm fb8c Track/sector for OS flags
 data fb8c-fb8f
 
-comm Track/sector for lower sounds
+comm fb90 Track/sector for lower sounds
 data fb90-fb9b
 
-comm Track/sector for upper sounds
+comm fb9c Track/sector for upper sounds
 data fb9c-fba7
 
-comm Track/sector for short sequences
+comm fba8 Track/sector for short sequences
 data fba8-fbc7
 
-comm Track/sector for long sequences
+comm fbc8 Track/sector for long sequences
 data fbc8-fbd3
 
-comm Something to do with directory bytes, apparently
-comm a bunch of stuff in here looks like a curve table
+comm fbd4 Something to do with directory bytes, apparently
+comm fbd4 a bunch of stuff in here looks like a curve table
 data fbd4-fc7e
 
 
@@ -202,8 +203,8 @@ label f19a hwsetup1
 lcomm f1a4 ACIA master reset
 lcomm f1b7 "set flag for os load" CHECKME
 
-comm Initialise DOC chip
-comm (referred to as Q Chip in some documents)
+comm f1bb Initialise DOC chip
+comm f1bb (referred to as Q Chip in some documents)
 
 label f1bb qchipsetup
 label f1be qchip1
