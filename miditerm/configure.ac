@@ -1,0 +1,9 @@
+AC_INIT([miditerm], 1.0)
+AM_INIT_AUTOMAKE
+AC_PROG_CC
+PKG_CHECK_MODULES([glib], [glib-2.0])
+PKG_CHECK_MODULES([vte], [vte])
+PKG_CHECK_MODULES([alsa], [alsa])
+AC_CONFIG_FILES(Makefile)
+AC_OUTPUT
+
