@@ -4,7 +4,7 @@
 
 file "./miragerom.bin" f000
 option nohex
-option noaddr
+-- option noaddr
 option noasc
 
 setdp e8
@@ -225,6 +225,45 @@ lcomm f207 all banks done, reset to bank 0
 comm f20d Load OS into $8000
 label f20d loadopsys
 
+
+
+comm f306 Check for disk error code (param 98)
+comm f306 flash appropriate error message if nonzero
+label f306 checkos
+label f315 checkos1
+label f321 checkos2
+label f32b checkos3
+label f33c showerrcode
+lcomm f30d 1 = "dE"
+lcomm f319 6 = "ud"
+lcomm f325 7 = "nd"
+
+lcomm f33c holds 16-bit message data
+lcomm f34d check for 1 bits in data
+lcomm f373 multiplexed two segments at a time
+lcomm f37c pause
+lcomm f384 next bit position
+
+comm f3f1 Move FD head to track, with retry
+label f3f1 gototrack
+label f3f6 gototrack1
+label f412 gototrackend
+lcomm f400 move head to home if seek failed
+lcomm f403 retry count
+lcomm f406 try again
+
+comm f413 Set FDC error code (param 98)
+comm f413 based on saved previous error code
+label f413 seterrcode
+
+comm f4c6 start disk motor and enable
+label f4c6 enablefd
+
+comm f4d6 stop disk motor and disable
+label disablefd
+
+
+
 comm fc7f Reset Handler
 comm fc7f checks for cartridge, jumps to coldstart if not present
 label fc7f reset_handler
@@ -236,3 +275,4 @@ label fc91 ospanic
 lcomm fc9b erroneous label, here - that's a constant
 
 
+const fdb7

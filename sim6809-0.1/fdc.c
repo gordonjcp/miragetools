@@ -66,6 +66,8 @@ void fdc_run() {
 	if ((fdc.sr & 0x01) == 0) return;   // nothing to do
 	if (cycles < fdc_cycles) return; // not ready yet
 	
+	//printf("checking for fdc command %02x\n", fdc.cr);
+
 	switch (fdc.cr & 0xf0) {
 		case 0x00:  // restore
 			//printf("fdc_run(): restore\n");
@@ -94,8 +96,20 @@ void fdc_run() {
 			if (s_byte>(fdc.sec_r==5?512:1024)) {
 				fdc.sr &= 0xfe;
 				nmi();
+				printf("nmi: sec %d trk %d\n", fdc.sec_r, fdc.trk_r);
 			}
 			return;
+		case 0x50: // step in
+			fdc.trk_r++;
+			printf("stepped in\n");
+			fdc_cycles = cycles + 32;
+			nmi();
+			break;
+		case 0x70: // step out
+			fdc.trk_r--;
+			fdc_cycles = cycles + 32;
+			nmi();
+			break;
 		default:
 			//printf("fdc_run(): unknown (%02x)\n", fdc.cr);
 			fdc.sr = 0;

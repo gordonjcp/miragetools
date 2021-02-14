@@ -13,14 +13,6 @@
 * system equates
 *
 
-
-; macro for A09
-
-fccz	macro
-	fcc &1
-	fcb 0
-	endm
-
 osram	equ	$8000
 sysram	equ	$8030
 width	equ	65		terminal screen width margin
